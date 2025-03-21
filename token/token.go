@@ -94,6 +94,8 @@ var keywords = map[string]TokenType{
 	"not":     NOT,
 	"true":    BOOLEAN,
 	"false":   BOOLEAN,
+	"eq": 	EQ,
+	"add": 	PLUS,
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定する

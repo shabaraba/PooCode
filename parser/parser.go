@@ -13,6 +13,7 @@ import (
 const (
 	_ int = iota
 	LOWEST
+	PIPE
 	ASSIGN      // >>
 	LOGICAL     // && ||
 	EQUALS      // == !=
@@ -45,8 +46,8 @@ var precedences = map[token.TokenType]int{
 	token.APOSTROPHE_S: PROPERTY,
 	token.AND:          LOGICAL,
 	token.OR:           LOGICAL,
-	token.PIPE:         LOWEST,
-	token.PIPE_PAR:     LOWEST,
+	token.PIPE:         PIPE,
+	token.PIPE_PAR:     PIPE,
 }
 
 type (
@@ -202,7 +203,6 @@ func (p *Parser) parseGlobalStatement() *ast.GlobalStatement {
 
 // parseExpressionStatement は式文を解析する
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
-	fmt.Print(p.curToken);
 	stmt := &ast.ExpressionStatement{Token: p.curToken}
 
 	stmt.Expression = p.parseExpression(LOWEST)
@@ -217,18 +217,15 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 // parseExpression は式を解析する
 func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefix := p.prefixParseFns[p.curToken.Type]
-	fmt.Print(p.curToken.Type)
-	fmt.Print(prefix)
 	if prefix == nil {
 		p.noPrefixParseFnError(p.curToken.Type)
 		return nil
 	}
 	leftExp := prefix()
-	fmt.Print(strconv.Itoa(precedence) + ", " + strconv.Itoa(p.peekPrecedence()));
 
+	fmt.Println(leftExp)
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
-		fmt.Print(infix)
 		if infix == nil {
 			return leftExp
 		}
@@ -237,7 +234,6 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 		leftExp = infix(leftExp)
 	}
 
-	fmt.Println("")
 	return leftExp
 }
 
