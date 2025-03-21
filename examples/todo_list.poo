@@ -1,0 +1,119 @@
+// TODOリストプログラム
+// タスクの追加、表示、ステータス変更などの機能を持つシンプルなTODOリスト
+
+// TODOアイテムのステータス列挙型
+class Todo
+    public title
+    public expired_at
+    public status
+    
+    // ステータス定数
+    def Todo.STATUS_TODO(): null -> str { "TODO" >> 💩 }
+    def Todo.STATUS_DOING(): null -> str { "DOING" >> 💩 }
+    def Todo.STATUS_DONE(): null -> str { "DONE" >> 💩 }
+    
+    // 同じタイトルかどうかを判定するメソッド
+    def is_same_title(target): Todo -> bool {
+        🍕's title == target's title >> 💩
+    }
+    
+    // 文字列表現を返すメソッド
+    def to_string(): null -> str {
+        "[" + status + "] " + title + " (期限: " + expired_at + ")" >> 💩
+    }
+
+// TODOリストを管理するクラス
+class TodoApp
+    public todo_list
+    
+    // コンストラクタ
+    def init(): null -> null {
+        [] >> todo_list
+        null >> 💩
+    }
+    
+    // TODOアイテムを追加するメソッド
+    def add(item): Todo -> TodoApp {
+        todo_list |> add item >> todo_list
+        🍕 >> 💩
+    }
+    
+    // 指定したタイトルのTODOアイテムのインデックスを取得するメソッド
+    def find_index(title): str -> int {
+        0 >> i
+        -1 >> result
+        
+        {
+            i |> lt todo_list's length |> eq true >> continue
+            
+            todo_list |> get i >> current_item
+            current_item's title |> eq title |> eq true >> found
+            
+            found |> eq true |> add i >> result
+            found |> eq true |> add false >> continue
+            
+            i |> add 1 >> i
+            continue
+        } |> eq true
+        
+        result >> 💩
+    }
+    
+    // 指定したタイトルのTODOアイテムのステータスを変更するメソッド
+    def change_status(title, new_status): str -> bool {
+        title |> find_index >> index
+        
+        index |> ge 0 |> eq true >> found
+        
+        found |> eq true |> add {
+            todo_list |> get index >> item
+            new_status >> item's status
+            true
+        } >> 💩
+        
+        found |> eq false |> add false >> 💩
+    }
+    
+    // 全てのTODOアイテムを表示するメソッド
+    def show_all(): null -> null {
+        "===== TODOリスト =====" |> print
+        
+        todo_list |> each {
+            🍕 |> .to_string |> print
+        }
+        
+        "======================" |> print
+        
+        null >> 💩
+    }
+
+// TodoAppのインスタンスを作成
+TodoApp() |> init >> app
+
+// TODOアイテムを作成して追加
+Todo(
+    title: "牛乳を買う",
+    expired_at: "2023-01-01",
+    status: Todo.STATUS_TODO()
+) |> app's add
+
+Todo(
+    title: "レポートを書く",
+    expired_at: "2023-01-15",
+    status: Todo.STATUS_DOING()
+) |> app's add
+
+Todo(
+    title: "部屋の掃除",
+    expired_at: "2023-01-05",
+    status: Todo.STATUS_TODO()
+) |> app's add
+
+// 全てのTODOアイテムを表示
+app |> .show_all
+
+// ステータスを変更
+"牛乳を買う" |> app's change_status Todo.STATUS_DONE() |> print
+
+// 変更後のリストを表示
+app |> .show_all
