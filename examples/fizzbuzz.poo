@@ -1,0 +1,33 @@
+def is_multiple_of(num): int -> bool {
+    🍕 % num == 0 >> 💩;
+}
+
+def fizzbuzz(num): int -> str {
+    "" >> result;
+    
+    🍕 is_multiple_of 3 >> is_multiple_of_3;
+    num is_multiple_of 5 >> is_multiple_of_5;
+    
+    is_multiple_of_3 && is_multiple_of_5 >> is_multiple_of_both
+    
+    is_multiple_of_both eq true >> is_fizzbuzz
+    is_multiple_of_3 && not is_multiple_of_both eq true >> is_fizz
+    is_multiple_of_5 && not is_multiple_of_both eq true >> is_buzz
+    
+    is_fizzbuzz eq true |> add "FizzBuzz" >> result
+    is_fizz eq true |> add "Fizz" >> result
+    is_buzz eq true |> add "Buzz" >> result
+    
+    not is_fizzbuzz && not is_fizz && not is_buzz eq true |> add num |> to_string >> result
+    
+    result >> 💩
+}
+
+1 >> i
+100 >> max
+
+{
+    i |> fizzbuzz |> print
+    i |> add 1 >> i
+    i |> le max
+} |> eq true |> print

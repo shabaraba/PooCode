@@ -1,0 +1,61 @@
+// 簡単な計算機プログラム
+// 基本的な四則演算と変数を使った計算を行う
+
+// 加算関数
+def add(a, b): int -> int {
+    🍕 + b >> 💩
+}
+
+// 減算関数
+def sub(a, b): int -> int {
+    🍕 - b >> 💩
+}
+
+// 乗算関数
+def mul(a, b): int -> int {
+    🍕 * b >> 💩
+}
+
+// 除算関数
+def div(a, b): int -> float {
+    🍕 / b >> 💩
+}
+
+// 計算結果を表示する関数
+def show_result(expr, result): str -> null {
+    expr + " = " + result |> to_string |> print
+    null >> 💩
+}
+
+// 基本的な計算例
+5 |> add 3 >> result1
+"5 + 3" |> show_result result1
+
+10 |> sub 4 >> result2
+"10 - 4" |> show_result result2
+
+6 |> mul 7 >> result3
+"6 * 7" |> show_result result3
+
+20 |> div 4 >> result4
+"20 / 4" |> show_result result4
+
+// パイプラインを使った複雑な計算
+5 |> add 3 |> mul 2 |> sub 1 >> result5
+"(5 + 3) * 2 - 1" |> show_result result5
+
+// 変数を使った計算
+10 >> x
+5 >> y
+
+x |> add y |> show_result "x + y"
+x |> sub y |> show_result "x - y"
+x |> mul y |> show_result "x * y"
+x |> div y |> show_result "x / y"
+
+// 条件付き関数の例
+def is_even() if 🍕 % 2 == 0: int -> str { "偶数です" >> 💩 }
+def is_even(): int -> str { "奇数です" >> 💩 }
+
+2 |> is_even |> print
+3 |> is_even |> print
