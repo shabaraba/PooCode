@@ -42,12 +42,12 @@
     - [x] `ast/statements.go` - 文関連のAST構造
     - [x] `ast/literals.go` - リテラル関連のAST構造
     - [x] `ast/function.go` - 関数関連のAST構造
-  - [ ] object パッケージの分割
-    - [ ] `object/object.go` - コアオブジェクト構造とインターフェース
-    - [ ] `object/primitive_types.go` - 整数、文字列など基本型
-    - [ ] `object/function.go` - 関数関連オブジェクト
-    - [ ] `object/container.go` - 配列やハッシュなどのコンテナオブジェクト
-    - [ ] `object/environment.go` - 環境関連コード
+  - [x] object パッケージの分割
+    - [x] `object/object.go` - コアオブジェクト構造とインターフェース
+    - [x] `object/primitive_types.go` - 整数、文字列など基本型
+    - [x] `object/function.go` - 関数関連オブジェクト
+    - [x] `object/container.go` - 配列やハッシュなどのコンテナオブジェクト
+    - [x] `object/environment.go` - 環境関連コード
   - [ ] lexer パッケージの分割
     - [ ] `lexer/lexer.go` - コアレキサーロジック
     - [ ] `lexer/token_readers.go` - 特定のトークンを読むための関数
