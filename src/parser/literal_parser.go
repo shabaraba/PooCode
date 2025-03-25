@@ -9,8 +9,45 @@ import (
 )
 
 // parseIdentifier は識別子を解析する
+// 修正版: 識別子の後に引数になりうるトークンが続く場合は関数呼び出しとして解析する
 func (p *Parser) parseIdentifier() ast.Expression {
-	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	
+	// 識別子の後に引数になりうるトークンが続いていて、かつ括弧ではない場合
+	// 例: func arg (括弧なしの関数呼び出し)
+	if p.peekTokenIs(token.INT) || p.peekTokenIs(token.STRING) || 
+	   p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.BOOLEAN) {
+		
+		// 次のトークンに進む
+		p.nextToken()
+		
+		// 引数を解析
+		var arg ast.Expression
+		
+		// トークンタイプに応じて適切な式を生成
+		switch p.curToken.Type {
+		case token.INT:
+			arg = p.parseIntegerLiteral()
+		case token.STRING:
+			arg = p.parseStringLiteral()
+		case token.BOOLEAN:
+			arg = p.parseBooleanLiteral()
+		case token.IDENT:
+			arg = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		}
+		
+		// 引数が見つかった場合は関数呼び出しとして解析
+		if arg != nil {
+			return &ast.CallExpression{
+				Token:     p.curToken,
+				Function:  ident,
+				Arguments: []ast.Expression{arg},
+			}
+		}
+	}
+	
+	// 通常の識別子として扱う
+	return ident
 }
 
 // parseIntegerLiteral は整数リテラルを解析する

@@ -10,6 +10,7 @@ import (
 // 組み込み関数のマップ
 var Builtins = map[string]*object.Builtin{
 	"print": &object.Builtin{
+		Name: "print",
 		Fn: func(args ...object.Object) object.Object {
 			// デバッグ情報：受け取った引数の詳細を出力
 			fmt.Printf("DEBUG: print関数が受け取った引数: %d個\n", len(args))
@@ -36,10 +37,15 @@ var Builtins = map[string]*object.Builtin{
 					fmt.Println(inspectVal)
 				}
 			}
+			// 第一引数を返すように変更（パイプラインの連鎖を維持するため）
+			if len(args) > 0 {
+				return args[0]
+			}
 			return NULL
 		},
 	},
 	"show": &object.Builtin{
+		Name: "show",
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
 				// arg.Inspect()ではなく実際の値を表示
@@ -58,6 +64,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"add": &object.Builtin{
+		Name: "add",
 		Fn: func(args ...object.Object) object.Object {
 			fmt.Printf("add関数が呼び出されました: 引数=%d個\n", len(args))
 			// デバッグ: すべての引数を出力
@@ -119,6 +126,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"sub": &object.Builtin{
+		Name: "sub",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("sub関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -139,6 +147,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"mul": &object.Builtin{
+		Name: "mul",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("mul関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -159,6 +168,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"div": &object.Builtin{
+		Name: "div",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("div関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -184,6 +194,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"mod": &object.Builtin{
+		Name: "mod",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("mod関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -209,6 +220,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"pow": &object.Builtin{
+		Name: "pow",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("pow関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -239,6 +251,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"to_string": &object.Builtin{
+		Name: "to_string",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("to_string関数は1つの引数が必要です: %d個与えられました", len(args))
@@ -257,6 +270,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"length": &object.Builtin{
+		Name: "length",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("length関数は1つの引数が必要です: %d個与えられました", len(args))
@@ -273,6 +287,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"eq": &object.Builtin{
+		Name: "eq",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("eq関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -297,6 +312,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"not": &object.Builtin{
+		Name: "not",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("not関数は1つの引数が必要です: %d個与えられました", len(args))
@@ -310,6 +326,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"split": &object.Builtin{
+		Name: "split",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("split関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -340,6 +357,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"join": &object.Builtin{
+		Name: "join",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return newError("join関数は2つの引数が必要です: %d個与えられました", len(args))
@@ -376,6 +394,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"substring": &object.Builtin{
+		Name: "substring",
 		Fn: func(args ...object.Object) object.Object {
 			// 引数の数をチェック
 			if len(args) < 2 || len(args) > 3 {
@@ -428,6 +447,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"to_upper": &object.Builtin{
+		Name: "to_upper",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("to_upper関数は1つの引数が必要です: %d個与えられました", len(args))
@@ -442,6 +462,7 @@ var Builtins = map[string]*object.Builtin{
 		},
 	},
 	"to_lower": &object.Builtin{
+		Name: "to_lower",
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return newError("to_lower関数は1つの引数が必要です: %d個与えられました", len(args))
@@ -453,6 +474,81 @@ var Builtins = map[string]*object.Builtin{
 			str, _ := args[0].(*object.String)
 			
 			return &object.String{Value: strings.ToLower(str.Value)}
+		},
+	},
+	"range": &object.Builtin{
+		Name: "range",
+		Fn: func(args ...object.Object) object.Object {
+			// 引数の数をチェック: 1または2つの引数を受け付ける
+			if len(args) < 1 || len(args) > 2 {
+				return newError("range関数は1-2個の引数が必要です: %d個与えられました", len(args))
+			}
+			
+			var start, end int64
+			
+			// 1つの引数の場合: 0からその値まで
+			if len(args) == 1 {
+				if args[0].Type() != object.INTEGER_OBJ {
+					return newError("range関数の引数は整数である必要があります: %s", args[0].Type())
+				}
+				endVal, _ := args[0].(*object.Integer)
+				
+				start = 0
+				end = endVal.Value
+			} else {
+				// 2つの引数の場合: startからendまで
+				if args[0].Type() != object.INTEGER_OBJ || args[1].Type() != object.INTEGER_OBJ {
+					return newError("range関数の引数は整数である必要があります")
+				}
+				
+				startVal, _ := args[0].(*object.Integer)
+				endVal, _ := args[1].(*object.Integer)
+				
+				start = startVal.Value
+				end = endVal.Value
+			}
+			
+			// 開始位置が終了位置より大きい場合は空の配列を返す
+			if start > end {
+				return &object.Array{Elements: []object.Object{}}
+			}
+			
+			// 配列を作成
+			elements := make([]object.Object, end-start)
+			for i := start; i < end; i++ {
+				elements[i-start] = &object.Integer{Value: i}
+			}
+			
+			return &object.Array{Elements: elements}
+		},
+	},
+	"sum": &object.Builtin{
+		Name: "sum",
+		Fn: func(args ...object.Object) object.Object {
+			// 引数の数をチェック
+			if len(args) != 1 {
+				return newError("sum関数は1つの引数が必要です: %d個与えられました", len(args))
+			}
+			
+			// 配列かどうかチェック
+			if args[0].Type() != object.ARRAY_OBJ {
+				return newError("sum関数の引数は配列である必要があります: %s", args[0].Type())
+			}
+			
+			array, _ := args[0].(*object.Array)
+			
+			// 合計を計算
+			sum := int64(0)
+			for _, elem := range array.Elements {
+				if elem.Type() != object.INTEGER_OBJ {
+					return newError("sum関数の配列要素はすべて整数である必要があります: %s", elem.Type())
+				}
+				
+				intVal, _ := elem.(*object.Integer)
+				sum += intVal.Value
+			}
+			
+			return &object.Integer{Value: sum}
 		},
 	},
 }

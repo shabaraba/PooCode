@@ -22,6 +22,7 @@ const (
 
 	// 演算子
 	ASSIGN   = ">>" // 代入演算子
+	EQUAL    = "="  // = 演算子
 	PLUS     = "+"  // 加算
 	MINUS    = "-"  // 減算
 	ASTERISK = "*"  // 乗算

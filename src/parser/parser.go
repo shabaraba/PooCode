@@ -28,6 +28,7 @@ const (
 // 演算子の優先順位マップ
 var precedences = map[token.TokenType]int{
 	token.ASSIGN:       ASSIGN,
+	token.EQUAL:        ASSIGN, // = も代入演算子として扱う
 	token.EQ:           EQUALS,
 	token.NOT_EQ:       EQUALS,
 	token.LT:           LESSGREATER,
@@ -112,6 +113,7 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerInfix(token.DOT, p.parsePropertyExpression)
 	p.registerInfix(token.APOSTROPHE_S, p.parsePropertyExpression)
 	p.registerInfix(token.ASSIGN, p.parseAssignExpression)
+	p.registerInfix(token.EQUAL, p.parseAssignExpression)  // = も代入演算子として扱う
 	p.registerInfix(token.PIPE, p.parsePipeExpression)
 	p.registerInfix(token.PIPE_PAR, p.parsePipeExpression)
 

@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"github.com/uncode/ast"
 	"github.com/uncode/token"
 )
@@ -15,11 +17,19 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 	}
 
-	// パラメータリストを解析
-	if !p.expectPeek(token.LPAREN) {
-		return nil
+	// 修正: 括弧を使った関数定義と括弧なしの関数定義の両方をサポート
+	// 次のトークンがパラメータ（IDENT）かどうかをチェック
+	if p.peekTokenIs(token.IDENT) {
+		// 括弧なしのパラメータ定義: def func param { ... }
+		p.nextToken()
+		// 引数は1つだけサポート
+		param := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		lit.Parameters = []*ast.Identifier{param}
+	} else if p.peekTokenIs(token.LPAREN) {
+		// 括弧ありのパラメータ定義: def func(param) { ... }
+		p.nextToken() // (
+		lit.Parameters = p.parseFunctionParameters()
 	}
-	lit.Parameters = p.parseFunctionParameters()
 
 	// 条件付き関数定義の条件部分を解析
 	if p.peekTokenIs(token.IF) {
@@ -82,8 +92,22 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 }
 
 // parseCallExpression は関数呼び出し式を解析する
+// 修正版: 括弧を使った呼び出し「func(arg)」形式をサポート
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseExpressionList(token.RPAREN)
+	
+	// 引数リストを解析
+	args := p.parseExpressionList(token.RPAREN)
+	
+	// スタンドアロンな関数呼び出しの場合、引数は最大1つまで
+	if len(args) > 1 {
+		p.errors = append(p.errors, fmt.Sprintf("%d行目: 関数 %s は最大1つの引数しか取れません（パイプラインを除く）", 
+			p.curToken.Line, function.String()))
+		// エラーの場合でも、最初の引数だけを使用して解析を続行
+		exp.Arguments = []ast.Expression{args[0]}
+	} else {
+		exp.Arguments = args
+	}
+	
 	return exp
 }

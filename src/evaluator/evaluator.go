@@ -143,10 +143,10 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if debugMode {
 			fmt.Println("中置式を評価")
 		}
-		// パイプライン演算子のチェック
+		// パイプライン演算子と代入演算子のチェック
 		if node.Operator == "|>" {
 			return evalPipeline(node, env)
-		} else if node.Operator == ">>" {
+		} else if node.Operator == ">>" || node.Operator == "=" {
 			return evalAssignment(node, env)
 		} else {
 			// その他の中置演算子

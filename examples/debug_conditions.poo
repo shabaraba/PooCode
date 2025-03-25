@@ -1,0 +1,12 @@
+// デバッグ用: 条件式のテスト
+def test(num) if 🍕 == 1 : int -> int {
+    "🍕 is 1, num is " + num >> 💩
+}
+
+def test(num): int -> int {
+    "🍕 is not 1, 🍕 = " + 🍕 + ", num = " + num >> 💩
+}
+
+// テスト
+1 |> test(10) |> print  // 🍕は1
+0 |> test(20) |> print  // 🍕は0
