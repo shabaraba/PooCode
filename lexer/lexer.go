@@ -85,6 +85,11 @@ func (l *Lexer) NextToken() token.Token {
 	case '*':
 		tok = l.newToken(token.ASTERISK, string(l.ch))
 	case '/':
+		// コメントのチェック: // が見つかったら行末までスキップ
+		if l.peekChar() == '/' {
+			l.skipComment()
+			return l.NextToken() // コメントをスキップした後で次のトークンを取得
+		}
 		tok = l.newToken(token.SLASH, string(l.ch))
 	case '%':
 		tok = l.newToken(token.MODULO, string(l.ch))
@@ -207,6 +212,18 @@ func (l *Lexer) newToken(tokenType token.TokenType, literal string) token.Token 
 // skipWhitespace は空白文字をスキップする
 func (l *Lexer) skipWhitespace() {
 	for unicode.IsSpace(l.ch) {
+		l.readChar()
+	}
+}
+
+// skipComment はコメントをスキップする
+// '//' から行末までをスキップする
+func (l *Lexer) skipComment() {
+	// 最初の '/' は既に読み込み済み、次の '/' もスキップ
+	l.readChar()
+	
+	// 改行文字または終端に到達するまでスキップ
+	for l.ch != '\n' && l.ch != 0 {
 		l.readChar()
 	}
 }

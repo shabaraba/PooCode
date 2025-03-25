@@ -223,7 +223,6 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 
-	fmt.Println(leftExp)
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -239,17 +238,44 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 
 // parsePipeExpression はパイプライン式を解析する
 func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
-	expression := &ast.InfixExpression{
-		Token:    p.curToken,
-		Operator: p.curToken.Literal,
-		Left:     left,
-	}
-
+	// パイプ演算子のトークンを保存
+	pipeToken := p.curToken
+	
+	// パイプ演算子の優先順位を取得
 	precedence := p.curPrecedence()
+	
+	// 次のトークンに進む
 	p.nextToken()
-	expression.Right = p.parseExpression(precedence)
-
-	return expression
+	
+	// パイプの右側の式を解析する
+	// 右側は関数または関数呼び出しである必要がある
+	rightExp := p.parseExpression(precedence)
+	
+	// パイプタイプに応じて処理を分ける
+	if pipeToken.Type == token.PIPE {
+		// 並列パイプ (|) の場合
+		return &ast.InfixExpression{
+			Token:    pipeToken,
+			Operator: pipeToken.Literal,
+			Left:     left,
+			Right:    rightExp,
+		}
+	} else {
+		// 通常パイプ (|>) の場合
+		// 右辺がCallExpressionかどうかで処理を分ける
+		if callExp, ok := rightExp.(*ast.CallExpression); ok {
+			// 既存の引数リストの先頭に left を追加
+			callExp.Arguments = append([]ast.Expression{left}, callExp.Arguments...)
+			return callExp
+		} else {
+			// 右辺が関数呼び出しでない場合、新しい関数呼び出しとして扱う
+			return &ast.CallExpression{
+				Token:     pipeToken,
+				Function:  rightExp,
+				Arguments: []ast.Expression{left},
+			}
+		}
+	}
 }
 
 // parseAssignExpression は代入式を解析する
