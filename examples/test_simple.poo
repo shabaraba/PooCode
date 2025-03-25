@@ -8,14 +8,14 @@ a |> print
 "b is:" |> print
 b |> print
 
-"a == true:" |> print
-a == true |> print
+"a eq true:" |> print
+a eq true |> print
 
-"b == true:" |> print
-b == true |> print
+"b eq true:" |> print
+b eq true |> print
 
-"a == false:" |> print
-a == false |> print
+"a eq false:" |> print
+a eq false |> print
 
-"b == false:" |> print
-b == false |> print
+"b eq false:" |> print
+b eq false |> print
