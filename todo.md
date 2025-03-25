@@ -23,13 +23,13 @@
 
 ## リファクタリング
 - [ ] ソースコードのモジュール分割
-  - [ ] evaluator パッケージの分割
-    - [ ] `evaluator/evaluator.go` - コア評価ロジック
-    - [ ] `evaluator/builtins.go` - 組み込み関数の実装
-    - [ ] `evaluator/expression_eval.go` - 式の評価ロジック
-    - [ ] `evaluator/statements_eval.go` - 文の評価ロジック
-    - [ ] `evaluator/function_eval.go` - 関数関連の評価ロジック
-    - [ ] `evaluator/pipeline_eval.go` - パイプライン処理の評価ロジック
+  - [x] evaluator パッケージの分割
+    - [x] `evaluator/evaluator.go` - コア評価ロジック
+    - [x] `evaluator/builtins.go` - 組み込み関数の実装
+    - [x] `evaluator/expression_eval.go` - 式の評価ロジック
+    - [x] `evaluator/statements_eval.go` - 文の評価ロジック
+    - [x] `evaluator/function_eval.go` - 関数関連の評価ロジック
+    - [x] `evaluator/pipeline_eval.go` - パイプライン処理の評価ロジック
   - [ ] parser パッケージの分割
     - [ ] `parser/parser.go` - コアパーサーのロジック
     - [ ] `parser/expression_parser.go` - 式のパース処理

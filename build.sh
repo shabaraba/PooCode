@@ -7,7 +7,7 @@ mkdir -p bin
 
 # ビルド
 echo "uncodeインタプリタをビルドしています..."
-cd src && go build -o ../bin/uncode cmd/uncode/main.go
+cd src && GO111MODULE=on go build -o ../bin/uncode cmd/uncode/main.go
 
 if [ $? -eq 0 ]; then
     echo "ビルド成功！"
