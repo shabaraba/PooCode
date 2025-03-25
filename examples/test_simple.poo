@@ -1,0 +1,21 @@
+// Test boolean values
+true >> a
+false >> b
+
+"a is:" |> print
+a |> print
+
+"b is:" |> print
+b |> print
+
+"a == true:" |> print
+a == true |> print
+
+"b == true:" |> print
+b == true |> print
+
+"a == false:" |> print
+a == false |> print
+
+"b == false:" |> print
+b == false |> print
