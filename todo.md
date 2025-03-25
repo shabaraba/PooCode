@@ -30,12 +30,12 @@
     - [x] `evaluator/statements_eval.go` - 文の評価ロジック
     - [x] `evaluator/function_eval.go` - 関数関連の評価ロジック
     - [x] `evaluator/pipeline_eval.go` - パイプライン処理の評価ロジック
-  - [ ] parser パッケージの分割
-    - [ ] `parser/parser.go` - コアパーサーのロジック
-    - [ ] `parser/expression_parser.go` - 式のパース処理
-    - [ ] `parser/statement_parser.go` - 文のパース処理
-    - [ ] `parser/literal_parser.go` - リテラルのパース処理
-    - [ ] `parser/function_parser.go` - 関数関連のパース処理
+  - [x] parser パッケージの分割
+    - [x] `parser/parser.go` - コアパーサーのロジック
+    - [x] `parser/expression_parser.go` - 式のパース処理
+    - [x] `parser/statement_parser.go` - 文のパース処理
+    - [x] `parser/literal_parser.go` - リテラルのパース処理
+    - [x] `parser/function_parser.go` - 関数関連のパース処理
   - [ ] ast パッケージの分割
     - [ ] `ast/ast.go` - コアAST構造とインターフェース
     - [ ] `ast/expressions.go` - 式関連のAST構造
