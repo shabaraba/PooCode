@@ -3,11 +3,11 @@
 # uncodeインタプリタのビルドスクリプト
 
 # ディレクトリ構造の確認
-mkdir -p cmd/uncode
+mkdir -p bin
 
 # ビルド
 echo "uncodeインタプリタをビルドしています..."
-go build -o bin/uncode cmd/uncode/main.go
+cd src && go build -o ../bin/uncode cmd/uncode/main.go
 
 if [ $? -eq 0 ]; then
     echo "ビルド成功！"
