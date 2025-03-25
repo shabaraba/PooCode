@@ -76,6 +76,10 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			fmt.Println("💩リテラルを評価")
 		}
 		// 💩は関数の戻り値として扱う特別なリテラル
+		fmt.Println("💩リテラルを検出: 空の戻り値オブジェクトを生成します")
+		
+		// Return空のReturnValueオブジェクト
+		// 実際の値はpipiline_eval.goのevalAssignment()内で設定される
 		return &object.ReturnValue{}
 		
 	case *ast.PrefixExpression:
@@ -113,7 +117,24 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			if debugMode {
 				fmt.Printf("関数名 %s を環境に登録します\n", node.Name.Value)
 			}
-			env.Set(node.Name.Value, function)
+			
+			// 条件付き関数の場合、特別な名前で登録（上書きを防ぐため）
+			if node.Condition != nil {
+				// 既存の同名関数の数をカウント
+				existingFuncs := env.GetAllFunctionsByName(node.Name.Value)
+				uniqueName := fmt.Sprintf("%s#%d", node.Name.Value, len(existingFuncs))
+				
+				fmt.Printf("条件付き関数 '%s' を '%s' として登録します\n", node.Name.Value, uniqueName)
+				
+				// 特別な名前で登録
+				env.Set(uniqueName, function)
+				
+				// 検索用に元の名前も関連付け
+				env.Set(node.Name.Value, function)
+			} else {
+				// 条件なし関数は通常通り登録
+				env.Set(node.Name.Value, function)
+			}
 		}
 		
 		return function
@@ -146,6 +167,22 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if debugMode {
 			fmt.Println("関数呼び出し式を評価")
 		}
+		
+		// 関数呼び出しが直接識別子（関数名）の場合、条件付き関数を検索
+		if ident, ok := node.Function.(*ast.Identifier); ok {
+			// 識別子名で関数を検索
+			if debugMode {
+				fmt.Printf("識別子 '%s' で関数を検索します\n", ident.Value)
+			}
+			
+			// 引数を評価
+			args := evalExpressions(node.Arguments, env)
+			
+			// 環境内の同名のすべての関数を検索し、条件に合う関数を適用
+			return applyNamedFunction(env, ident.Value, args)
+		}
+		
+		// 識別子以外（関数リテラルや式の結果など）の場合は従来通り処理
 		function := Eval(node.Function, env)
 		if function.Type() == object.ERROR_OBJ {
 			return function

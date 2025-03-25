@@ -23,64 +23,15 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		if debugMode {
 			fmt.Printf("識別子としてのパイプライン先: %s\n", ident.Value)
 		}
-		function := evalIdentifier(ident, env)
-		if function.Type() == object.ERROR_OBJ {
-			return function
-		}
 		
-		// 専用の環境変数 🍕 に値を設定して関数を呼び出す
-		if fn, ok := function.(*object.Function); ok {
-			// 条件付き関数の場合、条件を評価
-			if fn.Condition != nil {
-				// 評価用の環境を作成
-				condEnv := object.NewEnclosedEnvironment(fn.Env)
-				condEnv.Set("🍕", left)
-				
-				// 条件式を評価
-				condResult := Eval(fn.Condition, condEnv)
-				if condResult.Type() == object.ERROR_OBJ {
-					return condResult
-				}
-				
-				// 条件がfalseの場合は別の同名関数を探す
-				if !isTruthy(condResult) {
-					// 同名の別の関数を環境から探す
-					if ident != nil {
-						fnName := ident.Value
-						if debugMode {
-							fmt.Printf("条件が false のため、別の %s 関数を探します\n", fnName)
-						}
-						nextFn := env.GetNextFunction(fnName, fn)
-						if nextFn != nil {
-							fn = nextFn
-						} else {
-							return newError("条件を満たす関数が見つかりません: %s", fnName)
-						}
-					}
-				}
-			}
-			
-			extendedEnv := object.NewEnclosedEnvironment(fn.Env)
-			extendedEnv.Set("🍕", left)
-			
-			// ASTBodyをast.BlockStatementに型アサーション
-			astBody, ok := fn.ASTBody.(*ast.BlockStatement)
-			if !ok {
-				return newError("関数の本体がBlockStatementではありません")
-			}
-			result := evalBlockStatement(astBody, extendedEnv)
-			
-			// 💩値を返す（関数の戻り値）
-			if obj, ok := result.(*object.ReturnValue); ok {
-				return obj.Value
-			}
-			return result
-		} else if builtin, ok := function.(*object.Builtin); ok {
-			// 組み込み関数の場合はそのまま引数として渡す
-			return builtin.Fn(left)
-		}
+		fmt.Printf("パイプラインから applyNamedFunction を呼び出します (関数名: %s)\n", ident.Value)
 		
-		return newError("関数ではありません: %s", function.Type())
+		// 環境変数 🍕 を設定して名前付き関数呼び出しへ処理を委譲
+		// ここで左辺の値を唯一の引数として渡す
+		args := []object.Object{left}
+		
+		// 名前付き関数を適用する（条件付き関数の処理も行う）
+		return applyNamedFunction(env, ident.Value, args)
 	}
 	
 	// 右辺が関数呼び出しの場合
@@ -88,6 +39,40 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		if debugMode {
 			fmt.Println("関数呼び出しとしてのパイプライン先")
 		}
+		
+		// 関数名を識別子から直接取得（デバッグ用）
+		if ident, ok := callExpr.Function.(*ast.Identifier); ok {
+			fmt.Printf("パイプラインでビルトイン関数 '%s' を呼び出します\n", ident.Value)
+			
+			// 引数を評価
+			args := evalExpressions(callExpr.Arguments, env)
+			
+			// ビルトイン関数を直接取得して呼び出す
+			if builtin, ok := Builtins[ident.Value]; ok {
+				// leftを第一引数、その他の引数は後続
+				allArgs := []object.Object{left}
+				allArgs = append(allArgs, args...)
+				
+				fmt.Printf("ビルトイン関数 '%s' を実行: 全引数 %d 個\n", ident.Value, len(allArgs))
+				for i, arg := range allArgs {
+					fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+				}
+				
+				result := builtin.Fn(allArgs...)
+				fmt.Printf("ビルトイン関数 '%s' の結果: %s\n", ident.Value, result.Inspect())
+				return result
+			}
+			
+			// ビルトイン関数でない場合は名前付き関数として呼び出し
+			// leftを第一引数、その他の引数は後続
+			allArgs := []object.Object{left}
+			allArgs = append(allArgs, args...)
+			
+			// 名前付き関数を適用する（条件付き関数の処理も行う）
+			return applyNamedFunction(env, ident.Value, allArgs)
+		}
+		
+		// 識別子以外の関数式を評価
 		function := Eval(callExpr.Function, env)
 		if function.Type() == object.ERROR_OBJ {
 			return function
@@ -125,13 +110,23 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			return result
 		} else if builtin, ok := function.(*object.Builtin); ok {
 			// 組み込み関数の場合、leftを第一引数として追加
+			fmt.Printf("ビルトイン関数 '%s' を実行\n", callExpr.Function.(*ast.Identifier).Value)
 			args = append([]object.Object{left}, args...)
-			return builtin.Fn(args...)
+			
+			fmt.Printf("引数: %d個\n", len(args))
+			for i, arg := range args {
+				fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+			}
+			
+			result := builtin.Fn(args...)
+			fmt.Printf("ビルトイン関数の結果: %s\n", result.Inspect())
+			return result
 		}
 		
 		return newError("関数ではありません: %s", function.Type())
 	}
 	
+	// その他の場合は処理できない
 	return newError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
 }
 
@@ -163,6 +158,7 @@ func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.O
 		if left.Type() == object.ERROR_OBJ {
 			return left
 		}
+		fmt.Printf("💩に戻り値として %s を設定します\n", left.Inspect())
 		return &object.ReturnValue{Value: left}
 	}
 	

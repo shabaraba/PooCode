@@ -1,0 +1,13 @@
+// 修正版: add関数が正しく動作するかテスト
+def test(num) if 🍕 == 1 : int -> int {
+    // 修正: addの代わりにInfixExpression（+演算子）を使用
+    // 数値1に🍕を加算して返す
+    1 + 🍕 >> 💩
+}
+def test(num): int -> int {
+    // そのまま返す
+    🍕 >> 💩 
+}
+
+0 |> test 1 |> print // 🍕は0なので下のtestが呼ばれて0が返るはず
+1 |> test 1 |> print // 🍕は1なので上のtestが呼ばれて2(=1+1)が返るはず

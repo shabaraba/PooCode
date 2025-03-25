@@ -8,7 +8,7 @@ import (
 )
 
 // 組み込み関数のマップ
-var builtins = map[string]*object.Builtin{
+var Builtins = map[string]*object.Builtin{
 	"print": &object.Builtin{
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
@@ -27,8 +27,14 @@ var builtins = map[string]*object.Builtin{
 	},
 	"add": &object.Builtin{
 		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("add関数は2つの引数が必要です: %d個与えられました", len(args))
+			fmt.Printf("add関数が呼び出されました: 引数=%d個\n", len(args))
+			// デバッグ: すべての引数を出力
+			for i, arg := range args {
+				fmt.Printf("  引数 %d: %s (型: %s)\n", i, arg.Inspect(), arg.Type())
+			}
+			
+			if len(args) < 1 {
+				return newError("add関数は少なくとも1つの引数が必要です")
 			}
 			
 			// 文字列の場合は連結
@@ -38,34 +44,46 @@ var builtins = map[string]*object.Builtin{
 					return newError("文字列の変換に失敗しました")
 				}
 				
-				// 第2引数を文字列に変換
-				var rightStr string
-				switch right := args[1].(type) {
-				case *object.String:
-					rightStr = right.Value
-				case *object.Integer:
-					rightStr = fmt.Sprintf("%d", right.Value)
-				case *object.Boolean:
-					rightStr = fmt.Sprintf("%t", right.Value)
-				default:
-					rightStr = right.Inspect()
+				// 第2引数があれば文字列に変換して連結
+				if len(args) > 1 {
+					var rightStr string
+					switch right := args[1].(type) {
+					case *object.String:
+						rightStr = right.Value
+					case *object.Integer:
+						rightStr = fmt.Sprintf("%d", right.Value)
+					case *object.Boolean:
+						rightStr = fmt.Sprintf("%t", right.Value)
+					default:
+						rightStr = right.Inspect()
+					}
+					
+					return &object.String{Value: str.Value + rightStr}
 				}
-				
-				return &object.String{Value: str.Value + rightStr}
+				return str
 			}
 			
-			// 整数加算
+			// 整数加算（単一引数の場合は値をそのまま返す）
 			left, ok := args[0].(*object.Integer)
 			if !ok {
 				return newError("add関数の第1引数は整数または文字列である必要があります: %s", args[0].Type())
 			}
 			
+			// 第2引数がない場合は値をそのまま返す
+			if len(args) == 1 {
+				fmt.Printf("add関数: 単一引数 %d をそのまま返します\n", left.Value)
+				return left
+			}
+			
+			// 第2引数があれば加算
 			right, ok := args[1].(*object.Integer)
 			if !ok {
 				return newError("add関数の第2引数は整数である必要があります: %s", args[1].Type())
 			}
 			
-			return &object.Integer{Value: left.Value + right.Value}
+			result := &object.Integer{Value: left.Value + right.Value}
+			fmt.Printf("add関数: %d + %d = %d\n", left.Value, right.Value, result.Value)
+			return result
 		},
 	},
 	"sub": &object.Builtin{
