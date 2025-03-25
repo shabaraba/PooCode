@@ -31,7 +31,11 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		args := []object.Object{left}
 		
 		// 名前付き関数を適用する（条件付き関数の処理も行う）
-		return applyNamedFunction(env, ident.Value, args)
+		// 戻り値を変数に格納して、何が返されるか確認する
+		result := applyNamedFunction(env, ident.Value, args)
+		fmt.Printf("パイプライン: 関数 '%s' の実行結果: タイプ=%s, 値=%s\n", 
+			ident.Value, result.Type(), result.Inspect())
+		return result
 	}
 	
 	// 右辺が関数呼び出しの場合
@@ -69,7 +73,10 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			allArgs = append(allArgs, args...)
 			
 			// 名前付き関数を適用する（条件付き関数の処理も行う）
-			return applyNamedFunction(env, ident.Value, allArgs)
+			result := applyNamedFunction(env, ident.Value, allArgs)
+			fmt.Printf("パイプライン(callExpr): 関数 '%s' の実行結果: タイプ=%s, 値=%s\n", 
+				ident.Value, result.Type(), result.Inspect())
+			return result
 		}
 		
 		// 識別子以外の関数式を評価
@@ -105,8 +112,11 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			
 			// 💩値を返す（関数の戻り値）
 			if obj, ok := result.(*object.ReturnValue); ok {
-				return obj.Value
+				result = obj.Value
+				fmt.Printf("関数結果(ReturnValue): %s\n", result.Inspect())
+				return result
 			}
+			fmt.Printf("関数結果(直接): %s\n", result.Inspect())
 			return result
 		} else if builtin, ok := function.(*object.Builtin); ok {
 			// 組み込み関数の場合、leftを第一引数として追加

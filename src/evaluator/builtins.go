@@ -11,8 +11,30 @@ import (
 var Builtins = map[string]*object.Builtin{
 	"print": &object.Builtin{
 		Fn: func(args ...object.Object) object.Object {
-			for _, arg := range args {
-				fmt.Println(arg.Inspect())
+			// デバッグ情報：受け取った引数の詳細を出力
+			fmt.Printf("DEBUG: print関数が受け取った引数: %d個\n", len(args))
+			for i, arg := range args {
+				fmt.Printf("DEBUG: 引数%d - タイプ: %s, 値: %s\n", i, arg.Type(), arg.Inspect())
+				
+				// arg.Inspect()ではなく実際の値を表示
+				switch arg.Type() {
+				case object.INTEGER_OBJ:
+					intVal := arg.(*object.Integer).Value
+					fmt.Printf("DEBUG: 整数値として %d を出力\n", intVal)
+					fmt.Println(intVal)
+				case object.STRING_OBJ:
+					strVal := arg.(*object.String).Value
+					fmt.Printf("DEBUG: 文字列として \"%s\" を出力\n", strVal)
+					fmt.Println(strVal)
+				case object.BOOLEAN_OBJ:
+					boolVal := arg.(*object.Boolean).Value
+					fmt.Printf("DEBUG: 真偽値として %t を出力\n", boolVal)
+					fmt.Println(boolVal)
+				default:
+					inspectVal := arg.Inspect()
+					fmt.Printf("DEBUG: デフォルト - %s を出力\n", inspectVal)
+					fmt.Println(inspectVal)
+				}
 			}
 			return NULL
 		},
@@ -20,7 +42,17 @@ var Builtins = map[string]*object.Builtin{
 	"show": &object.Builtin{
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
-				fmt.Println(arg.Inspect())
+				// arg.Inspect()ではなく実際の値を表示
+				switch arg.Type() {
+				case object.INTEGER_OBJ:
+					fmt.Println(arg.(*object.Integer).Value)
+				case object.STRING_OBJ:
+					fmt.Println(arg.(*object.String).Value)
+				case object.BOOLEAN_OBJ:
+					fmt.Println(arg.(*object.Boolean).Value)
+				default:
+					fmt.Println(arg.Inspect())
+				}
 			}
 			return NULL
 		},
