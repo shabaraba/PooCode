@@ -2,8 +2,6 @@ package ast
 
 import (
 	"bytes"
-
-	"github.com/uncode/token"
 )
 
 // Node はすべてのAST（抽象構文木）ノードのインターフェース

@@ -1,9 +1,6 @@
 package lexer
 
 import (
-	"unicode"
-	"unicode/utf8"
-
 	"github.com/uncode/token"
 )
 

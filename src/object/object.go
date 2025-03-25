@@ -1,10 +1,5 @@
 package object
 
-import (
-	"fmt"
-	"hash/fnv"
-)
-
 // ObjectType は値の型を表す
 type ObjectType string
 
