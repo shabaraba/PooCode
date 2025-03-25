@@ -33,9 +33,10 @@ const (
 	GE     = ">=" // 以上
 
 	// 論理演算子
-	AND = "&&"  // 論理積
-	OR  = "||"  // 論理和
-	NOT = "not" // 論理否定
+	AND   = "&&"  // 論理積
+	OR    = "||"  // 論理和
+	NOT   = "not" // 論理否定
+	BANG  = "!"   // ! 論理否定
 
 	// デリミタ
 	COMMA     = "," // カンマ
@@ -95,8 +96,10 @@ var keywords = map[string]TokenType{
 	"true":    BOOLEAN,
 	"false":   BOOLEAN,
 	"eq":      EQ,
-	"add":     PLUS,
+	// "add":     PLUS, // 加算を表す関数ですが、直接+に変換するとパイプラインでエラーになるため
+	"add":     IDENT, // 関数として扱う
 	"print":   IDENT, // print関数を明示的に追加
+	"show":    IDENT, // 代替としてshowも追加
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定する

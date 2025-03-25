@@ -86,6 +86,7 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerPrefix(token.BOOLEAN, p.parseBooleanLiteral)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.NOT, p.parsePrefixExpression)
+	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
