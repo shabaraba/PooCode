@@ -1,0 +1,59 @@
+// Simple FizzBuzz implementation that avoids using 'not' and 'eq' with booleans
+
+// Function to check if a number is divisible by another
+def is_divisible_by(divisor): int -> bool {
+    // Calculate remainder and check if it's zero
+    🍕 % divisor == 0 >> 💩
+}
+
+// Main FizzBuzz function
+def fizzbuzz(num): int -> str {
+    // Initialize an empty result
+    "" >> result
+    
+    // Check divisibility by 3 and 5
+    num is_divisible_by 3 >> div_by_3
+    num is_divisible_by 5 >> div_by_5
+    
+    // Check divisibility by both
+    div_by_3 && div_by_5 >> div_by_both
+    
+    // For FizzBuzz: divisible by both 3 and 5
+    div_by_both == true >> case_fizzbuzz
+    
+    // For Fizz: divisible by 3 but not by both
+    div_by_3 == true && div_by_both == false >> case_fizz
+    
+    // For Buzz: divisible by 5 but not by both
+    div_by_5 == true && div_by_both == false >> case_buzz
+    
+    // For numbers: not divisible by 3 or 5
+    div_by_3 == false && div_by_5 == false >> case_number
+    
+    // Add the appropriate string to the result
+    case_fizzbuzz == true |> add "FizzBuzz" >> result
+    case_fizz == true |> add "Fizz" >> result
+    case_buzz == true |> add "Buzz" >> result
+    case_number == true |> add num |> to_string >> result
+    
+    // Return the result
+    result >> 💩
+}
+
+// Test with numbers 1 through 15
+1 |> fizzbuzz |> print
+2 |> fizzbuzz |> print
+3 |> fizzbuzz |> print
+4 |> fizzbuzz |> print
+5 |> fizzbuzz |> print
+6 |> fizzbuzz |> print
+7 |> fizzbuzz |> print
+8 |> fizzbuzz |> print
+9 |> fizzbuzz |> print
+10 |> fizzbuzz |> print
+11 |> fizzbuzz |> print
+12 |> fizzbuzz |> print
+13 |> fizzbuzz |> print
+14 |> fizzbuzz |> print
+15 |> fizzbuzz |> print
+

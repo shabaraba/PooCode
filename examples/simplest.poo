@@ -1,0 +1,56 @@
+// Simplest FizzBuzz - direct return style
+
+def fizzbuzz(n): int -> str {
+    // Check divisibility
+    n % 3 == 0 >> div_by_3
+    n % 5 == 0 >> div_by_5
+    
+    // Determine which case applies
+    div_by_3 && div_by_5 >> is_fizzbuzz
+    div_by_3 && !div_by_5 >> is_fizz
+    !div_by_3 && div_by_5 >> is_buzz
+    !div_by_3 && !div_by_5 >> is_number
+    
+    // Build result - the simplest approach
+    is_fizzbuzz |> fizzbuzz_result >> result
+    is_fizz |> fizz_result >> result
+    is_buzz |> buzz_result >> result
+    is_number |> number_result n >> result
+    
+    // Return result
+    result >> 💩
+}
+
+// Helper functions that return specific strings
+def fizzbuzz_result(): bool -> str {
+    🍕 >> dummy  // simply to use the parameter
+    "FizzBuzz" >> 💩
+}
+
+def fizz_result(): bool -> str {
+    🍕 >> dummy  // simply to use the parameter
+    "Fizz" >> 💩
+}
+
+def buzz_result(): bool -> str {
+    🍕 >> dummy  // simply to use the parameter
+    "Buzz" >> 💩
+}
+
+def number_result(n): bool -> str {
+    🍕 >> dummy  // simply to use the parameter
+    n |> to_string >> 💩
+}
+
+// Test all cases directly
+"3: " |> print
+3 |> fizzbuzz |> print
+
+"5: " |> print
+5 |> fizzbuzz |> print
+
+"15: " |> print
+15 |> fizzbuzz |> print
+
+"7: " |> print
+7 |> fizzbuzz |> print

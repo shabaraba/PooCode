@@ -1,0 +1,114 @@
+// Bare minimum FizzBuzz solution without using assignments
+
+def fizzbuzz(n): int -> str {
+    // Check divisibility 
+    n % 3 == 0 >> div_by_3
+    n % 5 == 0 >> div_by_5
+    
+    // Determine case
+    div_by_3 == true && div_by_5 == true >> is_fizzbuzz
+    div_by_3 == true && div_by_5 == false >> is_fizz
+    div_by_3 == false && div_by_5 == true >> is_buzz
+    div_by_3 == false && div_by_5 == false >> is_number
+    
+    // Create empty result
+    "" >> result
+    
+    // Simple approach: use functions to append the correct string
+    is_fizzbuzz |> append_fizzbuzz result >> output
+    is_fizz |> append_fizz result >> output
+    is_buzz |> append_buzz result >> output
+    is_number |> append_number result n >> output
+    
+    // Return final result
+    output >> 💩
+}
+
+// Helper function to append "FizzBuzz" if condition is true
+def append_fizzbuzz(result): bool -> str {
+    🍕 == true >> is_true
+    is_true == true >> new_result
+    "FizzBuzz" >> new_result
+    
+    🍕 == false >> is_false
+    is_false == true >> new_result2
+    result >> new_result2
+    
+    🍕 == true >> use_new
+    use_new == true >> output = new_result
+    
+    🍕 == false >> use_orig
+    use_orig == true >> output = new_result2
+    
+    output >> 💩
+}
+
+// Helper function to append "Fizz" if condition is true
+def append_fizz(result): bool -> str {
+    🍕 == true >> is_true
+    is_true == true >> new_result
+    "Fizz" >> new_result
+    
+    🍕 == false >> is_false
+    is_false == true >> new_result2
+    result >> new_result2
+    
+    🍕 == true >> use_new
+    use_new == true >> output = new_result
+    
+    🍕 == false >> use_orig
+    use_orig == true >> output = new_result2
+    
+    output >> 💩
+}
+
+// Helper function to append "Buzz" if condition is true
+def append_buzz(result): bool -> str {
+    🍕 == true >> is_true
+    is_true == true >> new_result
+    "Buzz" >> new_result
+    
+    🍕 == false >> is_false
+    is_false == true >> new_result2
+    result >> new_result2
+    
+    🍕 == true >> use_new
+    use_new == true >> output = new_result
+    
+    🍕 == false >> use_orig
+    use_orig == true >> output = new_result2
+    
+    output >> 💩
+}
+
+// Helper function to append number as string if condition is true
+def append_number(result, n): bool -> str {
+    🍕 == true >> is_true
+    is_true == true >> new_result
+    n |> to_string >> new_result
+    
+    🍕 == false >> is_false
+    is_false == true >> new_result2
+    result >> new_result2
+    
+    🍕 == true >> use_new
+    use_new == true >> output = new_result
+    
+    🍕 == false >> use_orig
+    use_orig == true >> output = new_result2
+    
+    output >> 💩
+}
+
+// Test
+"1:" |> print
+1 |> fizzbuzz |> print
+
+"3:" |> print
+3 |> fizzbuzz |> print
+
+"5:" |> print
+5 |> fizzbuzz |> print
+
+"15:" |> print
+15 |> fizzbuzz |> print

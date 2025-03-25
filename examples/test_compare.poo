@@ -1,0 +1,17 @@
+// 比較演算子のテスト
+
+// 整数の比較
+3 == 3 >> result1
+result1 |> print // trueが表示されるはず
+
+// 整数の比較 (不一致)
+4 == 3 >> result2
+result2 |> print // falseが表示されるはず
+
+// 論理演算
+true && true >> result3
+result3 |> print // trueが表示されるはず
+
+// 論理演算
+true || false >> result4
+result4 |> print // trueが表示されるはず

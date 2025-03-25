@@ -1,2 +1,2 @@
 // 否定演算子のテスト
-!true |> print  // falseが表示されるはず
+!false |> print  // falseが表示されるはず

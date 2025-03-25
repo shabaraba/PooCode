@@ -23,7 +23,7 @@ def fizzbuzz(num): int -> str {
     result >> 💩
 }
 
-// テスト: 1〜15までの数値に対してfizzbuzzを実行
+// 1から15までのfizzbuzzを実行
 1 |> fizzbuzz |> print
 2 |> fizzbuzz |> print
 3 |> fizzbuzz |> print
@@ -39,4 +39,3 @@ def fizzbuzz(num): int -> str {
 13 |> fizzbuzz |> print
 14 |> fizzbuzz |> print
 15 |> fizzbuzz |> print
-

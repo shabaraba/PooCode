@@ -59,3 +59,4 @@ def is_even(): int -> str { "奇数です" >> 💩 }
 
 2 |> is_even |> print
 3 |> is_even |> print
+

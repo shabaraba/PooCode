@@ -1,0 +1,73 @@
+// Simplest FizzBuzz implementation to work with the limitations of the language
+
+// FizzBuzz function that doesn't use 'not' or 'eq' with booleans
+def fizzbuzz(n): int -> str {
+    // Variables to track divisibility
+    n % 3 == 0 >> div_by_3
+    n % 5 == 0 >> div_by_5
+    
+    // Convert boolean to string
+    div_by_3 == true && div_by_5 == true >> is_fizzbuzz
+    div_by_3 == true && div_by_5 == false >> is_fizz
+    div_by_3 == false && div_by_5 == true >> is_buzz
+    div_by_3 == false && div_by_5 == false >> is_number
+    
+    // Default to empty result
+    "" >> result
+    
+    // Add the appropriate text
+    is_fizzbuzz == true |> add "FizzBuzz" >> result
+    is_fizz == true |> add "Fizz" >> result
+    is_buzz == true |> add "Buzz" >> result
+    is_number == true |> add n |> to_string >> result
+    
+    // Return result
+    result >> 💩
+}
+
+// Test with numbers 1-15
+"1: " |> print 
+1 |> fizzbuzz |> print
+
+"2: " |> print
+2 |> fizzbuzz |> print
+
+"3: " |> print
+3 |> fizzbuzz |> print
+
+"4: " |> print
+4 |> fizzbuzz |> print
+
+"5: " |> print
+5 |> fizzbuzz |> print
+
+"6: " |> print
+6 |> fizzbuzz |> print
+
+"7: " |> print
+7 |> fizzbuzz |> print
+
+"8: " |> print
+8 |> fizzbuzz |> print
+
+"9: " |> print
+9 |> fizzbuzz |> print
+
+"10: " |> print
+10 |> fizzbuzz |> print
+
+"11: " |> print
+11 |> fizzbuzz |> print
+
+"12: " |> print
+12 |> fizzbuzz |> print
+
+"13: " |> print
+13 |> fizzbuzz |> print
+
+"14: " |> print
+14 |> fizzbuzz |> print
+
+"15: " |> print
+15 |> fizzbuzz |> print
+

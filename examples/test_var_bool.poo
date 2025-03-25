@@ -1,0 +1,3 @@
+// 変数代入と参照のテスト
+true >> my_bool
+my_bool |> print  // trueが表示されるはず

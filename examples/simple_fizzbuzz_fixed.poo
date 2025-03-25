@@ -11,19 +11,23 @@ def fizzbuzz(num): int -> str {
     is_multiple_of_3 && is_multiple_of_5 >> is_multiple_of_both
     
     is_multiple_of_both eq true >> is_fizzbuzz
-    is_multiple_of_3 && not is_multiple_of_both eq true >> is_fizz
-    is_multiple_of_5 && not is_multiple_of_both eq true >> is_buzz
     
+    // notを使わずに表現
+    is_multiple_of_3 && (is_multiple_of_both eq false) >> is_fizz
+    is_multiple_of_5 && (is_multiple_of_both eq false) >> is_buzz
+    
+    // 条件判定
     is_fizzbuzz eq true |> add "FizzBuzz" >> result
     is_fizz eq true |> add "Fizz" >> result
     is_buzz eq true |> add "Buzz" >> result
     
-    not is_fizzbuzz && not is_fizz && not is_buzz eq true |> add num |> to_string >> result
+    // notを使わずに表現
+    is_fizzbuzz eq false && is_fizz eq false && is_buzz eq false |> add num |> to_string >> result
     
     result >> 💩
 }
 
-// テスト: 1〜15までの数値に対してfizzbuzzを実行
+// 1から15までのfizzbuzzを実行
 1 |> fizzbuzz |> print
 2 |> fizzbuzz |> print
 3 |> fizzbuzz |> print
@@ -39,4 +43,3 @@ def fizzbuzz(num): int -> str {
 13 |> fizzbuzz |> print
 14 |> fizzbuzz |> print
 15 |> fizzbuzz |> print
-

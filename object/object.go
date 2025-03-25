@@ -233,12 +233,12 @@ type Identifier struct {
 // Function は関数を表す
 type Function struct {
 	Parameters []*Identifier
-	Body       *BlockStatement
+	ASTBody    interface{} // ASTのBlockStatementを保持するフィールド
 	Env        *Environment
 	InputType  string
 	ReturnType string
-	Condition  Expression
-	Poo        Object // 💩メンバ
+	Condition  interface{} // 条件式
+	Poo        Object      // 💩メンバ
 }
 
 // Expression は式を表す
