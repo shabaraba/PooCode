@@ -1,0 +1,3 @@
+// 否定演算子のテスト
+not true |> print  // falseが表示されるはず
+not true |> print  // falseが表示されるはず
