@@ -41,6 +41,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// デバッグモードを設定
+	evaluator.SetDebugMode(debugMode)
+	
 	// デバッグモードの場合、ファイル内容を表示
 	if debugMode {
 		fmt.Printf("ファイル内容:\n%s\n", string(content))
@@ -78,6 +81,16 @@ func main() {
 
 	// インタプリタで実行
 	env := object.NewEnvironment()
+	// プリント関数を追加
+	env.Set("print", &object.Builtin{
+		Fn: func(args ...object.Object) object.Object {
+			for _, arg := range args {
+				fmt.Println(arg.Inspect())
+			}
+			return evaluator.NULL
+		},
+	})
+	
 	result := evaluator.Eval(program, env)
 	if result != nil && result.Type() == object.ERROR_OBJ {
 		fmt.Printf("実行時エラー: %s\n", result.Inspect())

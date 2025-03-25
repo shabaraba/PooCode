@@ -13,36 +13,58 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
+// デバッグフラグ
+var debugMode = false
+
+// SetDebugMode はデバッグモードを設定する
+func SetDebugMode(mode bool) {
+	debugMode = mode
+}
+
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
-	fmt.Printf("評価中のノード: %T\n", node)
+	if debugMode {
+		fmt.Printf("評価中のノード: %T\n", node)
+	}
 	
 	switch node := node.(type) {
 	case *ast.Program:
-		fmt.Println("プログラムノードを評価")
+		if debugMode {
+			fmt.Println("プログラムノードを評価")
+		}
 		return evalProgram(node, env)
 		
 	case *ast.ExpressionStatement:
-		fmt.Println("式文ノードを評価")
+		if debugMode {
+			fmt.Println("式文ノードを評価")
+		}
 		return Eval(node.Expression, env)
 		
 	case *ast.StringLiteral:
-		fmt.Println("文字列リテラルを評価")
+		if debugMode {
+			fmt.Println("文字列リテラルを評価")
+		}
 		return &object.String{Value: node.Value}
 		
 	case *ast.IntegerLiteral:
-		fmt.Println("整数リテラルを評価")
+		if debugMode {
+			fmt.Println("整数リテラルを評価")
+		}
 		return &object.Integer{Value: node.Value}
 		
 	case *ast.BooleanLiteral:
-		fmt.Println("真偽値リテラルを評価")
+		if debugMode {
+			fmt.Println("真偽値リテラルを評価")
+		}
 		if node.Value {
 			return TRUE
 		}
 		return FALSE
 		
 	case *ast.PizzaLiteral:
-		fmt.Println("ピザリテラルを評価")
+		if debugMode {
+			fmt.Println("ピザリテラルを評価")
+		}
 		// 🍕はパイプラインで渡された値を参照する特別な変数
 		if val, ok := env.Get("🍕"); ok {
 			return val
@@ -50,12 +72,16 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		return newError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 		
 	case *ast.PooLiteral:
-		fmt.Println("💩リテラルを評価")
+		if debugMode {
+			fmt.Println("💩リテラルを評価")
+		}
 		// 💩は関数の戻り値として扱う特別なリテラル
 		return &object.ReturnValue{}
 		
 	case *ast.PrefixExpression:
-		fmt.Println("前置式を評価:", node.Operator)
+		if debugMode {
+			fmt.Println("前置式を評価:", node.Operator)
+		}
 		right := Eval(node.Right, env)
 		if right.Type() == object.ERROR_OBJ {
 			return right
@@ -63,7 +89,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		return evalPrefixExpression(node.Operator, right)
 		
 	case *ast.FunctionLiteral:
-		fmt.Println("関数リテラルを評価")
+		if debugMode {
+			fmt.Println("関数リテラルを評価")
+		}
 		// ast.Identifierをobject.Identifierに変換
 		params := make([]*object.Identifier, len(node.Parameters))
 		for i, p := range node.Parameters {
@@ -82,14 +110,18 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		
 		// 関数に名前がある場合は環境に登録
 		if node.Name != nil {
-			fmt.Printf("関数名 %s を環境に登録します\n", node.Name.Value)
+			if debugMode {
+				fmt.Printf("関数名 %s を環境に登録します\n", node.Name.Value)
+			}
 			env.Set(node.Name.Value, function)
 		}
 		
 		return function
 		
 	case *ast.InfixExpression:
-		fmt.Println("中置式を評価")
+		if debugMode {
+			fmt.Println("中置式を評価")
+		}
 		// パイプライン演算子のチェック
 		if node.Operator == "|>" {
 			return evalPipeline(node, env)
@@ -111,7 +143,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		}
 		
 	case *ast.CallExpression:
-		fmt.Println("関数呼び出し式を評価")
+		if debugMode {
+			fmt.Println("関数呼び出し式を評価")
+		}
 		function := Eval(node.Function, env)
 		if function.Type() == object.ERROR_OBJ {
 			return function
@@ -155,11 +189,15 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		return newError("関数ではありません: %s", function.Type())
 		
 	case *ast.Identifier:
-		fmt.Println("識別子を評価")
+		if debugMode {
+			fmt.Println("識別子を評価")
+		}
 		return evalIdentifier(node, env)
 		
 	case *ast.AssignStatement:
-		fmt.Println("代入文を評価")
+		if debugMode {
+			fmt.Println("代入文を評価")
+		}
 		
 		// 右辺を評価
 		right := Eval(node.Value, env)
@@ -169,7 +207,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		
 		// 左辺が識別子の場合は変数に代入
 		if ident, ok := node.Left.(*ast.Identifier); ok {
-			fmt.Printf("変数 %s に代入します\n", ident.Value)
+			if debugMode {
+				fmt.Printf("変数 %s に代入します\n", ident.Value)
+			}
 			env.Set(ident.Value, right)
 			return right
 		} else {
@@ -181,7 +221,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			
 			// 💩リテラルへの代入は特殊な意味を持つ (関数からの戻り値)
 			if _, ok := node.Value.(*ast.PooLiteral); ok {
-				fmt.Println("💩への代入を検出しました (戻り値)")
+				if debugMode {
+					fmt.Println("💩への代入を検出しました - 戻り値として扱います")
+				}
 				return &object.ReturnValue{Value: left}
 			}
 		}
@@ -190,7 +232,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		
 	// その他のケース
 	default:
-		fmt.Printf("未実装のノードタイプ: %T\n", node)
+		if debugMode {
+			fmt.Printf("未実装のノードタイプ: %T\n", node)
+		}
 		return NULL
 	}
 }
@@ -198,4 +242,27 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 // エラー生成用ヘルパー関数
 func newError(format string, a ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, a...)}
+}
+
+// isTruthy は値が真かどうかを判定する
+func isTruthy(obj object.Object) bool {
+	switch obj {
+	case NULL:
+		return false
+	case TRUE:
+		return true
+	case FALSE:
+		return false
+	default:
+		// 数値の場合、0以外は真
+		if integer, ok := obj.(*object.Integer); ok {
+			return integer.Value != 0
+		}
+		// 文字列の場合、空文字列以外は真
+		if str, ok := obj.(*object.String); ok {
+			return str.Value != ""
+		}
+		// それ以外のオブジェクトは真
+		return true
+	}
 }

@@ -9,7 +9,9 @@ import (
 
 // evalPipeline は|>演算子のパイプライン処理を評価する
 func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Object {
-	fmt.Println("パイプライン演算子を検出しました")
+	if debugMode {
+		fmt.Println("パイプライン演算子を検出しました")
+	}
 	// |>演算子の場合、左辺の結果を右辺の関数に渡す
 	left := Eval(node.Left, env)
 	if left.Type() == object.ERROR_OBJ {
@@ -18,7 +20,9 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	
 	// 右辺が識別子の場合、関数として評価
 	if ident, ok := node.Right.(*ast.Identifier); ok {
-		fmt.Printf("識別子としてのパイプライン先: %s\n", ident.Value)
+		if debugMode {
+			fmt.Printf("識別子としてのパイプライン先: %s\n", ident.Value)
+		}
 		function := evalIdentifier(ident, env)
 		if function.Type() == object.ERROR_OBJ {
 			return function
@@ -26,6 +30,36 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		
 		// 専用の環境変数 🍕 に値を設定して関数を呼び出す
 		if fn, ok := function.(*object.Function); ok {
+			// 条件付き関数の場合、条件を評価
+			if fn.Condition != nil {
+				// 評価用の環境を作成
+				condEnv := object.NewEnclosedEnvironment(fn.Env)
+				condEnv.Set("🍕", left)
+				
+				// 条件式を評価
+				condResult := Eval(fn.Condition, condEnv)
+				if condResult.Type() == object.ERROR_OBJ {
+					return condResult
+				}
+				
+				// 条件がfalseの場合は別の同名関数を探す
+				if !isTruthy(condResult) {
+					// 同名の別の関数を環境から探す
+					if ident != nil {
+						fnName := ident.Value
+						if debugMode {
+							fmt.Printf("条件が false のため、別の %s 関数を探します\n", fnName)
+						}
+						nextFn := env.GetNextFunction(fnName, fn)
+						if nextFn != nil {
+							fn = nextFn
+						} else {
+							return newError("条件を満たす関数が見つかりません: %s", fnName)
+						}
+					}
+				}
+			}
+			
 			extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 			extendedEnv.Set("🍕", left)
 			
@@ -51,7 +85,9 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	
 	// 右辺が関数呼び出しの場合
 	if callExpr, ok := node.Right.(*ast.CallExpression); ok {
-		fmt.Println("関数呼び出しとしてのパイプライン先")
+		if debugMode {
+			fmt.Println("関数呼び出しとしてのパイプライン先")
+		}
 		function := Eval(callExpr.Function, env)
 		if function.Type() == object.ERROR_OBJ {
 			return function
@@ -101,7 +137,9 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 
 // evalAssignment は>>演算子による代入を評価する
 func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.Object {
-	fmt.Println("代入演算子を検出しました")
+	if debugMode {
+		fmt.Println("代入演算子を検出しました")
+	}
 	// >>演算子の場合、右辺の変数に左辺の値を代入する
 	right := node.Right
 	
@@ -118,7 +156,9 @@ func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.O
 	
 	// 右辺がPooLiteralの場合は戻り値として扱う
 	if _, ok := right.(*ast.PooLiteral); ok {
-		fmt.Println("💩への代入を検出しました - 戻り値として扱います")
+		if debugMode {
+			fmt.Println("💩への代入を検出しました - 戻り値として扱います")
+		}
 		left := Eval(node.Left, env)
 		if left.Type() == object.ERROR_OBJ {
 			return left
