@@ -1,5 +1,9 @@
 package token
 
+import (
+	"fmt"
+)
+
 // TokenType は字句解析で識別されるトークンの種類を表す
 type TokenType string
 
@@ -108,4 +112,10 @@ func LookupIdent(ident string) TokenType {
 		return tok
 	}
 	return IDENT
+}
+
+// String はトークンの文字列表現を返す
+func (t Token) String() string {
+	return fmt.Sprintf("Token{Type: %s, Literal: %q, Line: %d, Column: %d}", 
+		t.Type, t.Literal, t.Line, t.Column)
 }
