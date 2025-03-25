@@ -36,12 +36,12 @@
     - [x] `parser/statement_parser.go` - 文のパース処理
     - [x] `parser/literal_parser.go` - リテラルのパース処理
     - [x] `parser/function_parser.go` - 関数関連のパース処理
-  - [ ] ast パッケージの分割
-    - [ ] `ast/ast.go` - コアAST構造とインターフェース
-    - [ ] `ast/expressions.go` - 式関連のAST構造
-    - [ ] `ast/statements.go` - 文関連のAST構造
-    - [ ] `ast/literals.go` - リテラル関連のAST構造
-    - [ ] `ast/function.go` - 関数関連のAST構造
+  - [x] ast パッケージの分割
+    - [x] `ast/ast.go` - コアAST構造とインターフェース
+    - [x] `ast/expressions.go` - 式関連のAST構造
+    - [x] `ast/statements.go` - 文関連のAST構造
+    - [x] `ast/literals.go` - リテラル関連のAST構造
+    - [x] `ast/function.go` - 関数関連のAST構造
   - [ ] object パッケージの分割
     - [ ] `object/object.go` - コアオブジェクト構造とインターフェース
     - [ ] `object/primitive_types.go` - 整数、文字列など基本型
