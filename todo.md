@@ -48,10 +48,10 @@
     - [✓] `object/function.go` - 関数関連オブジェクト
     - [✓] `object/container.go` - 配列やハッシュなどのコンテナオブジェクト
     - [✓] `object/environment.go` - 環境関連コード
-  - [ ] lexer パッケージの分割
-    - [ ] `lexer/lexer.go` - コアレキサーロジック
-    - [ ] `lexer/token_readers.go` - 特定のトークンを読むための関数
-    - [ ] `lexer/helpers.go` - ヘルパー関数
+  - [✓] lexer パッケージの分割
+    - [✓] `lexer/lexer.go` - コアレキサーロジック
+    - [✓] `lexer/token_readers.go` - 特定のトークンを読むための関数
+    - [✓] `lexer/helpers.go` - ヘルパー関数
 - [ ] コードのドキュメント化（コメントの追加）
 - [ ] テストカバレッジの向上
 - [ ] パフォーマンス最適化
