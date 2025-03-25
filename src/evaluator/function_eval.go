@@ -59,18 +59,39 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 	// 新しい環境を作成
 	extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 	
-	// パイプラインを利用する関数では、第1引数は🍕として設定
+	// 引数とパラメータのデバッグ出力
+	fmt.Printf("関数パラメータ数: %d, 引数数: %d\n", len(fn.Parameters), len(args))
+	for i, param := range fn.Parameters {
+		fmt.Printf("  パラメータ %d: %s\n", i, param.Value)
+	}
+	for i, arg := range args {
+		fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+	}
+	
+	// パイプラインを利用する関数では:
+	// - 第1引数は常に🍕として設定される
+	// - パラメータがある場合、引数の残りをパラメータにマッピングする
 	if len(args) > 0 {
+		// 🍕 変数を設定
 		extendedEnv.Set("🍕", args[0])
 		fmt.Printf("🍕 に値 %s を設定しました\n", args[0].Inspect())
 		
-		// 残りの引数がある場合はパラメータにバインド（この部分は通常は使用されない）
-		if len(args) > 1 && len(fn.Parameters) > 0 {
-			for i, param := range fn.Parameters {
-				if i+1 < len(args) {
-					extendedEnv.Set(param.Value, args[i+1])
-					fmt.Printf("パラメータ %s に値 %s を設定しました\n", param.Value, args[i+1].Inspect())
-				}
+		// パラメータを環境にバインド
+		if len(fn.Parameters) > 0 {
+			// パラメータ名を取得
+			paramName := fn.Parameters[0].Value
+			
+			// numパラメータにどの値を設定するか
+			if len(args) > 1 {
+				// 複数引数の場合: 第2引数をnumに設定
+				extendedEnv.Set(paramName, args[1])
+				fmt.Printf("パラメータ '%s' に値 %s を設定しました\n", 
+					paramName, args[1].Inspect())
+			} else {
+				// 単一引数の場合: 🍕と同じ値をnumに設定
+				extendedEnv.Set(paramName, args[0])
+				fmt.Printf("単一引数: パラメータ '%s' に値 %s を設定しました\n", 
+					paramName, args[0].Inspect())
 			}
 		}
 	}

@@ -12,8 +12,8 @@ import (
 const (
 	_ int = iota
 	LOWEST
-	PIPE
 	ASSIGN      // >>
+	PIPE        // | |>
 	LOGICAL     // && ||
 	EQUALS      // == !=
 	LESSGREATER // > < >= <=

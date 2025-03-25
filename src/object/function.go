@@ -27,6 +27,32 @@ func (f *Function) GetPooValue() Object {
 }
 func (f *Function) SetPooValue(val Object) { f.Poo = val }
 
+// Name は関数の名前を取得する
+// 環境内で定義されている関数名を特定する必要がある場合に使用
+func (f *Function) Name() (string, bool) {
+	// 環境をスキャンして関数オブジェクトに対応する名前を見つける
+	for name, obj := range f.Env.store {
+		if obj == f {
+			return name, true
+		}
+	}
+	
+	// 外部環境も検索
+	if f.Env.outer != nil {
+		env := f.Env.outer
+		for env != nil {
+			for name, obj := range env.store {
+				if obj == f {
+					return name, true
+				}
+			}
+			env = env.outer
+		}
+	}
+	
+	return "", false
+}
+
 // BuiltinFunction は組み込み関数の型
 type BuiltinFunction func(args ...Object) Object
 

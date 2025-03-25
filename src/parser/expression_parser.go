@@ -120,7 +120,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	p.nextToken()
 	
 	// パイプの右側の式を解析する
-	// 右側は関数または関数呼び出しである必要がある
+	// 右側は識別子または関数呼び出しのはず
 	rightExp := p.parseExpression(precedence)
 	
 	// パイプタイプに応じて処理を分ける
@@ -133,19 +133,48 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 			Right:    rightExp,
 		}
 	} else {
-		// 通常パイプ (|>) の場合
-		// 右辺がCallExpressionかどうかで処理を分ける
-		if callExp, ok := rightExp.(*ast.CallExpression); ok {
-			// 既存の引数リストの先頭に left を追加
-			callExp.Arguments = append([]ast.Expression{left}, callExp.Arguments...)
-			return callExp
-		} else {
-			// 右辺が関数呼び出しでない場合、新しい関数呼び出しとして扱う
-			return &ast.CallExpression{
-				Token:     pipeToken,
-				Function:  rightExp,
-				Arguments: []ast.Expression{left},
+		// |> 演算子の場合（パイプライン）
+		
+		// 識別子の後に引数が続く場合の特別処理
+		if ident, ok := rightExp.(*ast.Identifier); ok {
+			// 現在のトークンが引数になりうるものかチェック
+			if p.curToken.Type == token.INT || p.curToken.Type == token.STRING || 
+			   p.curToken.Type == token.IDENT || p.curToken.Type == token.BOOLEAN {
+				
+				// 右辺の引数を解析
+				arg := p.parseExpression(LOWEST)
+				
+				// 新しいCallExpressionを生成
+				callExpr := &ast.CallExpression{
+					Token:     pipeToken,
+					Function:  ident,
+					Arguments: []ast.Expression{arg},
+				}
+				
+				// パイプライン式の右辺としてCallExpressionを使用
+				return &ast.InfixExpression{
+					Token:    pipeToken,
+					Operator: pipeToken.Literal,
+					Left:     left,
+					Right:    callExpr,
+				}
 			}
+			
+			// 引数がない場合は通常のパイプライン
+			return &ast.InfixExpression{
+				Token:    pipeToken,
+				Operator: pipeToken.Literal,
+				Left:     left,
+				Right:    rightExp,
+			}
+		}
+		
+		// 通常のパイプライン式として処理
+		return &ast.InfixExpression{
+			Token:    pipeToken,
+			Operator: pipeToken.Literal,
+			Left:     left,
+			Right:    rightExp,
 		}
 	}
 }

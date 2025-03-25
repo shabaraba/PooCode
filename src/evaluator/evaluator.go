@@ -166,6 +166,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.CallExpression:
 		if debugMode {
 			fmt.Println("関数呼び出し式を評価")
+			fmt.Printf("関数: %T, 引数の数: %d\n", node.Function, len(node.Arguments))
 		}
 		
 		// 関数呼び出しが直接識別子（関数名）の場合、条件付き関数を検索
@@ -177,6 +178,17 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			
 			// 引数を評価
 			args := evalExpressions(node.Arguments, env)
+			if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
+				return args[0]
+			}
+			
+			// デバッグ出力
+			if debugMode {
+				fmt.Printf("関数 '%s' の引数: %d 個\n", ident.Value, len(args))
+				for i, arg := range args {
+					fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+				}
+			}
 			
 			// 環境内の同名のすべての関数を検索し、条件に合う関数を適用
 			return applyNamedFunction(env, ident.Value, args)
@@ -188,6 +200,9 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			return function
 		}
 		args := evalExpressions(node.Arguments, env)
+		if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
+			return args[0]
+		}
 		
 		// 通常の関数呼び出しでは第一引数を🍕として設定しない
 		if fn, ok := function.(*object.Function); ok {

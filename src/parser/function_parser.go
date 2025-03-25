@@ -21,6 +21,13 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 	}
 	lit.Parameters = p.parseFunctionParameters()
 
+	// 条件付き関数定義の条件部分を解析
+	if p.peekTokenIs(token.IF) {
+		p.nextToken() // if
+		p.nextToken()
+		lit.Condition = p.parseExpression(LOWEST)
+	}
+
 	// 型注釈があれば解析
 	if p.peekTokenIs(token.COLON) {
 		p.nextToken() // :
@@ -35,13 +42,6 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 				lit.ReturnType = p.curToken.Literal
 			}
 		}
-	}
-
-	// 条件付き関数定義の条件部分を解析
-	if p.peekTokenIs(token.IF) {
-		p.nextToken() // if
-		p.nextToken()
-		lit.Condition = p.parseExpression(LOWEST)
 	}
 
 	// 関数本体を解析

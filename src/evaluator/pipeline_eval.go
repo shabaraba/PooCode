@@ -18,8 +18,45 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		return left
 	}
 	
+	// 右辺の式がCallExpressionの場合、特別に処理
+	if callExpr, ok := node.Right.(*ast.CallExpression); ok {
+		if debugMode {
+			fmt.Println("パイプラインの右辺がCallExpressionです")
+		}
+		
+		// 関数名を取得
+		var funcName string
+		if ident, ok := callExpr.Function.(*ast.Identifier); ok {
+			funcName = ident.Value
+		} else {
+			return newError("パイプラインの右側の関数名を取得できません: %T", callExpr.Function)
+		}
+		
+		// 引数を評価
+		args := evalExpressions(callExpr.Arguments, env)
+		if len(args) == 1 && args[0].Type() == object.ERROR_OBJ {
+			return args[0]
+		}
+		
+		// デバッグ出力
+		fmt.Printf("パイプラインの関数名: %s, 左辺値: %s, 引数: %v\n", 
+			funcName, left.Inspect(), args)
+		
+		// 引数の配列を作成（第一引数は左辺の値、第二引数以降は関数の引数）
+		allArgs := []object.Object{left}
+		allArgs = append(allArgs, args...)
+		
+		// 関数を適用
+		result := applyNamedFunction(env, funcName, allArgs)
+		fmt.Printf("関数 '%s' の適用結果: %s\n", funcName, result.Inspect())
+		return result
+	}
+	
+	// パイプラインの右側を評価する
+	right := node.Right
+	
 	// 右辺が識別子の場合、関数として評価
-	if ident, ok := node.Right.(*ast.Identifier); ok {
+	if ident, ok := right.(*ast.Identifier); ok {
 		if debugMode {
 			fmt.Printf("識別子としてのパイプライン先: %s\n", ident.Value)
 		}
@@ -39,17 +76,24 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	}
 	
 	// 右辺が関数呼び出しの場合
-	if callExpr, ok := node.Right.(*ast.CallExpression); ok {
+	if callExpr, ok := right.(*ast.CallExpression); ok {
 		if debugMode {
 			fmt.Println("関数呼び出しとしてのパイプライン先")
 		}
 		
-		// 関数名を識別子から直接取得（デバッグ用）
+		// 関数名を識別子から直接取得
 		if ident, ok := callExpr.Function.(*ast.Identifier); ok {
 			fmt.Printf("パイプラインでビルトイン関数 '%s' を呼び出します\n", ident.Value)
 			
 			// 引数を評価
 			args := evalExpressions(callExpr.Arguments, env)
+			
+			// デバッグ: 引数の内容を表示
+			fmt.Printf("関数呼び出し '%s' の引数: %d 個\n", ident.Value, len(args))
+			for i, arg := range args {
+				fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+			}
+			fmt.Printf("パイプラインから渡される値: %s\n", left.Inspect())
 			
 			// ビルトイン関数を直接取得して呼び出す
 			if builtin, ok := Builtins[ident.Value]; ok {
@@ -68,9 +112,16 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			}
 			
 			// ビルトイン関数でない場合は名前付き関数として呼び出し
-			// leftを第一引数、その他の引数は後続
 			allArgs := []object.Object{left}
+			
+			// 残りの引数も追加
 			allArgs = append(allArgs, args...)
+			
+			// デバッグ: 最終的な引数リストを表示
+			fmt.Printf("名前付き関数 '%s' の最終引数リスト: %d 個\n", ident.Value, len(allArgs))
+			for i, arg := range allArgs {
+				fmt.Printf("  引数 %d: %s\n", i, arg.Inspect())
+			}
 			
 			// 名前付き関数を適用する（条件付き関数の処理も行う）
 			result := applyNamedFunction(env, ident.Value, allArgs)
