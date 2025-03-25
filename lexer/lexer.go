@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"fmt"
 	"unicode"
 	"unicode/utf8"
 
@@ -231,9 +232,11 @@ func (l *Lexer) skipComment() {
 // readIdentifier は識別子を読み込む
 func (l *Lexer) readIdentifier() string {
 	position := l.position
+	
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
+	
 	return l.input[position:l.position]
 }
 
@@ -281,7 +284,13 @@ func (l *Lexer) readString() string {
 
 // isLetter は文字が識別子の一部として有効かどうかを判定する
 func isLetter(ch rune) bool {
-	return unicode.IsLetter(ch) || ch == '_'
+	// 簡単な回避策として、数字以外のすべての文字を許可
+	return ch != 0 && !unicode.IsSpace(ch) && !unicode.IsDigit(ch) && 
+		ch != '+' && ch != '-' && ch != '*' && ch != '/' && ch != '%' &&
+		ch != '=' && ch != '!' && ch != '<' && ch != '>' && ch != '&' &&
+		ch != '|' && ch != ',' && ch != ';' && ch != ':' && ch != '(' &&
+		ch != ')' && ch != '{' && ch != '}' && ch != '[' && ch != ']' &&
+		ch != '.' && ch != '\'' && ch != '"'
 }
 
 // isDigit は文字が数字かどうかを判定する
