@@ -44,11 +44,11 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		
 	case *ast.PizzaLiteral:
 		fmt.Println("ピザリテラルを評価")
-		// 🍕は現在のスコープの第一引数を参照する特別な変数
+		// 🍕はパイプラインで渡された値を参照する特別な変数
 		if val, ok := env.Get("🍕"); ok {
 			return val
 		}
-		return newError("🍕が定義されていません（関数の外部または引数なしで使用されています）")
+		return newError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 		
 	case *ast.PooLiteral:
 		fmt.Println("💩リテラルを評価")
@@ -108,7 +108,29 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 					return function
 				}
 				
-				return applyFunction(function, []object.Object{left})
+				// 専用の環境変数 🍕 に値を設定して関数を呼び出す
+				if fn, ok := function.(*object.Function); ok {
+					extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+					extendedEnv.Set("🍕", left)
+					
+					// ASTBodyをast.BlockStatementに型アサーション
+					astBody, ok := fn.ASTBody.(*ast.BlockStatement)
+					if !ok {
+						return newError("関数の本体がBlockStatementではありません")
+					}
+					result := evalBlockStatement(astBody, extendedEnv)
+					
+					// 💩値を返す（関数の戻り値）
+					if obj, ok := result.(*object.ReturnValue); ok {
+						return obj.Value
+					}
+					return result
+				} else if builtin, ok := function.(*object.Builtin); ok {
+					// 組み込み関数の場合はそのまま引数として渡す
+					return builtin.Fn(left)
+				}
+				
+				return newError("関数ではありません: %s", function.Type())
 			}
 			
 			// 右辺が関数呼び出しの場合
@@ -120,10 +142,42 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 				}
 				
 				args := evalExpressions(callExpr.Arguments, env)
-				// 左辺の結果を第1引数に挿入
-				args = append([]object.Object{left}, args...)
 				
-				return applyFunction(function, args)
+				// 関数オブジェクトの場合、専用の環境変数🍕に左辺の値を設定
+				if fn, ok := function.(*object.Function); ok {
+					extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+					
+					// 通常の引数を環境にバインド
+					if len(args) != len(fn.Parameters) {
+						return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+					}
+					
+					for i, param := range fn.Parameters {
+						extendedEnv.Set(param.Value, args[i])
+					}
+					
+					// パイプラインからの値を🍕にセット
+					extendedEnv.Set("🍕", left)
+					
+					// 関数本体を評価
+					astBody, ok := fn.ASTBody.(*ast.BlockStatement)
+					if !ok {
+						return newError("関数の本体がBlockStatementではありません")
+					}
+					result := evalBlockStatement(astBody, extendedEnv)
+					
+					// 💩値を返す（関数の戻り値）
+					if obj, ok := result.(*object.ReturnValue); ok {
+						return obj.Value
+					}
+					return result
+				} else if builtin, ok := function.(*object.Builtin); ok {
+					// 組み込み関数の場合、leftを第一引数として追加
+					args = append([]object.Object{left}, args...)
+					return builtin.Fn(args...)
+				}
+				
+				return newError("関数ではありません: %s", function.Type())
 			}
 			
 			return newError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
@@ -176,7 +230,42 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			return function
 		}
 		args := evalExpressions(node.Arguments, env)
-		return applyFunction(function, args)
+		
+		// 通常の関数呼び出しでは第一引数を🍕として設定しない
+		if fn, ok := function.(*object.Function); ok {
+			// 引数の数をチェック
+			if len(args) != len(fn.Parameters) {
+				return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+			}
+			
+			// 新しい環境を作成
+			extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+			
+			// 引数を環境にバインド
+			for i, param := range fn.Parameters {
+				extendedEnv.Set(param.Value, args[i])
+			}
+			
+			// 通常の関数呼び出しでは、🍕を設定しない
+			// （修正後の仕様では、🍕はパイプラインで渡された値のみを表す）
+			
+			// 関数本体を評価
+			astBody, ok := fn.ASTBody.(*ast.BlockStatement)
+			if !ok {
+				return newError("関数の本体がBlockStatementではありません")
+			}
+			result := evalBlockStatement(astBody, extendedEnv)
+			
+			// 💩値を返す（関数の戻り値）
+			if obj, ok := result.(*object.ReturnValue); ok {
+				return obj.Value
+			}
+			return result
+		} else if builtin, ok := function.(*object.Builtin); ok {
+			return builtin.Fn(args...)
+		}
+		
+		return newError("関数ではありません: %s", function.Type())
 		
 	case *ast.Identifier:
 		fmt.Println("識別子を評価")
@@ -698,10 +787,8 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 			extendedEnv.Set(param.Value, args[i])
 		}
 		
-		// Pizza (🍕) パラメータは第一引数を参照する特別な変数
-		if len(args) > 0 {
-			extendedEnv.Set("🍕", args[0])
-		}
+		// 修正後の仕様では、🍕はパイプラインで渡された値のみを表す
+		// 通常の関数呼び出しでは🍕は設定しない
 		
 		// 関数本体を評価（ASTBodyをast.BlockStatementに型アサーション）
 		astBody, ok := fn.ASTBody.(*ast.BlockStatement)
