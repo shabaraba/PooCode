@@ -1,325 +1,3 @@
-package evaluator
-
-import (
-	"fmt"
-	"strings"
-
-	"github.com/uncode/logger"
-	"github.com/uncode/object"
-)
-
-// 組み込み関数の型情報を取得する関数
-// GetBuiltinReturnType は組み込み関数の戻り値の型を返す
-func GetBuiltinReturnType(name string) object.ObjectType {
-	if builtin, ok := Builtins[name]; ok {
-		return builtin.ReturnType
-	}
-	return object.NULL_OBJ
-}
-
-// GetBuiltinParamTypes は組み込み関数のパラメータの型を返す
-func GetBuiltinParamTypes(name string) []object.ObjectType {
-	if builtin, ok := Builtins[name]; ok {
-		return builtin.ParamTypes
-	}
-	return nil
-}
-
-// 組み込み関数のマップ
-var Builtins = map[string]*object.Builtin{
-	"print": &object.Builtin{
-		Name: "print",
-		Fn: func(args ...object.Object) object.Object {
-			// デバッグ情報：受け取った引数の詳細を出力
-			logger.Debug("DEBUG: print関数が受け取った引数: %d個\n", len(args))
-			for i, arg := range args {
-				logger.Debug("DEBUG: 引数%d - タイプ: %s, 値: %s\n", i, arg.Type(), arg.Inspect())
-				
-				// arg.Inspect()ではなく実際の値を表示
-				switch arg.Type() {
-				case object.INTEGER_OBJ:
-					intVal := arg.(*object.Integer).Value
-					logger.Debug("DEBUG: 整数値として %d を出力\n", intVal)
-					fmt.Println(intVal)
-				case object.STRING_OBJ:
-					strVal := arg.(*object.String).Value
-					logger.Debug("DEBUG: 文字列として \"%s\" を出力\n", strVal)
-					fmt.Println(strVal)
-				case object.BOOLEAN_OBJ:
-					boolVal := arg.(*object.Boolean).Value
-					logger.Debug("DEBUG: 真偽値として %t を出力\n", boolVal)
-					fmt.Println(boolVal)
-				default:
-					inspectVal := arg.Inspect()
-					logger.Debug("DEBUG: デフォルト - %s を出力\n", inspectVal)
-					fmt.Println(inspectVal)
-				}
-			}
-			// 第一引数を返すように変更（パイプラインの連鎖を維持するため）
-			if len(args) > 0 {
-				return args[0]
-			}
-			return NULL
-		},
-	},
-	"show": &object.Builtin{
-		Name: "show",
-		Fn: func(args ...object.Object) object.Object {
-			for _, arg := range args {
-				// arg.Inspect()ではなく実際の値を表示
-				switch arg.Type() {
-				case object.INTEGER_OBJ:
-					fmt.Println(arg.(*object.Integer).Value)
-				case object.STRING_OBJ:
-					fmt.Println(arg.(*object.String).Value)
-				case object.BOOLEAN_OBJ:
-					fmt.Println(arg.(*object.Boolean).Value)
-				default:
-					fmt.Println(arg.Inspect())
-				}
-			}
-			return NULL
-		},
-	},
-	"add": &object.Builtin{
-		Name: "add",
-		Fn: func(args ...object.Object) object.Object {
-			logger.Debug("add関数が呼び出されました: 引数=%d個\n", len(args))
-			// デバッグ: すべての引数を出力
-			for i, arg := range args {
-				logger.Debug("  引数 %d: %s (型: %s)\n", i, arg.Inspect(), arg.Type())
-			}
-			
-			if len(args) < 1 {
-				return newError("add関数は少なくとも1つの引数が必要です")
-			}
-			
-			// 文字列の場合は連結
-			if args[0].Type() == object.STRING_OBJ {
-				str, ok := args[0].(*object.String)
-				if !ok {
-					return newError("文字列の変換に失敗しました")
-				}
-				
-				// 第2引数があれば文字列に変換して連結
-				if len(args) > 1 {
-					var rightStr string
-					switch right := args[1].(type) {
-					case *object.String:
-						rightStr = right.Value
-					case *object.Integer:
-						rightStr = fmt.Sprintf("%d", right.Value)
-					case *object.Boolean:
-						rightStr = fmt.Sprintf("%t", right.Value)
-					default:
-						rightStr = right.Inspect()
-					}
-					
-					return &object.String{Value: str.Value + rightStr}
-				}
-				return str
-			}
-			
-			// 整数加算（単一引数の場合は値をそのまま返す）
-			left, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("add関数の第1引数は整数または文字列である必要があります: %s", args[0].Type())
-			}
-			
-			// 第2引数がない場合は値をそのまま返す
-			if len(args) == 1 {
-				logger.Debug("add関数: 単一引数 %d をそのまま返します\n", left.Value)
-				return left
-			}
-			
-			// 第2引数があれば加算
-			right, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("add関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			result := &object.Integer{Value: left.Value + right.Value}
-			logger.Debug("add関数: %d + %d = %d\n", left.Value, right.Value, result.Value)
-			return result
-		},
-	},
-	"sub": &object.Builtin{
-		Name: "sub",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("sub関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			// 整数減算
-			left, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("sub関数の第1引数は整数である必要があります: %s", args[0].Type())
-			}
-			
-			right, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("sub関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			return &object.Integer{Value: left.Value - right.Value}
-		},
-	},
-	"mul": &object.Builtin{
-		Name: "mul",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("mul関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			// 整数乗算
-			left, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("mul関数の第1引数は整数である必要があります: %s", args[0].Type())
-			}
-			
-			right, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("mul関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			return &object.Integer{Value: left.Value * right.Value}
-		},
-	},
-	"div": &object.Builtin{
-		Name: "div",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("div関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			// 整数除算
-			left, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("div関数の第1引数は整数である必要があります: %s", args[0].Type())
-			}
-			
-			right, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("div関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			// ゼロ除算チェック
-			if right.Value == 0 {
-				return newError("ゼロによる除算: %d / 0", left.Value)
-			}
-			
-			return &object.Integer{Value: left.Value / right.Value}
-		},
-	},
-	"mod": &object.Builtin{
-		Name: "mod",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("mod関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			// 整数剰余
-			left, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("mod関数の第1引数は整数である必要があります: %s", args[0].Type())
-			}
-			
-			right, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("mod関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			// ゼロ除算チェック
-			if right.Value == 0 {
-				return newError("ゼロによるモジュロ: %d %% 0", left.Value)
-			}
-			
-			return &object.Integer{Value: left.Value % right.Value}
-		},
-	},
-	"pow": &object.Builtin{
-		Name: "pow",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("pow関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			// べき乗
-			base, ok := args[0].(*object.Integer)
-			if !ok {
-				return newError("pow関数の第1引数は整数である必要があります: %s", args[0].Type())
-			}
-			
-			exp, ok := args[1].(*object.Integer)
-			if !ok {
-				return newError("pow関数の第2引数は整数である必要があります: %s", args[1].Type())
-			}
-			
-			// 負の指数のチェック
-			if exp.Value < 0 {
-				return newError("pow関数の指数は0以上である必要があります: %d", exp.Value)
-			}
-			
-			result := int64(1)
-			for i := int64(0); i < exp.Value; i++ {
-				result *= base.Value
-			}
-			
-			return &object.Integer{Value: result}
-		},
-		ReturnType: object.INTEGER_OBJ,
-		ParamTypes: []object.ObjectType{object.INTEGER_OBJ, object.INTEGER_OBJ},
-	},
-	"to_string": &object.Builtin{
-		Name: "to_string",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 1 {
-				return newError("to_string関数は1つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			switch arg := args[0].(type) {
-			case *object.String:
-				return arg // 既に文字列
-			case *object.Integer:
-				return &object.String{Value: fmt.Sprintf("%d", arg.Value)}
-			case *object.Boolean:
-				return &object.String{Value: fmt.Sprintf("%t", arg.Value)}
-			default:
-				return &object.String{Value: arg.Inspect()}
-			}
-		},
-		ReturnType: object.STRING_OBJ,
-		ParamTypes: []object.ObjectType{object.ANY_OBJ},
-	},
-	"length": &object.Builtin{
-		Name: "length",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 1 {
-				return newError("length関数は1つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			switch arg := args[0].(type) {
-			case *object.String:
-				return &object.Integer{Value: int64(len(arg.Value))}
-			case *object.Array:
-				return &object.Integer{Value: int64(len(arg.Elements))}
-			default:
-				return newError("length関数は文字列または配列に対してのみ使用できます: %s", args[0].Type())
-			}
-		},
-	},
-	"eq": &object.Builtin{
-		Name: "eq",
-		Fn: func(args ...object.Object) object.Object {
-			if len(args) != 2 {
-				return newError("eq関数は2つの引数が必要です: %d個与えられました", len(args))
-			}
-			
-			switch left := args[0].(type) {
-			case *object.Integer:
-				if right, ok := args[1].(*object.Integer); ok {
-					return &object.Boolean{Value: left.Value == right.Value}
-				}
 			case *object.String:
 				if right, ok := args[1].(*object.String); ok {
 					return &object.Boolean{Value: left.Value == right.Value}
@@ -332,6 +10,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Boolean{Value: false}
 		},
+		ReturnType: object.BOOLEAN_OBJ,
+		ParamTypes: []object.ObjectType{object.ANY_OBJ, object.ANY_OBJ},
 	},
 	"not": &object.Builtin{
 		Name: "not",
@@ -346,6 +26,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Boolean{Value: false} // デフォルトはfalse
 		},
+		ReturnType: object.BOOLEAN_OBJ,
+		ParamTypes: []object.ObjectType{object.BOOLEAN_OBJ},
 	},
 	"split": &object.Builtin{
 		Name: "split",
@@ -377,6 +59,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Array{Elements: elements}
 		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.STRING_OBJ, object.STRING_OBJ},
 	},
 	"join": &object.Builtin{
 		Name: "join",
@@ -414,6 +98,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.String{Value: strings.Join(elements, delimiter.Value)}
 		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.STRING_OBJ},
 	},
 	"substring": &object.Builtin{
 		Name: "substring",
@@ -467,6 +153,8 @@ var Builtins = map[string]*object.Builtin{
 			// 第3引数がない場合は文字列の最後まで
 			return &object.String{Value: str.Value[start.Value:]}
 		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.STRING_OBJ, object.INTEGER_OBJ, object.INTEGER_OBJ},
 	},
 	"to_upper": &object.Builtin{
 		Name: "to_upper",
@@ -482,6 +170,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.String{Value: strings.ToUpper(str.Value)}
 		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.STRING_OBJ},
 	},
 	"to_lower": &object.Builtin{
 		Name: "to_lower",
@@ -497,6 +187,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.String{Value: strings.ToLower(str.Value)}
 		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.STRING_OBJ},
 	},
 	"range": &object.Builtin{
 		Name: "range",
@@ -543,6 +235,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Array{Elements: elements}
 		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.INTEGER_OBJ, object.INTEGER_OBJ},
 	},
 	"sum": &object.Builtin{
 		Name: "sum",
@@ -597,4 +291,21 @@ var Builtins = map[string]*object.Builtin{
 		ReturnType: object.STRING_OBJ,
 		ParamTypes: []object.ObjectType{object.ANY_OBJ},
 	},
+}
+
+// 組み込み関数の型情報を取得する関数
+// GetBuiltinReturnType は組み込み関数の戻り値の型を返す
+func GetBuiltinReturnType(name string) object.ObjectType {
+	if builtin, ok := Builtins[name]; ok {
+		return builtin.ReturnType
+	}
+	return object.NULL_OBJ
+}
+
+// GetBuiltinParamTypes は組み込み関数のパラメータの型を返す
+func GetBuiltinParamTypes(name string) []object.ObjectType {
+	if builtin, ok := Builtins[name]; ok {
+		return builtin.ParamTypes
+	}
+	return nil
 }
