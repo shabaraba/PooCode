@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	// Common boolean objects for reuse
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
 )
@@ -241,13 +240,6 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		logger.Warn("未実装のノードタイプ: %T", node)
 		return NullObj
 	}
-}
-
-// エラー生成用ヘルパー関数
-func createError(format string, a ...interface{}) *object.Error {
-	msg := fmt.Sprintf(format, a...)
-	logger.Error("実行時エラー: %s", msg)
-	return &object.Error{Message: msg}
 }
 
 // isTruthy は値が真かどうかを判定する
