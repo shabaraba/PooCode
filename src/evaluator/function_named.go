@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"github.com/uncode/ast"
+	"github.com/uncode/config"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -82,22 +83,40 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	}
 
 	// まず条件付き関数を検索して評価
-	logger.Debug("条件付き関数を %d 個見つけました\n", len(conditionalFuncs))
+	logger.EvalDebug("条件付き関数を %d 個見つけました\n", len(conditionalFuncs))
 	for i, fn := range conditionalFuncs {
-		logger.Debug("条件付き関数候補 %d を評価中...\n", i+1)
-		logger.Debug("条件式: %v\n", fn.Condition)
+		logger.EvalDebug("条件付き関数候補 %d を評価中...\n", i+1)
+		
+		// 条件式の詳細を表示（ShowConditionDebugがtrueの場合のみ）
+		if config.GlobalConfig.ShowConditionDebug {
+			logger.EvalDebug("-------- 条件式の詳細評価 --------")
+			logger.EvalDebug("条件式: %v", fn.Condition)
+			// AST構造をより詳細に表示
+			if infixExpr, ok := fn.Condition.(*ast.InfixExpression); ok {
+				logger.EvalDebug("条件式タイプ: 中置式")
+				logger.EvalDebug("  演算子: %s", infixExpr.Operator)
+				logger.EvalDebug("  左辺: %T - %v", infixExpr.Left, infixExpr.Left)
+				logger.EvalDebug("  右辺: %T - %v", infixExpr.Right, infixExpr.Right)
+			} else {
+				logger.EvalDebug("条件式タイプ: %T", fn.Condition)
+			}
+			logger.EvalDebug("----------------------------------")
+		}
 
 		// 条件式を評価するための環境を作成
 		condEnv := object.NewEnclosedEnvironment(funcEnv)
 		
 		// 条件式を評価
 		condResult := Eval(fn.Condition, condEnv)
-		logger.Debug("条件式の評価結果: %s\n", condResult.Inspect())
-		logger.Debug("条件式の評価結果のタイプ: %s\n", condResult.Type())
+		
+		if config.GlobalConfig.ShowConditionDebug {
+			logger.EvalDebug("条件式の評価結果: %s", condResult.Inspect())
+			logger.EvalDebug("条件式の評価結果のタイプ: %s", condResult.Type())
+		}
 
 		// エラーが発生した場合、詳細を出力
 		if condResult.Type() == object.ERROR_OBJ {
-			logger.Debug("条件評価でエラーが発生しました: %s\n", condResult.Inspect())
+			logger.EvalDebug("条件評価でエラーが発生しました: %s", condResult.Inspect())
 			return condResult
 		}
 
@@ -106,28 +125,29 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		isTrue := false
 		if condResult.Type() == object.BOOLEAN_OBJ {
 			isTrue = condResult.(*object.Boolean).Value
-			logger.Debug("条件式の真偽値: %v\n", isTrue)
+			logger.EvalDebug("条件式の真偽値: %v", isTrue)
 		} else {
 			isTrue = isTruthy(condResult)
-			logger.Debug("条件式の評価結果（非Boolean）が %v と判定されました\n", isTrue)
+			logger.EvalDebug("条件式の評価結果（非Boolean）が %v と判定されました", isTrue)
 		}
 
 		if isTrue {
-			logger.Debug("条件が真であるため、この関数を使用します")
+			logger.EvalDebug("条件が真であるため、この関数を使用します")
 			return applyFunctionWithPizza(fn, args)
 		} else {
-			logger.Debug("条件が偽であるため、この関数をスキップします")
+			logger.EvalDebug("条件が偽であるため、この関数をスキップします")
 		}
 	}
 
 	// 条件付き関数が該当しなかった場合、デフォルト関数を使用
-	logger.Debug("デフォルト関数を %d 個見つけました\n", len(defaultFuncs))
+	logger.EvalDebug("デフォルト関数を %d 個見つけました", len(defaultFuncs))
 	if len(defaultFuncs) > 0 {
-		logger.Debug("デフォルト関数を使用します")
+		logger.EvalDebug("デフォルト関数を使用します")
 		return applyFunctionWithPizza(defaultFuncs[0], args)
 	}
 
 	// 適用可能な関数が見つからない場合
+	logger.EvalDebug("条件に一致する関数が見つかりません")
 	return createEvalError("条件に一致する関数 '%s' が見つかりません", name)
 }
 

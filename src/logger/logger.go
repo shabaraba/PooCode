@@ -22,7 +22,8 @@ const (
 	LevelTrace
 	
 	// 特殊デバッグ情報レベル
-	LevelTypeInfo // 型情報のみを表示
+	LevelTypeInfo  // 型情報のみを表示
+	LevelEvalDebug // 評価器専用デバッグ情報
 )
 
 // LevelNames はログレベルと名前のマッピング
@@ -34,6 +35,7 @@ var LevelNames = map[LogLevel]string{
 	LevelDebug:    "DEBUG",
 	LevelTrace:    "TRACE",
 	LevelTypeInfo: "TYPE",
+	LevelEvalDebug: "EVAL",
 }
 
 var levelColors = map[LogLevel]string{
@@ -43,6 +45,7 @@ var levelColors = map[LogLevel]string{
 	LevelDebug:    "\033[36m", // シアン
 	LevelTrace:    "\033[35m", // マゼンタ
 	LevelTypeInfo: "\033[34m", // 青
+	LevelEvalDebug: "\033[33;1m", // 太字黄色
 }
 
 const (
@@ -277,6 +280,11 @@ func (l *Logger) TypeInfo(format string, args ...interface{}) {
 	l.log(LevelTypeInfo, format, args...)
 }
 
+// EvalDebug は評価器専用デバッグ情報を記録する
+func (l *Logger) EvalDebug(format string, args ...interface{}) {
+	l.log(LevelEvalDebug, format, args...)
+}
+
 // グローバル関数
 func SetLevel(level LogLevel) {
 	GetLogger().SetLevel(level)
@@ -338,6 +346,10 @@ func TypeInfo(format string, args ...interface{}) {
 	GetLogger().TypeInfo(format, args...)
 }
 
+func EvalDebug(format string, args ...interface{}) {
+	GetLogger().EvalDebug(format, args...)
+}
+
 // ParseLogLevel は文字列からログレベルを解析する
 func ParseLogLevel(levelStr string) LogLevel {
 	switch levelStr {
@@ -355,6 +367,8 @@ func ParseLogLevel(levelStr string) LogLevel {
 		return LevelTrace
 	case "TYPE":
 		return LevelTypeInfo
+	case "EVAL":
+		return LevelEvalDebug
 	default:
 		return LevelInfo // デフォルトはINFO
 	}

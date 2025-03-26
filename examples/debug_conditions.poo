@@ -1,11 +1,19 @@
 // デバッグ用: 条件式のテスト
-def test(num) if 🍕 == 1 : int -> int {
-    🍕 + num >> 💩;
+def test(num) if int(🍕) == 1 : int -> int {
+    "int condition matched: " + 🍕 + " + " + num >> 💩;
 }
 
+// 文字列の場合のテスト
+def test(num) if 🍕 == "2" : int -> int {
+    🍕 + " matched string condition" >> 💩;
+}
+
+// デフォルト関数（条件なし）
 def test(num): int -> int {
-    🍕 >> 💩;
+    "default function called with " + 🍕 >> 💩;
 }
 
 // テスト
-"2" |> test(20) |> print;  // 🍕は0
+"2" |> test(20) |> print;  // 🍕は"2"
+
+

@@ -11,17 +11,19 @@ import (
 
 // Config はアプリケーション全体の設定を保持する構造体
 type Config struct {
-	SourceFile     string
-	DebugMode      bool
-	LogLevel       logger.LogLevel
-	LogFile        string
-	OutputFile     string
-	ColorOutput    bool
-	ShowTimestamp  bool
-	ShowTypeInfo   bool
-	ShowLexerDebug bool
+	SourceFile      string
+	DebugMode       bool
+	LogLevel        logger.LogLevel
+	LogFile         string
+	OutputFile      string
+	ColorOutput     bool
+	ShowTimestamp   bool
+	ShowTypeInfo    bool
+	ShowLexerDebug  bool
 	ShowParserDebug bool
 	ShowEvalDebug   bool
+	ShowBuiltinDebug bool
+	ShowConditionDebug bool // 条件式の評価デバッグ表示
 }
 
 // GlobalConfig はアプリケーション全体で使用される設定
@@ -56,6 +58,8 @@ func ParseFlags() error {
 	flag.BoolVar(&GlobalConfig.ShowLexerDebug, "show-lexer", false, "レキサーのデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowParserDebug, "show-parser", false, "パーサーのデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowEvalDebug, "show-eval", false, "評価時のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowBuiltinDebug, "show-builtin", false, "組み込み関数のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 
 	// ログレベルをフラグで指定できるようにする
 	logLevelStr := flag.String("log-level", "", "ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
@@ -76,6 +80,8 @@ func ParseFlags() error {
 		GlobalConfig.ShowLexerDebug = true
 		GlobalConfig.ShowParserDebug = true 
 		GlobalConfig.ShowEvalDebug = true
+		GlobalConfig.ShowBuiltinDebug = true
+		GlobalConfig.ShowConditionDebug = true
 	}
 
 	// ソースファイルのパス取得
