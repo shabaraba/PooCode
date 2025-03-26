@@ -30,7 +30,7 @@ func SetupBuiltins(env *object.Environment) {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
 			}
-			return evaluator.NULL
+			return evaluator.NullObj
 		},
 	})
 	
