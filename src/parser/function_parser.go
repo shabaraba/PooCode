@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/uncode/ast"
+	"github.com/uncode/logger"
 	"github.com/uncode/token"
 )
 
@@ -98,6 +99,8 @@ func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	
 	// 引数リストを解析
 	args := p.parseExpressionList(token.RPAREN)
+	
+	logger.Debug("関数呼び出し解析中: 関数=%s, 引数数=%d", function.String(), len(args))
 	
 	// スタンドアロンな関数呼び出しの場合、引数は最大1つまで
 	if len(args) > 1 {
