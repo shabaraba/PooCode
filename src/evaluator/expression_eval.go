@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/uncode/ast"
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
@@ -167,6 +168,8 @@ func evalBooleanInfixExpression(operator string, left, right object.Object) obje
 
 // evalPrefixExpression は前置式を評価する
 func evalPrefixExpression(operator string, right object.Object) object.Object {
+	logger.EvalDebug("<<<評価器デバッグ専用ログ>>> 前置式を評価します: operator=%s, right=%s", operator, right.Inspect())
+	
 	switch operator {
 	case "!":
 		return evalBangOperatorExpression(right)

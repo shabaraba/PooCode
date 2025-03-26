@@ -15,6 +15,7 @@ type Config struct {
 	DebugMode          bool
 	LogLevel           logger.LogLevel
 	ComponentLogLevels map[logger.ComponentType]logger.LogLevel
+	SpecialLogLevels   map[logger.LogLevel]bool  // 特殊なログレベルの有効/無効
 	LogFile            string
 	OutputFile         string
 	ColorOutput        bool
@@ -49,8 +50,9 @@ func (e *UnsupportedExtensionError) Error() string {
 
 // ParseFlags はコマンドライン引数をパースし、設定を行う
 func ParseFlags() error {
-	// ComponentLogLevelsのマップを初期化
+	// マップの初期化
 	GlobalConfig.ComponentLogLevels = make(map[logger.ComponentType]logger.LogLevel)
+	GlobalConfig.SpecialLogLevels = make(map[logger.LogLevel]bool)
 	
 	// コマンドラインフラグのパース
 	flag.BoolVar(&GlobalConfig.DebugMode, "debug", false, "デバッグモードを有効にする")
@@ -114,6 +116,14 @@ func ParseFlags() error {
 		GlobalConfig.ShowEvalDebug = true
 		GlobalConfig.ShowBuiltinDebug = true
 		GlobalConfig.ShowConditionDebug = true
+		
+		// 特殊デバッグログレベルも有効化
+		GlobalConfig.SpecialLogLevels[logger.LevelTypeInfo] = GlobalConfig.ShowTypeInfo
+		GlobalConfig.SpecialLogLevels[logger.LevelEvalDebug] = GlobalConfig.ShowEvalDebug
+	} else {
+		// デバッグモードでない場合の設定
+		GlobalConfig.SpecialLogLevels[logger.LevelTypeInfo] = GlobalConfig.ShowTypeInfo
+		GlobalConfig.SpecialLogLevels[logger.LevelEvalDebug] = GlobalConfig.ShowEvalDebug
 	}
 
 	// ソースファイルのパス取得
@@ -164,6 +174,22 @@ func SetupLogger() error {
 		logger.SetComponentLevel(logger.ComponentBuiltin, logger.LevelDebug)
 	}
 	
+	// 特殊ログレベルの設定を適用
+	for level, enabled := range GlobalConfig.SpecialLogLevels {
+		logger.SetSpecialLevelEnabled(level, enabled)
+	}
+	
+	// 特殊デバッグに関連するコンポーネントのログレベルを設定
+	if GlobalConfig.ShowEvalDebug {
+		// 評価器デバッグログを有効にする場合、評価デバッグレベルも有効化
+		logger.SetSpecialLevelEnabled(logger.LevelEvalDebug, true)
+	}
+	
+	if GlobalConfig.ShowTypeInfo {
+		// 型情報表示を有効にする場合、型情報デバッグレベルを有効化
+		logger.SetSpecialLevelEnabled(logger.LevelTypeInfo, true)
+	}
+	
 	// カラー出力の設定
 	if GlobalConfig.ColorOutput {
 		logger.EnableColor()
@@ -194,6 +220,31 @@ func SetupLogger() error {
 func PrintUsage() {
 	fmt.Println("使用方法: uncode [オプション] <ファイル名>")
 	fmt.Println("オプション:")
+	
+	// config.goのGlobalConfigを初期化して全てのフラグ定義を呼び出す
+	GlobalConfig.ComponentLogLevels = make(map[logger.ComponentType]logger.LogLevel)
+	GlobalConfig.SpecialLogLevels = make(map[logger.LogLevel]bool)
+	
+	// コマンドラインフラグの定義（しかしParseはしない）
+	flag.BoolVar(&GlobalConfig.DebugMode, "debug", false, "デバッグモードを有効にする")
+	flag.StringVar(&GlobalConfig.LogFile, "log", "", "ログファイルのパス (指定がなければ標準出力のみ)")
+	flag.StringVar(&GlobalConfig.OutputFile, "output", "", "出力ファイルのパス (tee で出力を記録)")
+	flag.BoolVar(&GlobalConfig.ColorOutput, "color", true, "カラー出力を有効にする")
+	flag.BoolVar(&GlobalConfig.ShowTimestamp, "timestamp", true, "タイムスタンプを表示する")
+	flag.BoolVar(&GlobalConfig.ShowTypeInfo, "show-types", false, "型情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowLexerDebug, "show-lexer", false, "レキサーのデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowParserDebug, "show-parser", false, "パーサーのデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowEvalDebug, "show-eval", false, "評価時のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowBuiltinDebug, "show-builtin", false, "組み込み関数のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
+	
+	flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
+	flag.String("lexer-log-level", "", "レキサーのログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
+	flag.String("parser-log-level", "", "パーサーのログレベル")
+	flag.String("eval-log-level", "", "評価器のログレベル")
+	flag.String("runtime-log-level", "", "ランタイムのログレベル")
+	flag.String("builtin-log-level", "", "組み込み関数のログレベル")
+	
 	flag.PrintDefaults()
 	fmt.Println("\nサポートされている拡張子: .poo, .💩")
 }

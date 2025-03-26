@@ -67,14 +67,15 @@ const (
 
 // Logger はログを記録するための構造体
 type Logger struct {
-	globalLevel   LogLevel                // グローバルログレベル
+	globalLevel     LogLevel                // グローバルログレベル
 	componentLevels map[ComponentType]LogLevel  // コンポーネント別ログレベル
-	writer        io.Writer
-	fileWriter    io.Writer
-	mu            sync.Mutex
-	isEnabled     bool
-	useColor      bool
-	showTime      bool
+	specialLevels   map[LogLevel]bool      // 特殊なログレベルの有効/無効状態
+	writer          io.Writer
+	fileWriter      io.Writer
+	mu              sync.Mutex
+	isEnabled       bool
+	useColor        bool
+	showTime        bool
 }
 
 var (
@@ -130,13 +131,14 @@ func WithTime(showTime bool) LoggerOption {
 // NewLogger は新しいロガーインスタンスを生成する
 func NewLogger(options ...LoggerOption) *Logger {
 	logger := &Logger{
-		globalLevel:    LevelInfo,
+		globalLevel:     LevelInfo,
 		componentLevels: make(map[ComponentType]LogLevel),
-		writer:         os.Stdout,
-		fileWriter:     nil,
-		isEnabled:      true,
-		useColor:       true,
-		showTime:       true,
+		specialLevels:   make(map[LogLevel]bool),
+		writer:          os.Stdout,
+		fileWriter:      nil,
+		isEnabled:       true,
+		useColor:        true,
+		showTime:        true,
 	}
 	
 	// デフォルトのコンポーネントレベルを設定
@@ -146,6 +148,10 @@ func NewLogger(options ...LoggerOption) *Logger {
 	logger.componentLevels[ComponentEval] = LevelInfo
 	logger.componentLevels[ComponentRuntime] = LevelInfo
 	logger.componentLevels[ComponentBuiltin] = LevelInfo
+	
+	// デフォルトの特殊ログレベル設定（無効）
+	logger.specialLevels[LevelTypeInfo] = false
+	logger.specialLevels[LevelEvalDebug] = false
 	
 	// オプションを適用
 	for _, option := range options {
@@ -188,6 +194,24 @@ func (l *Logger) GetComponentLevel(component ComponentType) LogLevel {
 		return l.componentLevels[ComponentGlobal] // デフォルトはグローバル設定
 	}
 	return level
+}
+
+// SetSpecialLevelEnabled は特殊ログレベルの有効/無効を設定する
+func (l *Logger) SetSpecialLevelEnabled(level LogLevel, enabled bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.specialLevels[level] = enabled
+}
+
+// IsSpecialLevelEnabled は特殊ログレベルが有効かどうかを返す
+func (l *Logger) IsSpecialLevelEnabled(level LogLevel) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	enabled, exists := l.specialLevels[level]
+	if !exists {
+		return false // デフォルトは無効
+	}
+	return enabled
 }
 
 // SetOutput はログの出力先を設定する
@@ -282,7 +306,18 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.isEnabled || level > l.globalLevel {
+	// 特殊ログレベルの判定（LevelTypeInfo, LevelEvalDebugなど）
+	isSpecialLevel := level >= LevelTypeInfo
+	
+	// 特殊ログレベルの場合は専用の有効/無効設定を使用
+	if isSpecialLevel {
+		enabled, exists := l.specialLevels[level]
+		if !exists || !enabled {
+			// 特殊レベルが無効なら出力しない
+			return
+		}
+	} else if !l.isEnabled || level > l.globalLevel {
+		// 通常レベルの場合はグローバルログレベルに基づく
 		return
 	}
 
@@ -294,9 +329,7 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	
 	// ファイルにも書き込み（設定されている場合）
 	if l.fileWriter != nil {
-		// ファイルには色なしで書き込む
-		plainMsg := l.formatLogMessage(level, format, args...)
-		fmt.Fprintln(l.fileWriter, plainMsg)
+		fmt.Fprintln(l.fileWriter, formattedMsg)
 	}
 }
 
@@ -305,15 +338,28 @@ func (l *Logger) logWithComponent(component ComponentType, level LogLevel, forma
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// コンポーネントのログレベルを確認
-	componentLevel, exists := l.componentLevels[component]
-	if !exists {
-		componentLevel = l.componentLevels[ComponentGlobal]
-	}
+	// 特殊ログレベルの判定（LevelTypeInfo, LevelEvalDebugなど）
+	isSpecialLevel := level >= LevelTypeInfo
+	
+	if isSpecialLevel {
+		// 特殊ログレベルの場合は専用の有効/無効設定を使用
+		enabled, exists := l.specialLevels[level]
+		if !exists || !enabled {
+			// 特殊レベルが無効なら出力しない
+			return
+		}
+	} else {
+		// 通常レベルの場合はコンポーネントレベルに基づく
+		// コンポーネントのログレベルを確認
+		componentLevel, exists := l.componentLevels[component]
+		if !exists {
+			componentLevel = l.componentLevels[ComponentGlobal]
+		}
 
-	// コンポーネントのログレベルに基づきフィルタリング
-	if !l.isEnabled || level > componentLevel {
-		return
+		// コンポーネントのログレベルに基づきフィルタリング
+		if !l.isEnabled || level > componentLevel {
+			return
+		}
 	}
 
 	// コンポーネント名を含むフォーマット済みのメッセージを生成
@@ -429,6 +475,14 @@ func SetComponentLevel(component ComponentType, level LogLevel) {
 
 func GetComponentLevel(component ComponentType) LogLevel {
 	return GetLogger().GetComponentLevel(component)
+}
+
+func SetSpecialLevelEnabled(level LogLevel, enabled bool) {
+	GetLogger().SetSpecialLevelEnabled(level, enabled)
+}
+
+func IsSpecialLevelEnabled(level LogLevel) bool {
+	return GetLogger().IsSpecialLevelEnabled(level)
 }
 
 func SetOutput(w io.Writer) {

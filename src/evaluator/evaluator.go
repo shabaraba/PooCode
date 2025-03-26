@@ -16,6 +16,7 @@ var (
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
 	logger.Debug("評価中のノード: %T", node)
+	logger.EvalDebug("<<<評価器デバッグ専用ログ>>> 評価中のノード: %T", node)
 
 	switch node := node.(type) {
 	case *ast.Program:
