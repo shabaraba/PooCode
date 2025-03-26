@@ -9,9 +9,6 @@ import (
 // 組み込み関数のマップ
 var Builtins map[string]*object.Builtin
 
-// NullObj はnull値の共有インスタンス
-var NullObj = &object.Null{}
-
 // ビルトイン関数のロギングレベル
 var builtinLogLevel = logger.LevelDebug
 

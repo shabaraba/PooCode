@@ -11,7 +11,7 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 	switch fn := fn.(type) {
 	case *object.Function:
 		// 関数呼び出しの実装
-		logger.Debug("関数を呼び出します:", fn.Inspect())
+		logger.Debug("関数を呼び出します: %s", fn.Inspect())
 
 		// 修正: 引数は1つまでだけ許可（パイプライン以外）
 		if len(fn.Parameters) > 1 {

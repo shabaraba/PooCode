@@ -8,11 +8,6 @@ import (
 	"github.com/uncode/object"
 )
 
-var (
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
-)
-
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
 	logger.Debug("評価中のノード: %T", node)
@@ -37,10 +32,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 
 	case *ast.BooleanLiteral:
 		logger.Debug("真偽値リテラルを評価")
-		if node.Value {
-			return TRUE
-		}
-		return FALSE
+		return &object.Boolean{Value: node.Value}
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
@@ -239,19 +231,17 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	// その他のケース
 	default:
 		logger.Warn("未実装のノードタイプ: %T", node)
-		return NullObj
+		return NULL
 	}
 }
 
 // isTruthy は値が真かどうかを判定する
 func isTruthy(obj object.Object) bool {
-	switch obj {
-	case NullObj:
+	switch obj.Type() {
+	case object.NULL_OBJ:
 		return false
-	case TRUE:
-		return true
-	case FALSE:
-		return false
+	case object.BOOLEAN_OBJ:
+		return obj.(*object.Boolean).Value
 	default:
 		// 数値の場合、0以外は真
 		if integer, ok := obj.(*object.Integer); ok {

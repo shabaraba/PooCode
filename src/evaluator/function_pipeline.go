@@ -9,7 +9,7 @@ import (
 // applyPipelineFunction は関数を適用する（パイプラインの場合同様に🍕も設定）
 func applyPipelineFunction(fn *object.Function, args []object.Object) object.Object {
 	// 関数呼び出しの実装
-	logger.Debug("パイプライン対応で関数を呼び出します:", fn.Inspect())
+	logger.Debug("パイプライン対応で関数を呼び出します: %s", fn.Inspect())
 
 	// 引数とパラメータのデバッグ出力
 	logger.Debug("関数パラメータ数: %d, 引数数: %d\n", len(fn.Parameters), len(args))

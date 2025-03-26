@@ -68,7 +68,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		return applyFunctionWithPizza(functions[0], args)
 	}
 
-	logger.Debug("複数の関数が見つかりました:", len(functions))
+	logger.Debug("複数の関数が見つかりました: %d", len(functions))
 
 	// 条件付き関数と条件なし関数をグループ化
 	var conditionalFuncs []*object.Function
