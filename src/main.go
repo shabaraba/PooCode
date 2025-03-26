@@ -1,99 +1,42 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/uncode/evaluator"
-	"github.com/uncode/lexer"
+	"github.com/uncode/config"
 	"github.com/uncode/logger"
-	"github.com/uncode/object"
-	"github.com/uncode/parser"
+	"github.com/uncode/runtime"
 )
-
-var debugMode bool
 
 func main() {
 	// コマンドラインフラグのパース
-	flag.BoolVar(&debugMode, "debug", false, "デバッグモードを有効にする")
-	if debugMode {
-		logger.SetLevel(logger.LevelDebug)
-	} else {
-		logger.SetLevel(logger.LevelInfo)
-	}
-	flag.Parse()
-
-	args := flag.Args()
-	if len(args) != 1 {
-		fmt.Println("使用方法: uncode [オプション] <ファイル名>")
-		fmt.Println("オプション:")
-		flag.PrintDefaults()
-		os.Exit(1)
-	}
-
-	filename := args[0]
-	ext := filepath.Ext(filename)
-	if ext != ".poo" && ext != ".💩" {
-		fmt.Printf("エラー: サポートされていないファイル拡張子です: %s\n", ext)
-		fmt.Println("サポートされている拡張子: .poo, .💩")
-		os.Exit(1)
-	}
-
-	content, err := os.ReadFile(filename)
+	err := config.ParseFlags()
 	if err != nil {
-		fmt.Printf("エラー: ファイルを読み込めませんでした: %s\n", err)
+		fmt.Fprintln(os.Stderr, err)
+		config.PrintUsage()
 		os.Exit(1)
 	}
 
-	logger.Debug("ファイル内容:\n%s\n", string(content))
-
-	// レキサーでトークン化
-	l := lexer.NewLexer(string(content))
-	tokens, err := l.Tokenize()
+	// ロガーの設定
+	err = config.SetupLogger()
 	if err != nil {
-		logger.Error("レキサーエラー: %s\n", err)
+		fmt.Fprintf(os.Stderr, "ロガーの初期化エラー: %s\n", err)
 		os.Exit(1)
 	}
 
-	// デバッグモードの場合、トークン列を表示
-	logger.Debug("トークン列:")
-	for i, tok := range tokens {
-		logger.Debug("%d: %s\n", i, tok.String())
-	}
+	// バージョン情報のログ
+	logger.Info("PooCode インタプリタ バージョン 0.1.0")
+	logger.Debug("デバッグモード: %v", config.GlobalConfig.DebugMode)
+	logger.Debug("ログレベル: %s", logger.LevelNames[config.GlobalConfig.LogLevel])
 
-	// パーサーで構文解析
-	p := parser.NewParser(tokens)
-	program, err := p.ParseProgram()
+	// ソースファイルの実行
+	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)
 	if err != nil {
-		logger.Error("パーサーエラー: %s\n", err)
-		os.Exit(1)
+		// エラーはruntime内でログ出力されるので、ここでは終了コードだけ設定
+		os.Exit(result.ExitCode)
 	}
 
-	logger.Debug("構文木:")
-	logger.Debug(program.String())
-
-	// インタプリタで実行
-	env := object.NewEnvironment()
-	// プリント関数を追加
-	env.Set("print", &object.Builtin{
-		Fn: func(args ...object.Object) object.Object {
-			for _, arg := range args {
-				fmt.Println(arg.Inspect())
-			}
-			return evaluator.NULL
-		},
-	})
-
-	result := evaluator.Eval(program, env)
-	if result != nil && result.Type() == object.ERROR_OBJ {
-		logger.Error("実行時エラー: %s\n", result.Inspect())
-		os.Exit(1)
-	}
-
-	// デバッグモードの場合、実行結果を表示
-	if result != nil {
-		logger.Info("実行結果: %s\n", result.Inspect())
-	}
+	// 正常終了
+	os.Exit(0)
 }
