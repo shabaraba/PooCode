@@ -8,6 +8,23 @@ import (
 	"github.com/uncode/object"
 )
 
+// 組み込み関数の型情報を取得する関数
+// GetBuiltinReturnType は組み込み関数の戻り値の型を返す
+func GetBuiltinReturnType(name string) object.ObjectType {
+	if builtin, ok := Builtins[name]; ok {
+		return builtin.ReturnType
+	}
+	return object.NULL_OBJ
+}
+
+// GetBuiltinParamTypes は組み込み関数のパラメータの型を返す
+func GetBuiltinParamTypes(name string) []object.ObjectType {
+	if builtin, ok := Builtins[name]; ok {
+		return builtin.ParamTypes
+	}
+	return nil
+}
+
 // 組み込み関数のマップ
 var Builtins = map[string]*object.Builtin{
 	"print": &object.Builtin{
@@ -250,6 +267,8 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Integer{Value: result}
 		},
+		ReturnType: object.INTEGER_OBJ,
+		ParamTypes: []object.ObjectType{object.INTEGER_OBJ, object.INTEGER_OBJ},
 	},
 	"to_string": &object.Builtin{
 		Name: "to_string",
@@ -269,6 +288,8 @@ var Builtins = map[string]*object.Builtin{
 				return &object.String{Value: arg.Inspect()}
 			}
 		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.ANY_OBJ},
 	},
 	"length": &object.Builtin{
 		Name: "length",
@@ -551,5 +572,29 @@ var Builtins = map[string]*object.Builtin{
 			
 			return &object.Integer{Value: sum}
 		},
+		ReturnType: object.INTEGER_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ},
+	},
+	"typeof": &object.Builtin{
+		Name: "typeof",
+		Fn: func(args ...object.Object) object.Object {
+			if len(args) != 1 {
+				return newError("typeof関数は1つの引数が必要です: %d個与えられました", len(args))
+			}
+
+			// 引数が文字列の場合、組み込み関数名として解釈
+			if str, ok := args[0].(*object.String); ok {
+				funcName := str.Value
+				if builtin, exists := Builtins[funcName]; exists {
+					return &object.String{Value: string(builtin.ReturnType)}
+				}
+				return newError("組み込み関数 '%s' は存在しません", funcName)
+			}
+
+			// その他の型はそのまま型情報を返す
+			return &object.String{Value: string(args[0].Type())}
+		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.ANY_OBJ},
 	},
 }

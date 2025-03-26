@@ -58,9 +58,11 @@ type BuiltinFunction func(args ...Object) Object
 
 // Builtin は組み込み関数を表す
 type Builtin struct {
-	Name string           // 関数名
-	Fn   BuiltinFunction
-	Poo  Object // 💩メンバ
+	Name        string           // 関数名
+	Fn          BuiltinFunction  // 実装関数
+	ReturnType  ObjectType       // 戻り値の型
+	ParamTypes  []ObjectType     // パラメータの型（可変長対応）
+	Poo         Object           // 💩メンバ
 }
 
 func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }

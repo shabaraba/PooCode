@@ -17,6 +17,9 @@ const (
 	HASH_OBJ         = "HASH"
 	CLASS_OBJ        = "CLASS"
 	INSTANCE_OBJ     = "INSTANCE"
+	
+	// 特殊な型
+	ANY_OBJ          = "ANY"     // どの型でも受け付ける
 )
 
 // Object はすべての値のインターフェース

@@ -1,0 +1,35 @@
+// 組み込み関数の型情報を取得するテスト
+
+// 標準出力表示
+print("Testing builtin function return types\n")
+
+// to_string関数の型情報を取得
+str_type = typeof("to_string")
+print("to_string return type: " + str_type)
+
+// pow関数の型情報を取得
+pow_type = typeof("pow")
+print("pow return type: " + pow_type)
+
+// 実際の関数呼び出し結果の型を確認
+num = 123
+str = to_string(num)
+print("Value: " + str)
+print("Type of value: " + typeof(str))
+
+// 動的な型チェック
+function check_type(value, expected_type) {
+    actual_type = typeof(value)
+    if (actual_type == expected_type) {
+        print("Type check passed: " + actual_type + " matches " + expected_type)
+    } else {
+        print("Type check failed: expected " + expected_type + " but got " + actual_type)
+    }
+}
+
+// 各種型のテスト
+check_type(42, "INTEGER")
+check_type("hello", "STRING")
+check_type(true, "BOOLEAN")
+check_type(pow(2, 3), "INTEGER")
+check_type(to_string(123), "STRING")
