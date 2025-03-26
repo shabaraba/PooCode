@@ -15,12 +15,12 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 
 		// 修正: 引数は1つまでだけ許可（パイプライン以外）
 		if len(fn.Parameters) > 1 {
-			return newError("関数は最大1つのパラメータしか持てません（パイプライン以外）: %s", fn.Inspect())
+			return createError("関数は最大1つのパラメータしか持てません（パイプライン以外）: %s", fn.Inspect())
 		}
 
 		// 引数の数をチェック
 		if len(args) != len(fn.Parameters) {
-			return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+			return createError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 		}
 
 		// 入力型のチェック（パラメータが定義されている型と一致するか）
@@ -28,7 +28,7 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 			logger.Debug("入力型チェック: 関数=%s, 入力型=%s, 実際=%s", 
 				fn.Inspect(), fn.InputType, args[0].Type())
 			if ok, err := checkInputType(args[0], fn.InputType); !ok {
-				return newError("%s", err.Error())
+				return createError("%s", err.Error())
 			}
 		}
 		
@@ -46,7 +46,7 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 		// 関数本体を評価（ASTBodyをast.BlockStatementに型アサーション）
 		astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 		if !ok {
-			return newError("関数の本体がBlockStatementではありません")
+			return createError("関数の本体がBlockStatementではありません")
 		}
 		result := evalBlockStatement(astBody, extendedEnv)
 
@@ -57,7 +57,7 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 				logger.Debug("戻り値型チェック: 関数=%s, 戻り値型=%s, 実際=%s",
 					fn.Inspect(), fn.ReturnType, obj.Value.Type())
 				if ok, err := checkReturnType(obj.Value, fn.ReturnType); !ok {
-					return newError("%s", err.Error())
+					return createError("%s", err.Error())
 				}
 			}
 			return obj.Value
@@ -74,6 +74,6 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 		return fn.Fn(args...)
 
 	default:
-		return newError("関数ではありません: %s", fn.Type())
+		return createError("関数ではありません: %s", fn.Type())
 	}
 }

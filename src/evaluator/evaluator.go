@@ -9,7 +9,6 @@ import (
 )
 
 var (
-	NULL  = &object.Null{}
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
 )
@@ -48,7 +47,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if val, ok := env.Get("🍕"); ok {
 			return val
 		}
-		return newError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
+		return createError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 
 	case *ast.PooLiteral:
 		logger.Debug("💩リテラルを評価")
@@ -170,7 +169,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if fn, ok := function.(*object.Function); ok {
 			// 引数の数をチェック
 			if len(args) != len(fn.Parameters) {
-				return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+				return createError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 			}
 
 			// 新しい環境を作成
@@ -187,7 +186,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			// 関数本体を評価
 			astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 			if !ok {
-				return newError("関数の本体がBlockStatementではありません")
+				return createError("関数の本体がBlockStatementではありません")
 			}
 			result := evalBlockStatement(astBody, extendedEnv)
 
@@ -200,7 +199,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			return builtin.Fn(args...)
 		}
 
-		return newError("関数ではありません: %s", function.Type())
+		return createError("関数ではありません: %s", function.Type())
 
 	case *ast.Identifier:
 		logger.Debug("識別子を評価")
@@ -239,12 +238,12 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	// その他のケース
 	default:
 		logger.Warn("未実装のノードタイプ: %T", node)
-		return NULL
+		return NullObj
 	}
 }
 
 // エラー生成用ヘルパー関数
-func newError(format string, a ...interface{}) *object.Error {
+func createError(format string, a ...interface{}) *object.Error {
 	msg := fmt.Sprintf(format, a...)
 	logger.Error("実行時エラー: %s", msg)
 	return &object.Error{Message: msg}
@@ -253,7 +252,7 @@ func newError(format string, a ...interface{}) *object.Error {
 // isTruthy は値が真かどうかを判定する
 func isTruthy(obj object.Object) bool {
 	switch obj {
-	case NULL:
+	case NullObj:
 		return false
 	case TRUE:
 		return true
@@ -272,4 +271,3 @@ func isTruthy(obj object.Object) bool {
 		return true
 	}
 }
-

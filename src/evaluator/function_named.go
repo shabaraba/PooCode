@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -34,7 +35,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	functions := env.GetAllFunctionsByName(name)
 
 	if len(functions) == 0 {
-		return newError("関数 '%s' が見つかりません", name)
+		return createError("関数 '%s' が見つかりません", name)
 	}
 
 	// デバッグ情報
@@ -127,5 +128,43 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	}
 
 	// 適用可能な関数が見つからない場合
-	return newError("条件に一致する関数 '%s' が見つかりません", name)
+	return createError("条件に一致する関数 '%s' が見つかりません", name)
+}
+
+// applyFunctionWithPizza は関数に🍕をセットして実行する
+func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Object {
+	// 関数呼び出し用の新しい環境を作成
+	extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+
+	// 引数をバインド
+	if len(args) > 0 {
+		// 第1引数は特別に🍕にもセット
+		extendedEnv.Set("🍕", args[0])
+
+		// 通常の引数セット
+		for i, param := range fn.Parameters {
+			if i < len(args) {
+				extendedEnv.Set(param.Value, args[i])
+			} else {
+				return createError("引数の数が足りません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+			}
+		}
+	} else if len(fn.Parameters) > 0 {
+		return createError("引数が足りません: 期待=%d, 実際=0", len(fn.Parameters))
+	}
+
+	// 関数本体を評価
+	astBody, ok := fn.ASTBody.(*ast.BlockStatement)
+	if !ok {
+		return createError("関数の本体がBlockStatementではありません")
+	}
+
+	evaluated := evalBlockStatement(astBody, extendedEnv)
+
+	// ReturnValue の場合は Value を抽出
+	if returnValue, ok := evaluated.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+
+	return evaluated
 }

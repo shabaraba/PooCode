@@ -72,7 +72,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		if ident, ok := callExpr.Function.(*ast.Identifier); ok {
 			funcName = ident.Value
 		} else {
-			return newError("パイプラインの右側の関数名を取得できません: %T", callExpr.Function)
+			return createError("パイプラインの右側の関数名を取得できません: %T", callExpr.Function)
 		}
 
 		// 引数を評価（一時環境で評価することで🍕の影響を分離）
@@ -181,7 +181,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 
 					// 通常の引数を環境にバインド
 					if len(args) != len(fn.Parameters) {
-						return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+						return createError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 					}
 
 					for i, param := range fn.Parameters {
@@ -194,7 +194,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 					// 関数本体を評価
 					astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 					if !ok {
-						return newError("関数の本体がBlockStatementではありません")
+						return createError("関数の本体がBlockStatementではありません")
 					}
 					result = evalBlockStatement(astBody, extendedEnv)
 
@@ -217,12 +217,12 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 					result = builtin.Fn(args...)
 					logger.Debug("ビルトイン関数の結果: %s\n", result.Inspect())
 				} else {
-					return newError("関数ではありません: %s", function.Type())
+					return createError("関数ではありません: %s", function.Type())
 				}
 			}
 		} else {
 			// その他の場合は処理できない
-			return newError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
+			return createError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
 		}
 	}
 
@@ -263,5 +263,5 @@ func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.O
 		return &object.ReturnValue{Value: left}
 	}
 
-	return newError("代入先が識別子または💩ではありません: %T", right)
+	return createError("代入先が識別子または💩ではありません: %T", right)
 }

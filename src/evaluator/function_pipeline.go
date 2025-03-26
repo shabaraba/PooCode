@@ -34,7 +34,7 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 		logger.Debug("入力型チェック: 関数=%s, 入力型=%s, 実際=%s", 
 			fn.Inspect(), fn.InputType, args[0].Type())
 		if ok, err := checkInputType(args[0], fn.InputType); !ok {
-			return newError("%s", err.Error())
+			return createError("%s", err.Error())
 		}
 	}
 
@@ -71,7 +71,7 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 	// 関数本体を評価（ASTBodyをast.BlockStatementに型アサーション）
 	astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 	if !ok {
-		return newError("関数の本体がBlockStatementではありません")
+		return createError("関数の本体がBlockStatementではありません")
 	}
 
 	logger.Debug("関数本体を評価します...")
@@ -86,7 +86,7 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 			logger.Debug("戻り値型チェック: 関数=%s, 戻り値型=%s, 実際=%s",
 				fn.Inspect(), fn.ReturnType, obj.Value.Type())
 			if ok, err := checkReturnType(obj.Value, fn.ReturnType); !ok {
-				return newError("%s", err.Error())
+				return createError("%s", err.Error())
 			}
 		}
 		
