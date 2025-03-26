@@ -7,6 +7,7 @@ package evaluator
 import (
 	"fmt"
 	
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
@@ -19,8 +20,10 @@ var (
 	FALSE = &object.Boolean{Value: false}
 )
 
-// CreateError creates an error object with formatted message
+// createError creates an error object with formatted message
 // This is exported to avoid initialization cycle issues
-func CreateError(format string, a ...interface{}) *object.Error {
-	return &object.Error{Message: fmt.Sprintf(format, a...)}
+func createError(format string, a ...interface{}) *object.Error {
+	msg := fmt.Sprintf(format, a...)
+	logger.Error("実行時エラー: %s", msg)
+	return &object.Error{Message: msg}
 }

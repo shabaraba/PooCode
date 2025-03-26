@@ -8,11 +8,6 @@ import (
 	"github.com/uncode/object"
 )
 
-var (
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
-)
-
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
 	logger.Debug("評価中のノード: %T", node)
