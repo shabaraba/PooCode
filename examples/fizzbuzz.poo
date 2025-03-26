@@ -15,35 +15,20 @@ def showBuzz() if 🍕 % 5 == 0 : int -> str {
 def showBuzz() : int -> str {
     "" >> 💩;
 }
+
+def showNumber(num) if 🍕 != "" : str -> str {
+    num |> to_string >> 💩;
+}
+def showNumber(num) : str -> str {
+    🍕 >> 💩;
+}
  
 def fizzbuzz(): int -> str {
-    🍕 >> tmp;
     "" >> result;
     
-    tmp |> showFizz |> add result >> result;
-    tmp |> showBuzz |> add result >> 💩;
+    🍕 |> showFizz |> add result >> result;
+    🍕 |> showBuzz |> add result |> showNumber 🍕 >> 💩;
+
 }
 
-// 拡張したテスト: 1〜20までの数値に対してfizzbuzzを実行
-print "=== fizzbuzz オリジナル（一時変数版） ===";
-3 |> fizzbuzz |> print;   // Fizz
-5 |> fizzbuzz |> print;   // Buzz
-15 |> fizzbuzz |> print;  // FizzBuzz
-4 |> fizzbuzz |> print;   // 空文字
-
-// 一時変数を使わないバージョン
-def fizzbuzz_direct(): int -> str {
-    "" >> result;
-    
-    // 直接パイプラインで渡す（修正後はこれでも正しく動作するはず）
-    🍕 |> showFizz >> fizz;
-    🍕 |> showBuzz >> buzz;
-    
-    fizz + buzz >> 💩;
-}
-
-print "\n=== fizzbuzz 直接パイプライン版（修正後） ===";
-3 |> fizzbuzz_direct |> print;   // Fizz
-5 |> fizzbuzz_direct |> print;   // Buzz
-15 |> fizzbuzz_direct |> print;  // FizzBuzz
-4 |> fizzbuzz_direct |> print;   // 空文字
+1 |> fizzbuzz |> print;

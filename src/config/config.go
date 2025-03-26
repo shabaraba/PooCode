@@ -11,12 +11,17 @@ import (
 
 // Config はアプリケーション全体の設定を保持する構造体
 type Config struct {
-	SourceFile    string
-	DebugMode     bool
-	LogLevel      logger.LogLevel
-	LogFile       string
-	ColorOutput   bool
-	ShowTimestamp bool
+	SourceFile     string
+	DebugMode      bool
+	LogLevel       logger.LogLevel
+	LogFile        string
+	OutputFile     string
+	ColorOutput    bool
+	ShowTimestamp  bool
+	ShowTypeInfo   bool
+	ShowLexerDebug bool
+	ShowParserDebug bool
+	ShowEvalDebug   bool
 }
 
 // GlobalConfig はアプリケーション全体で使用される設定
@@ -44,8 +49,13 @@ func ParseFlags() error {
 	// コマンドラインフラグのパース
 	flag.BoolVar(&GlobalConfig.DebugMode, "debug", false, "デバッグモードを有効にする")
 	flag.StringVar(&GlobalConfig.LogFile, "log", "", "ログファイルのパス (指定がなければ標準出力のみ)")
+	flag.StringVar(&GlobalConfig.OutputFile, "output", "", "出力ファイルのパス (tee で出力を記録)")
 	flag.BoolVar(&GlobalConfig.ColorOutput, "color", true, "カラー出力を有効にする")
 	flag.BoolVar(&GlobalConfig.ShowTimestamp, "timestamp", true, "タイムスタンプを表示する")
+	flag.BoolVar(&GlobalConfig.ShowTypeInfo, "show-types", false, "型情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowLexerDebug, "show-lexer", false, "レキサーのデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowParserDebug, "show-parser", false, "パーサーのデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowEvalDebug, "show-eval", false, "評価時のデバッグ情報を表示する")
 
 	// ログレベルをフラグで指定できるようにする
 	logLevelStr := flag.String("log-level", "", "ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
@@ -59,6 +69,13 @@ func ParseFlags() error {
 		GlobalConfig.LogLevel = logger.LevelDebug
 	} else {
 		GlobalConfig.LogLevel = logger.LevelInfo
+	}
+
+	// デバッグフラグを設定した場合は自動的に対応するデバッグを有効にする
+	if GlobalConfig.DebugMode {
+		GlobalConfig.ShowLexerDebug = true
+		GlobalConfig.ShowParserDebug = true 
+		GlobalConfig.ShowEvalDebug = true
 	}
 
 	// ソースファイルのパス取得

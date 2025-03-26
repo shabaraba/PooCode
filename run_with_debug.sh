@@ -9,5 +9,5 @@ FILE=${1:-examples/fizzbuzz.poo}
 # ビルドして実行（--debugフラグ付き）
 bash build.sh
 
-echo "テストファイル $FILE を実行しています..."
-./bin/uncode --debug $FILE | tee ai/output_debug.log
+echo "テストファイル $FILE を実行しています（デバッグモード）..."
+./bin/uncode --debug --log-level=DEBUG --log=ai/output.log --color --timestamp $FILE | tee ai/output_debug.log

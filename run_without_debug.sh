@@ -3,6 +3,11 @@
 
 cd /Users/t002451/my_work/private/PooCode
 
+# コマンドライン引数を取得
+FILE=${1:-examples/fizzbuzz.poo}
+
 # ビルドして実行（デバッグフラグなし）
 bash build.sh
-./bin/uncode --color --timestamp --log-level=INFO --log=ai/output.log examples/fizzbuzz.poo | tee ai/output_clean.log
+
+echo "テストファイル $FILE を実行しています（通常モード）..."
+./bin/uncode --color --timestamp --log-level=INFO --log=ai/output.log $FILE | tee ai/output_clean.log

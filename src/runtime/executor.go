@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/uncode/ast"
+	"github.com/uncode/config"
 	"github.com/uncode/evaluator"
 	"github.com/uncode/lexer"
 	"github.com/uncode/logger"
@@ -48,7 +49,10 @@ func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 		return nil, fmt.Errorf("ファイルを読み込めませんでした: %w", err)
 	}
 
-	logger.Debug("ファイル内容:\n%s\n", string(content))
+	// ファイル内容をデバッグ出力
+	if config.GlobalConfig.ShowLexerDebug {
+		logger.Debug("ファイル内容:\n%s\n", string(content))
+	}
 
 	// レキサーでトークン化
 	l := lexer.NewLexer(string(content))
@@ -60,10 +64,12 @@ func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 	}
 	result.Tokens = tokens
 
-	// デバッグモードの場合、トークン列を表示
-	logger.Debug("トークン列:")
-	for i, tok := range tokens {
-		logger.Debug("%d: %s\n", i, tok.String())
+	// トークン列をデバッグ出力
+	if config.GlobalConfig.ShowLexerDebug {
+		logger.Debug("トークン列:")
+		for i, tok := range tokens {
+			logger.Debug("%d: %s\n", i, tok.String())
+		}
 	}
 
 	// パーサーで構文解析
@@ -76,12 +82,25 @@ func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 	}
 	result.Program = program
 
-	logger.Debug("構文木:")
-	logger.Debug(program.String())
+	// 構文木をデバッグ出力
+	if config.GlobalConfig.ShowParserDebug {
+		logger.Debug("構文木:")
+		logger.Debug(program.String())
+	}
 
 	// インタプリタで実行
 	env := object.NewEnvironment()
 	SetupBuiltins(env)
+
+	// 型情報のデバッグ出力を設定
+	if config.GlobalConfig.ShowTypeInfo {
+		logger.SetLevel(logger.LevelTypeInfo)
+	}
+
+	// 評価フェーズのデバッグ出力
+	if config.GlobalConfig.ShowEvalDebug {
+		logger.Debug("評価フェーズ開始...")
+	}
 
 	evalResult := evaluator.Eval(program, env)
 	result.Result = evalResult
@@ -93,7 +112,7 @@ func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 	}
 
 	// 実行結果を表示
-	if evalResult != nil {
+	if evalResult != nil && config.GlobalConfig.ShowEvalDebug {
 		logger.Info("実行結果: %s\n", evalResult.Inspect())
 	}
 

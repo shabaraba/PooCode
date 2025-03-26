@@ -19,7 +19,6 @@ func main() {
 	}
 
 	// ロガーの設定
-	fmt.Print("logger")
 	err = config.SetupLogger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ロガーの初期化エラー: %s\n", err)
@@ -30,6 +29,7 @@ func main() {
 	logger.Info("PooCode インタプリタ バージョン 0.1.0")
 	logger.Debug("デバッグモード: %v", config.GlobalConfig.DebugMode)
 	logger.Debug("ログレベル: %s", logger.LevelNames[config.GlobalConfig.LogLevel])
+	logger.Debug("ソースファイル: %s", config.GlobalConfig.SourceFile)
 
 	// ソースファイルの実行
 	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)
