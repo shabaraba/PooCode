@@ -23,6 +23,15 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 			return newError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 		}
 
+		// 入力型のチェック（パラメータが定義されている型と一致するか）
+		if len(args) > 0 && fn.InputType != "" {
+			logger.Debug("入力型チェック: 関数=%s, 入力型=%s, 実際=%s", 
+				fn.Inspect(), fn.InputType, args[0].Type())
+			if ok, err := checkInputType(args[0], fn.InputType); !ok {
+				return newError("%s", err.Error())
+			}
+		}
+		
 		// 新しい環境を作成
 		extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 
@@ -43,6 +52,14 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 
 		// 💩値を返す（関数の戻り値）
 		if obj, ok := result.(*object.ReturnValue); ok {
+			// 戻り値の型チェック
+			if fn.ReturnType != "" {
+				logger.Debug("戻り値型チェック: 関数=%s, 戻り値型=%s, 実際=%s",
+					fn.Inspect(), fn.ReturnType, obj.Value.Type())
+				if ok, err := checkReturnType(obj.Value, fn.ReturnType); !ok {
+					return newError("%s", err.Error())
+				}
+			}
 			return obj.Value
 		}
 		return result
