@@ -6,8 +6,8 @@ import (
 	"github.com/uncode/object"
 )
 
-// applyFunctionWithPizza は関数を適用する（パイプラインの場合同様に🍕も設定）
-func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Object {
+// applyPipelineFunction は関数を適用する（パイプラインの場合同様に🍕も設定）
+func applyPipelineFunction(fn *object.Function, args []object.Object) object.Object {
 	// 関数呼び出しの実装
 	logger.Debug("パイプライン対応で関数を呼び出します:", fn.Inspect())
 

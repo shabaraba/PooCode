@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	// Common boolean objects for reuse
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
 )
