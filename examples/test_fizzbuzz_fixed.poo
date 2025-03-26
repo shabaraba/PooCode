@@ -1,0 +1,51 @@
+// fizzbuzzテスト（修正後）
+
+// 3の倍数のときは"Fizz"、そうでないときは空文字を返す
+def showFizz() if 🍕 % 3 == 0: int -> str {
+    "Fizz" >> 💩;
+}
+def showFizz(): int -> str {
+    "" >> 💩;
+}
+
+// 5の倍数のときは"Buzz"、そうでないときは空文字を返す
+def showBuzz() if 🍕 % 5 == 0: int -> str {
+    "Buzz" >> 💩;
+}
+def showBuzz(): int -> str {
+    "" >> 💩;
+}
+
+// 一時変数を使わないfizzbuzz実装
+// 修正後は両方のパイプラインで元の🍕値が使われるはず
+def fizzbuzz(): int -> str {
+    "" >> result;
+    
+    // 元の値を一時変数に保存する代わりに、直接パイプラインで渡す
+    🍕 |> showFizz >> fizz;
+    🍕 |> showBuzz >> buzz;
+    
+    // 結果を結合
+    fizz + buzz >> 💩;
+}
+
+// テスト実行
+print "=== fizzbuzzテスト（修正後）===";
+
+// 3と5の倍数の場合
+print "15 -> ";
+15 |> fizzbuzz |> print;  // "FizzBuzz"が期待値
+
+// 3の倍数のみの場合
+print "6 -> ";
+6 |> fizzbuzz |> print;   // "Fizz"が期待値
+
+// 5の倍数のみの場合
+print "10 -> ";
+10 |> fizzbuzz |> print;  // "Buzz"が期待値
+
+// どちらの倍数でもない場合
+print "7 -> ";
+7 |> fizzbuzz |> print;   // ""（空文字）が期待値
+
+print "=== テスト終了 ===";
