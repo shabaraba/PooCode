@@ -8,6 +8,8 @@ import (
 	"github.com/uncode/object"
 )
 
+// This file uses variables and functions defined in common.go
+
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
 	logger.Debug("評価中のノード: %T", node)
