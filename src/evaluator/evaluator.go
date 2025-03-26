@@ -8,7 +8,10 @@ import (
 	"github.com/uncode/object"
 )
 
-// This file uses variables and functions defined in common.go
+var (
+	TRUE  = &object.Boolean{Value: true}
+	FALSE = &object.Boolean{Value: false}
+)
 
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
