@@ -13,6 +13,6 @@ def test(num): int -> int {
 }
 
 // テスト: 値を表示
-0 |> test(999) |> print  // 100が返るはず 
-1 |> test(999) |> print  // 200が返るはず
-2 |> test(999) |> print  // 300が返るはず
+0 |> test(999) |> print;  // 100が返るはず 
+1 |> test(999) |> print;  // 200が返るはず
+2 |> test(999) |> print;  // 300が返るはず

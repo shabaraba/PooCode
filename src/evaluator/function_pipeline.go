@@ -54,7 +54,6 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 			// パラメータ名を取得
 			paramName := fn.Parameters[0].Value
 
-			// numパラメータにどの値を設定するか
 			if len(args) > 1 {
 				// 複数引数の場合: 第2引数をnumに設定
 				extendedEnv.Set(paramName, args[1])

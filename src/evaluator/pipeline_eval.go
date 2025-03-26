@@ -73,16 +73,6 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		logger.Debug("パイプラインの関数名: %s, 左辺値: %s, 引数: %v\n",
 			funcName, left.Inspect(), args)
 
-		// test関数への呼び出しなら値の変換を試みる
-		if funcName == "test" && left.Type() == object.STRING_OBJ {
-			origLeft := left
-			left = maybeConvertToInteger(left)
-			if left != origLeft {
-				logger.Debug("文字列 %s を数値 %s に変換しました\n",
-					origLeft.Inspect(), left.Inspect())
-			}
-		}
-
 		// 引数の配列を作成（第一引数は左辺の値、第二引数以降は関数の引数）
 		allArgs := []object.Object{left}
 		allArgs = append(allArgs, args...)
@@ -108,16 +98,6 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 
 		logger.Debug("パイプラインから applyNamedFunction を呼び出します (関数名: %s)\n", ident.Value)
 
-		// test関数への呼び出しなら値の変換を試みる
-		if ident.Value == "test" && left.Type() == object.STRING_OBJ {
-			origLeft := left
-			left = maybeConvertToInteger(left)
-			if left != origLeft {
-				logger.Debug("文字列 %s を数値 %s に変換しました\n",
-					origLeft.Inspect(), left.Inspect())
-			}
-		}
-
 		// 環境変数 🍕 を設定して名前付き関数呼び出しへ処理を委譲
 		// ここで左辺の値を唯一の引数として渡す
 		args := []object.Object{left}
@@ -137,16 +117,6 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 		// 関数名を識別子から直接取得
 		if ident, ok := callExpr.Function.(*ast.Identifier); ok {
 			logger.Debug("パイプラインでビルトイン関数 '%s' を呼び出します\n", ident.Value)
-
-			// 特殊処理: 左辺値が文字列でtest関数に渡される場合、整数変換を試みる
-			if left.Type() == object.STRING_OBJ && ident.Value == "test" {
-				origLeft := left
-				left = maybeConvertToInteger(left)
-				if left != origLeft {
-					logger.Debug("文字列 %s を数値 %s に変換しました\n",
-						origLeft.Inspect(), left.Inspect())
-				}
-			}
 
 			// 引数を評価
 			args := evalExpressions(callExpr.Arguments, env)

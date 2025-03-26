@@ -22,8 +22,6 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	if len(args) > 1 {
 		logger.Debug("警告: 関数 '%s' は通常の呼び出しでは1つの引数しか取れません（現在: %d）\n",
 			name, len(args))
-		// 余分な引数は無視して最初の引数だけを使用
-		args = args[:1]
 	}
 
 	// ビルトイン関数を確認

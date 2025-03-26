@@ -19,6 +19,7 @@ func main() {
 	}
 
 	// ロガーの設定
+	fmt.Print("logger")
 	err = config.SetupLogger()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ロガーの初期化エラー: %s\n", err)
