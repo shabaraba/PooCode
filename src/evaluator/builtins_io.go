@@ -6,7 +6,7 @@ import (
 	"github.com/uncode/object"
 )
 
-// registerIOBuiltins は入出力関連の組み込み関数を登録する
+// registerIOBuiltins はIO関連の組み込み関数を登録する
 func registerIOBuiltins() {
 	// 標準出力に出力する関数
 	Builtins["print"] = &object.Builtin{

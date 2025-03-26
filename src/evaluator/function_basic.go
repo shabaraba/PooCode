@@ -68,8 +68,6 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 		// 修正: ビルトイン関数も引数を1つまでに制限（ただし print や数学関数など一部の例外を除く）
 		if len(args) > 1 && fn.Name != "print" && fn.Name != "range" && fn.Name != "sum" {
 			logger.Debug("ビルトイン関数 %s は引数を1つしか取れません: 実際の引数数=%d\n", fn.Name, len(args))
-			// 引数が多い場合は最初の引数だけを使用
-			return fn.Fn(args[0])
 		}
 		return fn.Fn(args...)
 

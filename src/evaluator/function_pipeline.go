@@ -25,8 +25,6 @@ func applyPipelineFunction(fn *object.Function, args []object.Object) object.Obj
 	// - 追加の引数は最大1つまで
 	if len(args) > 2 {
 		logger.Debug("警告: パイプラインでは最大1つの追加引数しか使用できません（現在: %d）\n", len(args)-1)
-		// 余分な引数は無視して最初の2つだけを使用（🍕 + 1つの引数）
-		args = args[:2]
 	}
 
 	// 入力型のチェック

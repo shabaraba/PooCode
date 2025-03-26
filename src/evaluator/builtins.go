@@ -1,12 +1,16 @@
 package evaluator
 
 import (
+	"fmt"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
 // 組み込み関数のマップ
 var Builtins map[string]*object.Builtin
+
+// NullObj はnull値の共有インスタンス
+var NullObj = &object.Null{}
 
 // ビルトイン関数のロギングレベル
 var builtinLogLevel = logger.LevelDebug
@@ -23,20 +27,23 @@ func GetBuiltinLogLevel() logger.LogLevel {
 
 // logIfEnabled はビルトイン関数のデバッグログを出力
 func logIfEnabled(level logger.LogLevel, format string, args ...interface{}) {
-	if level <= builtinLogLevel {
+	componentLevel := logger.GetComponentLevel(logger.ComponentBuiltin)
+	if level <= componentLevel {
+		// ComponentXXXの関数を使って出力
 		switch level {
 		case logger.LevelError:
-			logger.Error(format, args...)
+			logger.ComponentError(logger.ComponentBuiltin, format, args...)
 		case logger.LevelWarn:
-			logger.Warn(format, args...)
+			logger.ComponentWarn(logger.ComponentBuiltin, format, args...)
 		case logger.LevelInfo:
-			logger.Info(format, args...)
+			logger.ComponentInfo(logger.ComponentBuiltin, format, args...)
 		case logger.LevelDebug:
-			logger.Debug(format, args...)
+			logger.ComponentDebug(logger.ComponentBuiltin, format, args...)
 		case logger.LevelTrace:
-			logger.Trace(format, args...)
-		case logger.LevelTypeInfo:
-			logger.TypeInfo(format, args...)
+			logger.ComponentTrace(logger.ComponentBuiltin, format, args...)
+		default:
+			// その他のレベルはそのまま出力
+			logger.Debug(format, args...)
 		}
 	}
 }
@@ -68,4 +75,11 @@ func GetBuiltinParamTypes(name string) []object.ObjectType {
 		return builtin.ParamTypes
 	}
 	return nil
+}
+
+// createError はエラーオブジェクトを作成するヘルパー関数
+func createError(format string, args ...interface{}) *object.Error {
+	errMsg := fmt.Sprintf(format, args...)
+	logIfEnabled(logger.LevelError, "エラー: %s", errMsg)
+	return &object.Error{Message: errMsg}
 }

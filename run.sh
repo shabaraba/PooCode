@@ -7,14 +7,19 @@ cd /Users/t002451/my_work/private/PooCode
 if [ "$#" -lt 1 ]; then
     echo "使用方法: $0 <ファイル> [オプション]"
     echo "オプション:"
-    echo "  --debug       デバッグモードで実行"
-    echo "  --log-level   ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE, TYPE)"
-    echo "  --no-color    カラー出力を無効化"
-    echo "  --no-time     タイムスタンプを非表示"
-    echo "  --show-lexer  レキサーデバッグ情報を表示"
-    echo "  --show-parser パーサーデバッグ情報を表示"
-    echo "  --show-eval   評価時デバッグ情報を表示"
-    echo "  --show-types  型情報を表示"
+    echo "  --debug           デバッグモードで実行"
+    echo "  --log-level       ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE, TYPE)"
+    echo "  --lexer-log-level  レキサーのログレベル"
+    echo "  --parser-log-level パーサーのログレベル"
+    echo "  --eval-log-level   評価器のログレベル"
+    echo "  --builtin-log-level 組み込み関数のログレベル"
+    echo "  --runtime-log-level ランタイムのログレベル"
+    echo "  --no-color        カラー出力を無効化"
+    echo "  --no-time         タイムスタンプを非表示"
+    echo "  --show-lexer      レキサーデバッグ情報を表示"
+    echo "  --show-parser     パーサーデバッグ情報を表示"
+    echo "  --show-eval       評価時デバッグ情報を表示"
+    echo "  --show-types      型情報を表示"
     exit 1
 fi
 
@@ -33,6 +38,7 @@ SHOW_EVAL=""
 SHOW_TYPES=""
 LOG_FILE="ai/output.log"
 OUTPUT_FILE="ai/output.log"
+COMPONENT_LOG_LEVELS=""
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -42,6 +48,21 @@ while [ "$#" -gt 0 ]; do
             ;;
         --log-level=*)
             LOG_LEVEL="${1#*=}"
+            ;;
+        --lexer-log-level=*)
+            COMPONENT_LOG_LEVELS="$COMPONENT_LOG_LEVELS --lexer-log-level=${1#*=}"
+            ;;
+        --parser-log-level=*)
+            COMPONENT_LOG_LEVELS="$COMPONENT_LOG_LEVELS --parser-log-level=${1#*=}"
+            ;;
+        --eval-log-level=*)
+            COMPONENT_LOG_LEVELS="$COMPONENT_LOG_LEVELS --eval-log-level=${1#*=}"
+            ;;
+        --builtin-log-level=*)
+            COMPONENT_LOG_LEVELS="$COMPONENT_LOG_LEVELS --builtin-log-level=${1#*=}"
+            ;;
+        --runtime-log-level=*)
+            COMPONENT_LOG_LEVELS="$COMPONENT_LOG_LEVELS --runtime-log-level=${1#*=}"
             ;;
         --no-color)
             COLOR=""
@@ -73,7 +94,7 @@ done
 bash build.sh
 
 # 実行コマンドの組み立て
-CMD="./bin/uncode $DEBUG $COLOR $TIMESTAMP --log-level=$LOG_LEVEL --log=$LOG_FILE $SHOW_LEXER $SHOW_PARSER $SHOW_EVAL $SHOW_TYPES $FILE"
+CMD="./bin/uncode $DEBUG $COLOR $TIMESTAMP --log-level=$LOG_LEVEL --log=$LOG_FILE $COMPONENT_LOG_LEVELS $SHOW_LEXER $SHOW_PARSER $SHOW_EVAL $SHOW_TYPES $FILE"
 
 # 実行
 echo "実行コマンド: $CMD"

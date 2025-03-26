@@ -11,18 +11,19 @@ import (
 
 // Config はアプリケーション全体の設定を保持する構造体
 type Config struct {
-	SourceFile      string
-	DebugMode       bool
-	LogLevel        logger.LogLevel
-	LogFile         string
-	OutputFile      string
-	ColorOutput     bool
-	ShowTimestamp   bool
-	ShowTypeInfo    bool
-	ShowLexerDebug  bool
-	ShowParserDebug bool
-	ShowEvalDebug   bool
-	ShowBuiltinDebug bool
+	SourceFile         string
+	DebugMode          bool
+	LogLevel           logger.LogLevel
+	ComponentLogLevels map[logger.ComponentType]logger.LogLevel
+	LogFile            string
+	OutputFile         string
+	ColorOutput        bool
+	ShowTimestamp      bool
+	ShowTypeInfo       bool
+	ShowLexerDebug     bool
+	ShowParserDebug    bool
+	ShowEvalDebug      bool
+	ShowBuiltinDebug   bool
 	ShowConditionDebug bool // 条件式の評価デバッグ表示
 }
 
@@ -48,6 +49,9 @@ func (e *UnsupportedExtensionError) Error() string {
 
 // ParseFlags はコマンドライン引数をパースし、設定を行う
 func ParseFlags() error {
+	// ComponentLogLevelsのマップを初期化
+	GlobalConfig.ComponentLogLevels = make(map[logger.ComponentType]logger.LogLevel)
+	
 	// コマンドラインフラグのパース
 	flag.BoolVar(&GlobalConfig.DebugMode, "debug", false, "デバッグモードを有効にする")
 	flag.StringVar(&GlobalConfig.LogFile, "log", "", "ログファイルのパス (指定がなければ標準出力のみ)")
@@ -62,17 +66,45 @@ func ParseFlags() error {
 	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 
 	// ログレベルをフラグで指定できるようにする
-	logLevelStr := flag.String("log-level", "", "ログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
+	logLevelStr := flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
+	
+	// コンポーネント別ログレベルの設定
+	lexerLogLevelStr := flag.String("lexer-log-level", "", "レキサーのログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
+	parserLogLevelStr := flag.String("parser-log-level", "", "パーサーのログレベル")
+	evalLogLevelStr := flag.String("eval-log-level", "", "評価器のログレベル")
+	runtimeLogLevelStr := flag.String("runtime-log-level", "", "ランタイムのログレベル")
+	builtinLogLevelStr := flag.String("builtin-log-level", "", "組み込み関数のログレベル")
 
 	flag.Parse()
 
-	// ログレベルの設定
+	// グローバルログレベルの設定
 	if *logLevelStr != "" {
 		GlobalConfig.LogLevel = logger.ParseLogLevel(*logLevelStr)
 	} else if GlobalConfig.DebugMode {
 		GlobalConfig.LogLevel = logger.LevelDebug
 	} else {
 		GlobalConfig.LogLevel = logger.LevelInfo
+	}
+	
+	// コンポーネント別ログレベルの設定
+	if *lexerLogLevelStr != "" {
+		GlobalConfig.ComponentLogLevels[logger.ComponentLexer] = logger.ParseLogLevel(*lexerLogLevelStr)
+	}
+	
+	if *parserLogLevelStr != "" {
+		GlobalConfig.ComponentLogLevels[logger.ComponentParser] = logger.ParseLogLevel(*parserLogLevelStr)
+	}
+	
+	if *evalLogLevelStr != "" {
+		GlobalConfig.ComponentLogLevels[logger.ComponentEval] = logger.ParseLogLevel(*evalLogLevelStr)
+	}
+	
+	if *runtimeLogLevelStr != "" {
+		GlobalConfig.ComponentLogLevels[logger.ComponentRuntime] = logger.ParseLogLevel(*runtimeLogLevelStr)
+	}
+	
+	if *builtinLogLevelStr != "" {
+		GlobalConfig.ComponentLogLevels[logger.ComponentBuiltin] = logger.ParseLogLevel(*builtinLogLevelStr)
 	}
 
 	// デバッグフラグを設定した場合は自動的に対応するデバッグを有効にする
@@ -107,8 +139,30 @@ func ParseFlags() error {
 
 // SetupLogger はロガーの設定を行う
 func SetupLogger() error {
-	// ロガーの設定を適用
+	// グローバルログレベルの設定を適用
 	logger.SetLevel(GlobalConfig.LogLevel)
+	
+	// コンポーネント別ログレベルの設定を適用
+	for component, level := range GlobalConfig.ComponentLogLevels {
+		logger.SetComponentLevel(component, level)
+	}
+	
+	// コンポーネント別デバッグフラグからログレベルを設定
+	if GlobalConfig.ShowLexerDebug && GlobalConfig.ComponentLogLevels[logger.ComponentLexer] == 0 {
+		logger.SetComponentLevel(logger.ComponentLexer, logger.LevelDebug)
+	}
+	
+	if GlobalConfig.ShowParserDebug && GlobalConfig.ComponentLogLevels[logger.ComponentParser] == 0 {
+		logger.SetComponentLevel(logger.ComponentParser, logger.LevelDebug)
+	}
+	
+	if GlobalConfig.ShowEvalDebug && GlobalConfig.ComponentLogLevels[logger.ComponentEval] == 0 {
+		logger.SetComponentLevel(logger.ComponentEval, logger.LevelDebug)
+	}
+	
+	if GlobalConfig.ShowBuiltinDebug && GlobalConfig.ComponentLogLevels[logger.ComponentBuiltin] == 0 {
+		logger.SetComponentLevel(logger.ComponentBuiltin, logger.LevelDebug)
+	}
 	
 	// カラー出力の設定
 	if GlobalConfig.ColorOutput {

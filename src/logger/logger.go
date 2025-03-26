@@ -26,6 +26,19 @@ const (
 	LevelEvalDebug // 評価器専用デバッグ情報
 )
 
+// コンポーネント種別を表す型
+type ComponentType string
+
+const (
+	// コンポーネント定義
+	ComponentGlobal  ComponentType = "global"  // グローバル（デフォルト）
+	ComponentLexer   ComponentType = "lexer"   // レキサー
+	ComponentParser  ComponentType = "parser"  // パーサー
+	ComponentEval    ComponentType = "eval"    // 評価器
+	ComponentRuntime ComponentType = "runtime" // ランタイム
+	ComponentBuiltin ComponentType = "builtin" // 組み込み関数
+)
+
 // LevelNames はログレベルと名前のマッピング
 var LevelNames = map[LogLevel]string{
 	LevelOff:      "OFF",
@@ -54,13 +67,14 @@ const (
 
 // Logger はログを記録するための構造体
 type Logger struct {
-	level       LogLevel
-	writer      io.Writer
-	fileWriter  io.Writer
-	mu          sync.Mutex
-	isEnabled   bool
-	useColor    bool
-	showTime    bool
+	globalLevel   LogLevel                // グローバルログレベル
+	componentLevels map[ComponentType]LogLevel  // コンポーネント別ログレベル
+	writer        io.Writer
+	fileWriter    io.Writer
+	mu            sync.Mutex
+	isEnabled     bool
+	useColor      bool
+	showTime      bool
 }
 
 var (
@@ -71,10 +85,17 @@ var (
 // LoggerOption はロガーの設定用オプション関数型
 type LoggerOption func(*Logger)
 
-// WithLevel はログレベルを設定するオプション
+// WithLevel はグローバルログレベルを設定するオプション
 func WithLevel(level LogLevel) LoggerOption {
 	return func(l *Logger) {
-		l.level = level
+		l.globalLevel = level
+	}
+}
+
+// WithComponentLevel はコンポーネント別ログレベルを設定するオプション
+func WithComponentLevel(component ComponentType, level LogLevel) LoggerOption {
+	return func(l *Logger) {
+		l.componentLevels[component] = level
 	}
 }
 
@@ -109,13 +130,22 @@ func WithTime(showTime bool) LoggerOption {
 // NewLogger は新しいロガーインスタンスを生成する
 func NewLogger(options ...LoggerOption) *Logger {
 	logger := &Logger{
-		level:     LevelInfo,
-		writer:    os.Stdout,
-		fileWriter: nil,
-		isEnabled: true,
-		useColor:  true,
-		showTime:  true,
+		globalLevel:    LevelInfo,
+		componentLevels: make(map[ComponentType]LogLevel),
+		writer:         os.Stdout,
+		fileWriter:     nil,
+		isEnabled:      true,
+		useColor:       true,
+		showTime:       true,
 	}
+	
+	// デフォルトのコンポーネントレベルを設定
+	logger.componentLevels[ComponentGlobal] = LevelInfo
+	logger.componentLevels[ComponentLexer] = LevelInfo
+	logger.componentLevels[ComponentParser] = LevelInfo
+	logger.componentLevels[ComponentEval] = LevelInfo
+	logger.componentLevels[ComponentRuntime] = LevelInfo
+	logger.componentLevels[ComponentBuiltin] = LevelInfo
 	
 	// オプションを適用
 	for _, option := range options {
@@ -133,11 +163,31 @@ func GetLogger() *Logger {
 	return defaultLogger
 }
 
-// SetLevel はログレベルを設定する
+// SetLevel はグローバルログレベルを設定する
 func (l *Logger) SetLevel(level LogLevel) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.level = level
+	l.globalLevel = level
+	// グローバルレベルの変更を全コンポーネントに反映（ただし明示的に設定されたものは除く）
+	l.componentLevels[ComponentGlobal] = level
+}
+
+// SetComponentLevel はコンポーネント別ログレベルを設定する
+func (l *Logger) SetComponentLevel(component ComponentType, level LogLevel) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.componentLevels[component] = level
+}
+
+// GetComponentLevel はコンポーネント別ログレベルを取得する
+func (l *Logger) GetComponentLevel(component ComponentType) LogLevel {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	level, exists := l.componentLevels[component]
+	if !exists {
+		return l.componentLevels[ComponentGlobal] // デフォルトはグローバル設定
+	}
+	return level
 }
 
 // SetOutput はログの出力先を設定する
@@ -232,7 +282,7 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if !l.isEnabled || level > l.level {
+	if !l.isEnabled || level > l.globalLevel {
 		return
 	}
 
@@ -247,6 +297,63 @@ func (l *Logger) log(level LogLevel, format string, args ...interface{}) {
 		// ファイルには色なしで書き込む
 		plainMsg := l.formatLogMessage(level, format, args...)
 		fmt.Fprintln(l.fileWriter, plainMsg)
+	}
+}
+
+// logWithComponent はコンポーネント指定付きでログを記録する
+func (l *Logger) logWithComponent(component ComponentType, level LogLevel, format string, args ...interface{}) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	// コンポーネントのログレベルを確認
+	componentLevel, exists := l.componentLevels[component]
+	if !exists {
+		componentLevel = l.componentLevels[ComponentGlobal]
+	}
+
+	// コンポーネントのログレベルに基づきフィルタリング
+	if !l.isEnabled || level > componentLevel {
+		return
+	}
+
+	// コンポーネント名を含むフォーマット済みのメッセージを生成
+	msg := fmt.Sprintf(format, args...)
+	levelName := LevelNames[level]
+	
+	var builder strings.Builder
+	
+	// タイムスタンプを追加
+	if l.showTime {
+		timestamp := time.Now().Format("2006-01-02 15:04:05.000")
+		builder.WriteString(fmt.Sprintf("[%s] ", timestamp))
+	}
+	
+	// レベル名とコンポーネント名を追加（カラーあり/なし）
+	if l.useColor {
+		colorCode, hasColor := levelColors[level]
+		if hasColor {
+			builder.WriteString(fmt.Sprintf("%s[%s]%s ", colorCode, levelName, colorReset))
+			builder.WriteString(fmt.Sprintf("%s[%s]%s ", colorCode, string(component), colorReset))
+		} else {
+			builder.WriteString(fmt.Sprintf("[%s] ", levelName))
+			builder.WriteString(fmt.Sprintf("[%s] ", string(component)))
+		}
+	} else {
+		builder.WriteString(fmt.Sprintf("[%s] ", levelName))
+		builder.WriteString(fmt.Sprintf("[%s] ", string(component)))
+	}
+	
+	// メッセージを追加
+	builder.WriteString(msg)
+	
+	formattedMsg := builder.String()
+	
+	// 標準出力に書き込み
+	fmt.Fprintln(l.writer, formattedMsg)
+	
+	// ファイルにも書き込み（設定されている場合）
+	if l.fileWriter != nil {
+		fmt.Fprintln(l.fileWriter, formattedMsg)
 	}
 }
 
@@ -285,9 +392,43 @@ func (l *Logger) EvalDebug(format string, args ...interface{}) {
 	l.log(LevelEvalDebug, format, args...)
 }
 
+// コンポーネント指定付きログ関数群
+// ComponentError はコンポーネント指定付きでエラーレベルのログを記録する
+func (l *Logger) ComponentError(component ComponentType, format string, args ...interface{}) {
+	l.logWithComponent(component, LevelError, format, args...)
+}
+
+// ComponentWarn はコンポーネント指定付きで警告レベルのログを記録する
+func (l *Logger) ComponentWarn(component ComponentType, format string, args ...interface{}) {
+	l.logWithComponent(component, LevelWarn, format, args...)
+}
+
+// ComponentInfo はコンポーネント指定付きで情報レベルのログを記録する
+func (l *Logger) ComponentInfo(component ComponentType, format string, args ...interface{}) {
+	l.logWithComponent(component, LevelInfo, format, args...)
+}
+
+// ComponentDebug はコンポーネント指定付きでデバッグレベルのログを記録する
+func (l *Logger) ComponentDebug(component ComponentType, format string, args ...interface{}) {
+	l.logWithComponent(component, LevelDebug, format, args...)
+}
+
+// ComponentTrace はコンポーネント指定付きでトレースレベルのログを記録する
+func (l *Logger) ComponentTrace(component ComponentType, format string, args ...interface{}) {
+	l.logWithComponent(component, LevelTrace, format, args...)
+}
+
 // グローバル関数
 func SetLevel(level LogLevel) {
 	GetLogger().SetLevel(level)
+}
+
+func SetComponentLevel(component ComponentType, level LogLevel) {
+	GetLogger().SetComponentLevel(component, level)
+}
+
+func GetComponentLevel(component ComponentType) LogLevel {
+	return GetLogger().GetComponentLevel(component)
 }
 
 func SetOutput(w io.Writer) {
@@ -320,6 +461,27 @@ func Enable() {
 
 func Disable() {
 	GetLogger().Disable()
+}
+
+// コンポーネント指定付きグローバルログ関数
+func ComponentError(component ComponentType, format string, args ...interface{}) {
+	GetLogger().ComponentError(component, format, args...)
+}
+
+func ComponentWarn(component ComponentType, format string, args ...interface{}) {
+	GetLogger().ComponentWarn(component, format, args...)
+}
+
+func ComponentInfo(component ComponentType, format string, args ...interface{}) {
+	GetLogger().ComponentInfo(component, format, args...)
+}
+
+func ComponentDebug(component ComponentType, format string, args ...interface{}) {
+	GetLogger().ComponentDebug(component, format, args...)
+}
+
+func ComponentTrace(component ComponentType, format string, args ...interface{}) {
+	GetLogger().ComponentTrace(component, format, args...)
 }
 
 func Error(format string, args ...interface{}) {

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/uncode/config"
+	"github.com/uncode/evaluator"
 	"github.com/uncode/logger"
 	"github.com/uncode/runtime"
 )
@@ -30,6 +31,13 @@ func main() {
 	logger.Debug("デバッグモード: %v", config.GlobalConfig.DebugMode)
 	logger.Debug("ログレベル: %s", logger.LevelNames[config.GlobalConfig.LogLevel])
 	logger.Debug("ソースファイル: %s", config.GlobalConfig.SourceFile)
+	
+	// 組み込み関数のログレベルを設定
+	if config.GlobalConfig.ShowBuiltinDebug {
+		evaluator.SetBuiltinLogLevel(logger.LevelDebug)
+	} else {
+		evaluator.SetBuiltinLogLevel(logger.LevelInfo)
+	}
 
 	// ソースファイルの実行
 	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)

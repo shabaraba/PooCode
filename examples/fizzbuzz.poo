@@ -16,7 +16,7 @@ def showBuzz() : int -> str {
     "" >> 💩;
 }
 
-def showNumber(num) if 🍕 != "" : str -> str {
+def showNumber(num) if 🍕 == "" : str -> str {
     num |> to_string >> 💩;
 }
 def showNumber(num) : str -> str {
@@ -24,11 +24,16 @@ def showNumber(num) : str -> str {
 }
  
 def fizzbuzz(): int -> str {
+    🍕 |> print;
     "" >> result;
     
-    🍕 |> showFizz |> add result >> result;
-    🍕 |> showBuzz |> add result |> showNumber 🍕 >> 💩;
-
+    🍕 |> showBuzz |> add result >> result;
+    🍕 |> showFizz |> add result |> showNumber 🍕 >> 💩;
 }
 
 1 |> fizzbuzz |> print;
+2 |> fizzbuzz |> print;
+3 |> fizzbuzz |> print;
+4 |> fizzbuzz |> print;
+5 |> fizzbuzz |> print;
+15 |> fizzbuzz |> print;
