@@ -9,6 +9,7 @@ import (
 )
 
 var (
+	NULL_OBJ  = &object.Null{}
 	TRUE  = &object.Boolean{Value: true}
 	FALSE = &object.Boolean{Value: false}
 )
@@ -47,7 +48,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if val, ok := env.Get("🍕"); ok {
 			return val
 		}
-		return createError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
+		return createEvalError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 
 	case *ast.PooLiteral:
 		logger.Debug("💩リテラルを評価")
@@ -169,7 +170,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		if fn, ok := function.(*object.Function); ok {
 			// 引数の数をチェック
 			if len(args) != len(fn.Parameters) {
-				return createError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+				return createEvalError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 			}
 
 			// 新しい環境を作成
@@ -186,7 +187,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			// 関数本体を評価
 			astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 			if !ok {
-				return createError("関数の本体がBlockStatementではありません")
+				return createEvalError("関数の本体がBlockStatementではありません")
 			}
 			result := evalBlockStatement(astBody, extendedEnv)
 
@@ -199,7 +200,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			return builtin.Fn(args...)
 		}
 
-		return createError("関数ではありません: %s", function.Type())
+		return createEvalError("関数ではありません: %s", function.Type())
 
 	case *ast.Identifier:
 		logger.Debug("識別子を評価")
@@ -238,14 +239,21 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	// その他のケース
 	default:
 		logger.Warn("未実装のノードタイプ: %T", node)
-		return NullObj
+		return NULL_OBJ
 	}
+}
+
+// エラー生成用ヘルパー関数
+func createEvalError(format string, a ...interface{}) *object.Error {
+	msg := fmt.Sprintf(format, a...)
+	logger.Error("実行時エラー: %s", msg)
+	return &object.Error{Message: msg}
 }
 
 // isTruthy は値が真かどうかを判定する
 func isTruthy(obj object.Object) bool {
 	switch obj {
-	case NullObj:
+	case NULL_OBJ:
 		return false
 	case TRUE:
 		return true

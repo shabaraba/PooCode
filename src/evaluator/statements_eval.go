@@ -9,7 +9,7 @@ import (
 
 // evalProgram はプログラムを評価する
 func evalProgram(program *ast.Program, env *object.Environment) object.Object {
-	var result object.Object = NullObj
+	var result object.Object = NULL_OBJ
 
 	for _, statement := range program.Statements {
 		result = Eval(statement, env)
@@ -20,7 +20,7 @@ func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 
 // evalBlockStatement はブロック文を評価する
 func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
-	var result object.Object = NullObj
+	var result object.Object = NULL_OBJ
 
 	for _, statement := range block.Statements {
 		result = Eval(statement, env)

@@ -40,10 +40,10 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	
 	// 型の不一致
 	if left.Type() != right.Type() {
-		return createError("型の不一致: %s %s %s", left.Type(), operator, right.Type())
+		return createEvalError("型の不一致: %s %s %s", left.Type(), operator, right.Type())
 	}
 	
-	return createError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
+	return createEvalError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
 }
 
 // evalIntegerInfixExpression は整数の中置式を評価する
@@ -61,13 +61,13 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 	case "/":
 		// ゼロ除算チェック
 		if rightVal == 0 {
-			return createError("ゼロによる除算: %d / 0", leftVal)
+			return createEvalError("ゼロによる除算: %d / 0", leftVal)
 		}
 		return &object.Integer{Value: leftVal / rightVal}
 	case "%":
 		// ゼロ除算チェック
 		if rightVal == 0 {
-			return createError("ゼロによるモジュロ: %d %% 0", leftVal)
+			return createEvalError("ゼロによるモジュロ: %d %% 0", leftVal)
 		}
 		return &object.Integer{Value: leftVal % rightVal}
 	case "**":
@@ -105,7 +105,7 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 	case ">=":
 		return &object.Boolean{Value: leftVal >= rightVal}
 	default:
-		return createError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
+		return createEvalError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -136,7 +136,7 @@ func evalStringInfixExpression(operator string, left, right object.Object) objec
 	case "ends_with":
 		return &object.Boolean{Value: strings.HasSuffix(leftVal, rightVal)}
 	default:
-		return createError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
+		return createEvalError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -161,7 +161,7 @@ func evalBooleanInfixExpression(operator string, left, right object.Object) obje
 		}
 		return right
 	default:
-		return createError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
+		return createEvalError("未知の演算子: %s %s %s", left.Type(), operator, right.Type())
 	}
 }
 
@@ -176,7 +176,7 @@ func evalPrefixExpression(operator string, right object.Object) object.Object {
 		// 言語仕様で "not" は ! と同様に扱う
 		return evalBangOperatorExpression(right)
 	default:
-		return createError("未知の前置演算子: %s%s", operator, right.Type())
+		return createEvalError("未知の前置演算子: %s%s", operator, right.Type())
 	}
 }
 
@@ -187,7 +187,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 		return FALSE
 	case FALSE:
 		return TRUE
-	case NullObj:
+	case NULL_OBJ:
 		return TRUE
 	default:
 		// 真偽値以外の値に対しては false を返す
@@ -204,7 +204,7 @@ func evalBangOperatorExpression(right object.Object) object.Object {
 // evalMinusPrefixOperatorExpression は - 演算子を評価する
 func evalMinusPrefixOperatorExpression(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return createError("-演算子は整数に対してのみ使用できます: %s", right.Type())
+		return createEvalError("-演算子は整数に対してのみ使用できます: %s", right.Type())
 	}
 	
 	value := right.(*object.Integer).Value
@@ -223,5 +223,5 @@ func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object
 		return builtin
 	}
 	
-	return createError("識別子が見つかりません: " + node.Value)
+	return createEvalError("識別子が見つかりません: " + node.Value)
 }
