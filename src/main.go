@@ -8,6 +8,7 @@ import (
 
 	"github.com/uncode/evaluator"
 	"github.com/uncode/lexer"
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 	"github.com/uncode/parser"
 )
@@ -17,6 +18,11 @@ var debugMode bool
 func main() {
 	// コマンドラインフラグのパース
 	flag.BoolVar(&debugMode, "debug", false, "デバッグモードを有効にする")
+	if debugMode {
+		logger.SetLevel(logger.LevelDebug)
+	} else {
+		logger.SetLevel(logger.LevelInfo)
+	}
 	flag.Parse()
 
 	args := flag.Args()
@@ -41,43 +47,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	// デバッグモードを設定
-	evaluator.SetDebugMode(debugMode)
-	
-	// デバッグモードの場合、ファイル内容を表示
-	if debugMode {
-		fmt.Printf("ファイル内容:\n%s\n", string(content))
-	}
+	logger.Debug("ファイル内容:\n%s\n", string(content))
 
 	// レキサーでトークン化
 	l := lexer.NewLexer(string(content))
 	tokens, err := l.Tokenize()
 	if err != nil {
-		fmt.Printf("レキサーエラー: %s\n", err)
+		logger.Error("レキサーエラー: %s\n", err)
 		os.Exit(1)
 	}
 
 	// デバッグモードの場合、トークン列を表示
-	if debugMode {
-		fmt.Println("トークン列:")
-		for i, tok := range tokens {
-			fmt.Printf("%d: %s\n", i, tok.String())
-		}
+	logger.Debug("トークン列:")
+	for i, tok := range tokens {
+		logger.Debug("%d: %s\n", i, tok.String())
 	}
 
 	// パーサーで構文解析
 	p := parser.NewParser(tokens)
 	program, err := p.ParseProgram()
 	if err != nil {
-		fmt.Printf("パーサーエラー: %s\n", err)
+		logger.Error("パーサーエラー: %s\n", err)
 		os.Exit(1)
 	}
 
-	// デバッグモードの場合、構文木を表示
-	if debugMode {
-		fmt.Println("構文木:")
-		fmt.Println(program.String())
-	}
+	logger.Debug("構文木:")
+	logger.Debug(program.String())
 
 	// インタプリタで実行
 	env := object.NewEnvironment()
@@ -90,15 +85,15 @@ func main() {
 			return evaluator.NULL
 		},
 	})
-	
+
 	result := evaluator.Eval(program, env)
 	if result != nil && result.Type() == object.ERROR_OBJ {
-		fmt.Printf("実行時エラー: %s\n", result.Inspect())
+		logger.Error("実行時エラー: %s\n", result.Inspect())
 		os.Exit(1)
 	}
 
 	// デバッグモードの場合、実行結果を表示
-	if debugMode && result != nil {
-		fmt.Printf("実行結果: %s\n", result.Inspect())
+	if result != nil {
+		logger.Info("実行結果: %s\n", result.Inspect())
 	}
 }

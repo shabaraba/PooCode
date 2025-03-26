@@ -1,7 +1,7 @@
 package object
 
 import (
-	"fmt"
+	"github.com/uncode/logger"
 )
 
 // Environment は変数環境を表す
@@ -121,14 +121,14 @@ func (e *Environment) GetAllFunctionsByName(name string) []*Function {
 	collectFunctions(e)
 	
 	// デバッグ情報
-	fmt.Printf("関数 '%s' の候補を %d 個見つけました\n", name, len(functions))
+	logger.Debug("関数 '%s' の候補を %d 個見つけました", name, len(functions))
 	for i, fn := range functions {
 		// 条件の有無を表示
 		hasCondition := "なし"
 		if fn.Condition != nil {
 			hasCondition = "あり"
 		}
-		fmt.Printf("  関数候補 %d: 条件=%s\n", i+1, hasCondition)
+		logger.Trace("  関数候補 %d: 条件=%s", i+1, hasCondition)
 	}
 	
 	return functions

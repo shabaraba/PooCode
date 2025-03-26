@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
@@ -13,27 +14,27 @@ var Builtins = map[string]*object.Builtin{
 		Name: "print",
 		Fn: func(args ...object.Object) object.Object {
 			// デバッグ情報：受け取った引数の詳細を出力
-			fmt.Printf("DEBUG: print関数が受け取った引数: %d個\n", len(args))
+			logger.Debug("DEBUG: print関数が受け取った引数: %d個\n", len(args))
 			for i, arg := range args {
-				fmt.Printf("DEBUG: 引数%d - タイプ: %s, 値: %s\n", i, arg.Type(), arg.Inspect())
+				logger.Debug("DEBUG: 引数%d - タイプ: %s, 値: %s\n", i, arg.Type(), arg.Inspect())
 				
 				// arg.Inspect()ではなく実際の値を表示
 				switch arg.Type() {
 				case object.INTEGER_OBJ:
 					intVal := arg.(*object.Integer).Value
-					fmt.Printf("DEBUG: 整数値として %d を出力\n", intVal)
+					logger.Debug("DEBUG: 整数値として %d を出力\n", intVal)
 					fmt.Println(intVal)
 				case object.STRING_OBJ:
 					strVal := arg.(*object.String).Value
-					fmt.Printf("DEBUG: 文字列として \"%s\" を出力\n", strVal)
+					logger.Debug("DEBUG: 文字列として \"%s\" を出力\n", strVal)
 					fmt.Println(strVal)
 				case object.BOOLEAN_OBJ:
 					boolVal := arg.(*object.Boolean).Value
-					fmt.Printf("DEBUG: 真偽値として %t を出力\n", boolVal)
+					logger.Debug("DEBUG: 真偽値として %t を出力\n", boolVal)
 					fmt.Println(boolVal)
 				default:
 					inspectVal := arg.Inspect()
-					fmt.Printf("DEBUG: デフォルト - %s を出力\n", inspectVal)
+					logger.Debug("DEBUG: デフォルト - %s を出力\n", inspectVal)
 					fmt.Println(inspectVal)
 				}
 			}
@@ -66,10 +67,10 @@ var Builtins = map[string]*object.Builtin{
 	"add": &object.Builtin{
 		Name: "add",
 		Fn: func(args ...object.Object) object.Object {
-			fmt.Printf("add関数が呼び出されました: 引数=%d個\n", len(args))
+			logger.Debug("add関数が呼び出されました: 引数=%d個\n", len(args))
 			// デバッグ: すべての引数を出力
 			for i, arg := range args {
-				fmt.Printf("  引数 %d: %s (型: %s)\n", i, arg.Inspect(), arg.Type())
+				logger.Debug("  引数 %d: %s (型: %s)\n", i, arg.Inspect(), arg.Type())
 			}
 			
 			if len(args) < 1 {
@@ -110,7 +111,7 @@ var Builtins = map[string]*object.Builtin{
 			
 			// 第2引数がない場合は値をそのまま返す
 			if len(args) == 1 {
-				fmt.Printf("add関数: 単一引数 %d をそのまま返します\n", left.Value)
+				logger.Debug("add関数: 単一引数 %d をそのまま返します\n", left.Value)
 				return left
 			}
 			
@@ -121,7 +122,7 @@ var Builtins = map[string]*object.Builtin{
 			}
 			
 			result := &object.Integer{Value: left.Value + right.Value}
-			fmt.Printf("add関数: %d + %d = %d\n", left.Value, right.Value, result.Value)
+			logger.Debug("add関数: %d + %d = %d\n", left.Value, right.Value, result.Value)
 			return result
 		},
 	},
