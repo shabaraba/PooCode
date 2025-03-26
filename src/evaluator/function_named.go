@@ -47,6 +47,19 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		}
 	}
 
+	// 修正：関数適用のための独立した環境を作成
+	// これにより元の環境の🍕変数が上書きされるのを防ぐ
+	funcEnv := object.NewEnclosedEnvironment(env)
+
+	// 🍕 を設定（もし引数があれば）
+	if len(args) > 0 {
+		logger.Debug("関数適用の環境で🍕に値 %s を設定します\n", args[0].Inspect())
+		logger.Debug("🍕の値のタイプ: %s\n", args[0].Type())
+		funcEnv.Set("🍕", args[0])
+	} else {
+		logger.Debug("引数が見つからないため、🍕は設定しません")
+	}
+
 	// 関数が1つだけの場合は直接適用
 	if len(functions) == 1 {
 		logger.Debug("関数が1つだけ見つかりました")
@@ -54,15 +67,6 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	}
 
 	logger.Debug("複数の関数が見つかりました:", len(functions))
-
-	// 🍕 を設定（もし必要なら）
-	if len(args) > 0 {
-		logger.Debug("🍕 に値 %s を設定します\n", args[0].Inspect())
-		logger.Debug("🍕の値のタイプ: %s\n", args[0].Type())
-		env.Set("🍕", args[0])
-	} else {
-		logger.Debug("引数が見つからないため、🍕は設定しません")
-	}
 
 	// 条件付き関数と条件なし関数をグループ化
 	var conditionalFuncs []*object.Function
@@ -83,12 +87,8 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		logger.Debug("条件式: %v\n", fn.Condition)
 
 		// 条件式を評価するための環境を作成
-		condEnv := object.NewEnclosedEnvironment(env)
-		if len(args) > 0 {
-			condEnv.Set("🍕", args[0])
-			logger.Debug("条件評価のために 🍕 に値 %s を設定しました\n", args[0].Inspect())
-		}
-
+		condEnv := object.NewEnclosedEnvironment(funcEnv)
+		
 		// 条件式を評価
 		condResult := Eval(fn.Condition, condEnv)
 		logger.Debug("条件式の評価結果: %s\n", condResult.Inspect())
