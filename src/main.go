@@ -46,6 +46,14 @@ func main() {
 	} else {
 		evaluator.SetPipeDebugLevel(logger.LevelOff)
 	}
+	
+	// map/filter演算子のデバッグレベルを設定
+	if config.GlobalConfig.ShowMapFilterDebug {
+		evaluator.SetMapFilterDebugLevel(logger.LevelDebug)
+		logger.Debug("map/filter演算子のデバッグ出力を有効化しました")
+	} else {
+		evaluator.SetMapFilterDebugLevel(logger.LevelOff)
+	}
 
 	// ソースファイルの実行
 	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)

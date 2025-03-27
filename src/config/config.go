@@ -24,9 +24,10 @@ type Config struct {
 	ShowLexerDebug     bool
 	ShowParserDebug    bool
 	ShowEvalDebug      bool
-	ShowBuiltinDebug   bool
-	ShowConditionDebug bool // 条件式の評価デバッグ表示
-	ShowPipelineDebug  bool // パイプライン処理のデバッグ表示
+	ShowBuiltinDebug     bool
+	ShowConditionDebug   bool // 条件式の評価デバッグ表示
+	ShowPipelineDebug    bool // パイプライン処理のデバッグ表示
+	ShowMapFilterDebug   bool // map/filter演算子のデバッグ表示
 }
 
 // GlobalConfig はアプリケーション全体で使用される設定
@@ -68,6 +69,7 @@ func ParseFlags() error {
 	flag.BoolVar(&GlobalConfig.ShowBuiltinDebug, "show-builtin", false, "組み込み関数のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowPipelineDebug, "show-pipeline", false, "パイプライン処理のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowMapFilterDebug, "show-map-filter", false, "map/filter演算子のデバッグ情報を表示する")
 
 	// ログレベルをフラグで指定できるようにする
 	logLevelStr := flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
@@ -81,9 +83,13 @@ func ParseFlags() error {
 
 	flag.Parse()
 	
-	// 環境変数からもパイプラインデバッグを設定可能に
+	// 環境変数からもパイプライン/map/filterデバッグを設定可能に
 	if os.Getenv("POO_PIPE_DEBUG") == "1" {
 		GlobalConfig.ShowPipelineDebug = true
+	}
+	
+	if os.Getenv("POO_MAP_FILTER_DEBUG") == "1" {
+		GlobalConfig.ShowMapFilterDebug = true
 	}
 
 	// グローバルログレベルの設定
@@ -124,6 +130,7 @@ func ParseFlags() error {
 		GlobalConfig.ShowBuiltinDebug = true
 		GlobalConfig.ShowConditionDebug = true
 		GlobalConfig.ShowPipelineDebug = true
+		GlobalConfig.ShowMapFilterDebug = true
 		
 		// 特殊デバッグログレベルも有効化
 		GlobalConfig.SpecialLogLevels[logger.LevelTypeInfo] = GlobalConfig.ShowTypeInfo
@@ -249,6 +256,7 @@ func PrintUsage() {
 	flag.BoolVar(&GlobalConfig.ShowBuiltinDebug, "show-builtin", false, "組み込み関数のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowPipelineDebug, "show-pipeline", false, "パイプライン処理のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.ShowMapFilterDebug, "show-map-filter", false, "map/filter演算子のデバッグ情報を表示する")
 	
 	flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
 	flag.String("lexer-log-level", "", "レキサーのログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
@@ -260,5 +268,6 @@ func PrintUsage() {
 	flag.PrintDefaults()
 	fmt.Println("\n環境変数:")
 	fmt.Println("  POO_PIPE_DEBUG=1       パイプライン処理のデバッグログを有効にする")
+	fmt.Println("  POO_MAP_FILTER_DEBUG=1 map/filter演算子のデバッグログを有効にする")
 	fmt.Println("\nサポートされている拡張子: .poo, .💩")
 }
