@@ -1,6 +1,7 @@
-// Simply print each number individually
+// Simple program to print numbers 1 to 10
 print("Program started");
 
+// Print each number individually
 print(1);
 print(2);
 print(3);
