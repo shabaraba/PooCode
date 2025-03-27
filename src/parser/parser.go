@@ -48,6 +48,8 @@ var precedences = map[token.TokenType]int{
 	token.OR:           LOGICAL,
 	token.PIPE:         PIPE,
 	token.PIPE_PAR:     PIPE,
+	token.MAP_PIPE:     PIPE,
+	token.FILTER_PIPE:  PIPE,
 	token.DOTDOT:       SUM, // 範囲演算子の優先順位
 }
 
@@ -118,6 +120,8 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerInfix(token.EQUAL, p.parseAssignExpression)  // = も代入演算子として扱う
 	p.registerInfix(token.PIPE, p.parsePipeExpression)
 	p.registerInfix(token.PIPE_PAR, p.parsePipeExpression)
+	p.registerInfix(token.MAP_PIPE, p.parsePipeExpression)
+	p.registerInfix(token.FILTER_PIPE, p.parsePipeExpression)
 
 	// 最初の2つのトークンを読み込む
 	if len(tokens) > 0 {

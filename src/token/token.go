@@ -61,8 +61,8 @@ const (
 	PIPE_PAR = "|"  // 並列パイプライン
 	
 	// 特殊パイプ演算子
-	MAP_PIPE = "MAP_PIPE" // map関数をパイプとして使用
-	FILTER_PIPE = "FILTER_PIPE" // filter関数をパイプとして使用
+	MAP_PIPE = "+>" // map関数をパイプとして使用
+	FILTER_PIPE = "?>" // filter関数をパイプとして使用
 
 	// キーワード
 	FUNCTION = "def"     // 関数定義

@@ -46,8 +46,6 @@ func (l *Lexer) NextToken() token.Token {
 	tok.Column = l.column
 
 	switch l.ch {
-	case '+':
-		tok = l.newToken(token.PLUS, string(l.ch))
 	case '-':
 		tok = l.newToken(token.MINUS, string(l.ch))
 	case '*':
@@ -112,6 +110,22 @@ func (l *Lexer) NextToken() token.Token {
 			tok = l.newToken(token.PIPE, string(ch)+string(l.ch))
 		} else {
 			tok = l.newToken(token.PIPE_PAR, string(l.ch))
+		}
+	case '+':
+		if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			tok = l.newToken(token.MAP_PIPE, string(ch)+string(l.ch))
+		} else {
+			tok = l.newToken(token.PLUS, string(l.ch))
+		}
+	case '?':
+		if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			tok = l.newToken(token.FILTER_PIPE, string(ch)+string(l.ch))
+		} else {
+			tok = l.newToken(token.ILLEGAL, string(l.ch))
 		}
 	case ',':
 		tok = l.newToken(token.COMMA, string(l.ch))

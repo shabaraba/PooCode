@@ -1,0 +1,46 @@
+// test_new_pipes.poo - 新しいパイプ演算子(+>と?>)のテスト
+
+// 配列を作成
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] >> numbers
+"配列を作成しました: " + numbers |> print
+
+// 条件関数を定義
+def is_even() : int -> bool {
+    🍕 % 2 == 0 >> 💩
+}
+
+// +> 演算子（map）をパイプとして使用
+numbers +> is_even >> results
+"+> 演算子のテスト: " + results |> print
+
+// ?> 演算子（filter）を使って偶数のみをフィルタリング
+numbers ?> is_even >> evens
+"?> 演算子のテスト: " + evens |> print
+
+// 引数付き関数を定義
+def multiply(factor) : int -> int {
+    🍕 * factor >> 💩
+}
+
+// 引数付きでmap演算子を使用
+numbers +> multiply(10) >> multiplied
+"引数付き +> 演算子のテスト: " + multiplied |> print
+
+// 引数付きfilter関数を定義
+def greater_than(n) : int -> bool {
+    🍕 > n >> 💩
+}
+
+// 引数付きでfilter演算子を使用
+numbers ?> greater_than(5) >> greater_than_five
+"引数付き ?> 演算子のテスト: " + greater_than_five |> print
+
+// パイプラインの連鎖とmap/filterの組み合わせ
+numbers ?> is_even +> multiply(100) >> complex_result
+"複雑なパイプライン(?>と+>の連鎖): " + complex_result |> print
+
+// 比較のために従来のパイプラインスタイル
+numbers |> filter is_even |> map multiply(100) >> old_style_result
+"従来のパイプライン(|>): " + old_style_result |> print
+
+"新しいパイプ演算子テスト完了" |> print
