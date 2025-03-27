@@ -342,12 +342,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 				
 				// パイプライン式の右辺としてCallExpressionを使用
 				logger.ParserDebug("関数呼び出し式を生成: %s(引数: %d個)", ident.Value, len(args))
-				return &ast.InfixExpression{
-					Token:    pipeToken,
-					Operator: pipeToken.Literal,
-					Left:     left,
-					Right:    callExpr,
-				}
+				rightExp = callExpr
 			} else {
 				logger.ParserDebug("引数なしの識別子: %s、次のトークン: %s", ident.Value, p.peekToken.Literal)
 			}
