@@ -79,6 +79,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 条件付き関数と条件なし関数をグループ化
 	var conditionalFuncs []*object.Function
 	var defaultFuncs []*object.Function
+	
+	// NULLオブジェクト
+	var NullObj = &object.Null{}
 
 	for _, fn := range functions {
 		if fn.Condition != nil {
@@ -204,12 +207,21 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 		return createEvalError("関数の本体がBlockStatementではありません")
 	}
 
+	logger.Debug("関数 '%s' の本体を評価中...", funcName)
 	evaluated := evalBlockStatement(astBody, extendedEnv)
+	logger.Debug("関数 '%s' の評価結果: %s (%T)", funcName, evaluated.Inspect(), evaluated)
 
 	// ReturnValue の場合は Value を抽出
 	if returnValue, ok := evaluated.(*object.ReturnValue); ok {
+		logger.Debug("関数 '%s' から戻り値を受け取りました: %s", funcName, returnValue.Inspect())
+		// Valueフィールドがnilの場合は空のオブジェクトを返す
+		if returnValue.Value == nil {
+			logger.Debug("戻り値が nil です、NULL を返します")
+			return NullObj
+		}
 		return returnValue.Value
 	}
 
+	logger.Debug("通常の評価結果を返します: %s", evaluated.Inspect())
 	return evaluated
 }

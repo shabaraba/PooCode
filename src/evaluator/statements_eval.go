@@ -1,9 +1,8 @@
 package evaluator
 
 import (
-	"fmt"
-	
 	"github.com/uncode/ast"
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
@@ -30,27 +29,39 @@ func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) object.Object {
 	var result object.Object = NullObj
 
-	for _, statement := range block.Statements {
+	// デバッグ出力
+	logger.Debug("ブロック文の評価を開始します。%d 個のステートメント", len(block.Statements))
+	
+	for i, statement := range block.Statements {
+		logger.Debug("  ステートメント %d を評価: %T", i, statement)
 		result = Eval(statement, env)
 		
-		// 特殊なケース: >>💩 は関数からの戻り値
+		// ReturnValue（関数からの戻り値）が検出された場合は評価を中止して戻る
 		if returnValue, ok := result.(*object.ReturnValue); ok {
+			logger.Debug("  ReturnValue が検出されました: %s", returnValue.Inspect())
 			return returnValue
+		}
+		
+		// ErrorValue が検出された場合も評価を中止して戻る
+		if result.Type() == object.ERROR_OBJ {
+			logger.Debug("  Error が検出されました: %s", result.Inspect())
+			return result
 		}
 		
 		// 代入文の場合、PooLiteralへの代入は特別な意味を持つ
 		if assignStmt, ok := statement.(*ast.AssignStatement); ok {
 			if _, ok := assignStmt.Value.(*ast.PooLiteral); ok {
-				fmt.Println("💩への代入を検出しました - 戻り値として扱います")
-				// 右辺の値を取得
-				rightVal := Eval(assignStmt.Left, env)
-				if rightVal.Type() == object.ERROR_OBJ {
-					return rightVal
+				logger.Debug("  💩への代入を検出しました - 戻り値として扱います")
+				// 左辺の値を取得
+				leftVal := Eval(assignStmt.Left, env)
+				if leftVal.Type() == object.ERROR_OBJ {
+					return leftVal
 				}
-				return &object.ReturnValue{Value: rightVal}
+				return &object.ReturnValue{Value: leftVal}
 			}
 		}
 	}
 	
+	logger.Debug("ブロック文の評価を完了しました。最終結果: %s", result.Inspect())
 	return result
 }

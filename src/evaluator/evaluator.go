@@ -201,11 +201,14 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 				return createError("引数の数が一致しません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
 			}
 
+			logger.Debug("関数呼び出しを評価します")
+			
 			// 新しい環境を作成
 			extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 
 			// 引数を環境にバインド
 			for i, param := range fn.Parameters {
+				logger.Debug("  引数 '%s' に値 '%s' をバインドします", param.Value, args[i].Inspect())
 				extendedEnv.Set(param.Value, args[i])
 			}
 
@@ -217,12 +220,23 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			if !ok {
 				return createError("関数の本体がBlockStatementではありません")
 			}
+			
+			logger.Debug("  関数本体を評価します")
 			result := evalBlockStatement(astBody, extendedEnv)
+			logger.Debug("  関数本体の評価結果: %T", result)
 
-			// 💩値を返す（関数の戻り値）
-			if obj, ok := result.(*object.ReturnValue); ok {
-				return obj.Value
+			// ReturnValue オブジェクトの処理
+			if returnValue, ok := result.(*object.ReturnValue); ok {
+				logger.Debug("  関数から戻り値を受け取りました: %s", returnValue.Inspect())
+				// Valueフィールドがnilの場合は空のオブジェクトを返す
+				if returnValue.Value == nil {
+					logger.Debug("  戻り値が nil です、NULL を返します")
+					return NullObj
+				}
+				return returnValue.Value
 			}
+			
+			logger.Debug("  通常の評価結果を返します: %s", result.Inspect())
 			return result
 		} else if builtin, ok := function.(*object.Builtin); ok {
 			return builtin.Fn(args...)
