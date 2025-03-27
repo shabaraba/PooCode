@@ -185,7 +185,79 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 		p.curToken.Literal, p.peekToken.Literal)
 	
 	// パイプの右側の式を解析する
-	// 右側は識別子または関数呼び出しのはず
+	// map演算子の特別処理が必要なので、最初にidentifierを確認
+	if p.curTokenIs(token.IDENT) && p.curToken.Literal == "map" {
+		// map専用の処理
+		mapIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		
+		// 次のトークンが識別子またはその他の有効な引数なら、関数と引数として扱う
+		if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+		   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+			
+			// 次のトークンを取得
+			p.nextToken()
+			
+			// 最初の関数引数を処理
+			funcIdentifier := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			
+			// 追加引数があるか確認
+			var args []ast.Expression = nil
+			
+			// 可能性のある引数トークンを確認
+			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+				
+				// 引数リストを初期化
+				args = []ast.Expression{}
+				
+				// 追加の引数を処理
+				for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+					!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+					
+					p.nextToken()
+					arg := p.parseExpression(LOWEST)
+					args = append(args, arg)
+					
+					logger.ParserDebug("map関数用の引数を追加: %s (タイプ: %T)", arg.String(), arg)
+					
+					// 次のトークンがパイプやセミコロンなら終了
+					if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
+					   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
+						break
+					}
+				}
+			}
+			
+			// 引数リストを作成
+			var allArgs []ast.Expression
+			allArgs = append(allArgs, funcIdentifier)
+			
+			// 追加引数があれば追加
+			if args != nil {
+				allArgs = append(allArgs, args...)
+			}
+			
+			// map関数呼び出しを作成
+			callExpr := &ast.CallExpression{
+				Token:     pipeToken,
+				Function:  mapIdent,
+				Arguments: allArgs,
+			}
+			
+			logger.ParserDebug("map関数呼び出しを生成: map(%s)、引数数=%d", 
+				funcIdentifier.Value, len(allArgs))
+			
+			// InfixExpressionを作成
+			return &ast.InfixExpression{
+				Token:    pipeToken,
+				Operator: pipeToken.Literal,
+				Left:     left,
+				Right:    callExpr,
+			}
+		}
+	}
+	
+	// 通常のパイプライン処理（map以外）
 	rightExp := p.parseExpression(precedence)
 	
 	// 解析された右辺の式を記録
