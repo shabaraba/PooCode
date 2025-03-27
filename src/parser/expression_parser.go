@@ -197,55 +197,79 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 			// 次のトークンを取得
 			p.nextToken()
 			
-			// 最初の関数引数を処理
-			funcIdentifier := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+			// 関数引数を処理（関数名）
+			var funcIdentifier ast.Expression
 			
-			// 追加引数があるか確認
-			var args []ast.Expression = nil
-			
-			// 可能性のある引数トークンを確認
-			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+			// 呼び出し式かどうかを確認（関数名の後に括弧が続く場合）
+			if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
+				// 識別子を保存
+				ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 				
-				// 引数リストを初期化
-				args = []ast.Expression{}
+				// 括弧に進む
+				p.nextToken()
 				
-				// 追加の引数を処理
-				for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-					!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+				// 関数呼び出し式としてパース
+				funcIdentifier = &ast.CallExpression{
+					Token:     p.curToken,
+					Function:  ident,
+					Arguments: p.parseExpressionList(token.RPAREN),
+				}
+				
+				logger.ParserDebug("関数呼び出しとして解析: %s (引数付き)", ident.Value)
+			} else {
+				// 通常の識別子として処理
+				funcIdentifier = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+				
+				// 追加引数があるか確認
+				var funcArgs []ast.Expression
+				
+				// 可能性のある引数トークンを確認
+				if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+				   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
 					
-					p.nextToken()
-					arg := p.parseExpression(LOWEST)
-					args = append(args, arg)
-					
-					logger.ParserDebug("map関数用の引数を追加: %s (タイプ: %T)", arg.String(), arg)
-					
-					// 次のトークンがパイプやセミコロンなら終了
-					if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
-					   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
-						break
+					// 追加の引数を処理
+					for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+						!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+						
+						p.nextToken()
+						arg := p.parseExpression(LOWEST)
+						funcArgs = append(funcArgs, arg)
+						
+						logger.ParserDebug("関数への追加引数: %s (タイプ: %T)", arg.String(), arg)
+						
+						// 次のトークンがパイプやセミコロンなら終了
+						if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
+						   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
+							break
+						}
 					}
+				}
+				
+				// 引数がある場合は関数呼び出し式を作成
+				if len(funcArgs) > 0 {
+					funcIdentifier = &ast.CallExpression{
+						Token:     pipeToken,
+						Function:  funcIdentifier,
+						Arguments: funcArgs,
+					}
+					logger.ParserDebug("関数呼び出しを生成: %s(引数: %d個)", p.curToken.Literal, len(funcArgs))
 				}
 			}
 			
-			// 引数リストを作成
-			var allArgs []ast.Expression
-			allArgs = append(allArgs, funcIdentifier)
+			// マップ関数呼び出しのための引数リストを作成
+			var mapArgs []ast.Expression
 			
-			// 追加引数があれば追加
-			if args != nil {
-				allArgs = append(allArgs, args...)
-			}
+			// 関数（または関数呼び出し式）自体を引数として追加
+			mapArgs = append(mapArgs, funcIdentifier)
 			
 			// map関数呼び出しを作成
 			callExpr := &ast.CallExpression{
 				Token:     pipeToken,
 				Function:  mapIdent,
-				Arguments: allArgs,
+				Arguments: mapArgs,
 			}
 			
-			logger.ParserDebug("map関数呼び出しを生成: map(%s)、引数数=%d", 
-				funcIdentifier.Value, len(allArgs))
+			logger.ParserDebug("map関数呼び出しを生成: map()、引数数=%d", len(mapArgs))
 			
 			// InfixExpressionを作成
 			return &ast.InfixExpression{

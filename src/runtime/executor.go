@@ -26,6 +26,7 @@ type SourceCodeResult struct {
 func SetupBuiltins(env *object.Environment) {
 	// プリント関数を追加
 	env.Set("print", &object.Builtin{
+		Name: "print",
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())
@@ -34,7 +35,12 @@ func SetupBuiltins(env *object.Environment) {
 		},
 	})
 	
-	// その他の組み込み関数があればここに追加
+	// 評価器から組み込み関数をすべてインポート
+	// evaluator.Builtinsに登録されている関数をすべて環境に追加
+	for name, builtin := range evaluator.Builtins {
+		logger.Debug("組み込み関数を登録: %s", name)
+		env.Set(name, builtin)
+	}
 }
 
 // ExecuteSourceFile はソースファイルを読み込んで実行する

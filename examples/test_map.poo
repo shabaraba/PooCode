@@ -20,6 +20,6 @@ print("\nDoubled values:");
 
 // Use a function with argument
 print("\nAdd 100 to each value:");
-[1..10] |> map add_num 100 |> map print;
+[1..10] |> map add_num(100) |> map print;
 
 print("Program completed");

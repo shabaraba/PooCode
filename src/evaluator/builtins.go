@@ -55,6 +55,13 @@ func init() {
 	registerArrayBuiltins()
 	registerTypeBuiltins()
 	registerIOBuiltins()
+	
+	// 登録された組み込み関数を一覧表示（デバッグ用）
+	functions := make([]string, 0, len(Builtins))
+	for name := range Builtins {
+		functions = append(functions, name)
+	}
+	logger.Debug("登録された組み込み関数: %v", functions)
 }
 
 // 組み込み関数の型情報を取得する関数

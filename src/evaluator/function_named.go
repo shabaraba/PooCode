@@ -179,22 +179,53 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 
 	// 引数をバインド
 	if len(args) > 0 {
-		// 第1引数は特別に🍕にもセット
+		// 第1引数は必ず🍕にセット
+		logger.Debug("第1引数を🍕にセット: %s", args[0].Inspect())
 		extendedEnv.Set("🍕", args[0])
-
-		// 通常の引数セット
+		
+		// パイプラインで追加の引数を取得する場合がある
+		// 例えば [1..10] |> map add_num(100) の場合、argsは[array, 100]となる
+		logger.Debug("引数の数: %d, パラメータの数: %d", len(args), len(fn.Parameters))
+		
+		// パラメータの詳細をログに出力
 		for i, param := range fn.Parameters {
-			if i < len(args) - 1 {  // 最初の引数はすでに🍕にセットしたので残りの引数のみ処理
-				extendedEnv.Set(param.Value, args[i+1])
+			logger.Debug("パラメータ%d: %s", i, param.Value)
+		}
+		
+		// 引数の詳細をログに出力
+		for i, arg := range args {
+			logger.Debug("引数%d: %s (%s)", i, arg.Inspect(), arg.Type())
+		}
+		
+		// 特殊ケース: 関数に引数がない場合はそのまま実行
+		if len(fn.Parameters) == 0 {
+			logger.Debug("関数に引数がないためそのまま実行します")
+			return nil
+		}
+		
+		// 特殊な引数処理: map add_num(100)の場合
+		// (1) 引数が2つの場合（第1引数はすでに🍕にセット済み、第2引数はパラメータの第1引数として）
+		// (2) 引数が1つの場合（🍕のみでパラメータ引数なし）
+		
+		if len(fn.Parameters) > 0 {
+			// 通常のケース: 関数の引数が必要
+			// [1..10] |> map add_num(100) の場合、add_num関数のnumパラメータに100を渡す
+			
+			if len(args) >= 2 { // 最低2つ（配列と関数の引数）必要
+				// 第2引数を関数の第1パラメータにセット
+				logger.Debug("第2引数 %s を関数パラメータ %s にセット", 
+					args[1].Inspect(), fn.Parameters[0].Value)
+				extendedEnv.Set(fn.Parameters[0].Value, args[1])
 			} else {
-				// 引数が足りない場合はエラーとはせず、その関数は適用しない
-				// プログラム例では多数の条件付き関数がある可能性があるため
+				// 引数が足りない場合
+				logger.Debug("引数が不足しています（必要:%d+1, 現在:%d）", 
+					len(fn.Parameters), len(args))
 				return nil
 			}
 		}
 	} else if len(fn.Parameters) > 0 {
 		// 引数が必要なのに渡されていない場合はnilを返す
-		// これにより後続の条件付き関数やデフォルト関数が試行される
+		logger.Debug("引数がまったくありませんが、関数は引数を必要としています")
 		return nil
 	}
 

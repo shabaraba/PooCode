@@ -2,14 +2,31 @@ package evaluator
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
+	"github.com/uncode/token"
 )
+
+// カレント環境を保持するグローバル変数
+var currentEnv *object.Environment
+
+// GetEvalEnv は現在の評価環境を取得する
+func GetEvalEnv() *object.Environment {
+	if currentEnv == nil {
+		// デフォルト環境を作成
+		currentEnv = object.NewEnvironment()
+	}
+	return currentEnv
+}
 
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
+	// 現在の環境を設定
+	currentEnv = env
+	
 	// ノードがnilの場合はNULLを返す
 	if node == nil {
 		logger.Warn("nilノードが評価されました")
@@ -47,12 +64,23 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		return &object.Boolean{Value: node.Value}
 		
 	case *ast.ArrayLiteral:
-		logger.Debug("配列リテラルを評価")
+		logger.Debug("配列リテラル [%v] を評価", node.Elements)
 		elements := evalExpressions(node.Elements, env)
 		if len(elements) > 0 && elements[0].Type() == object.ERROR_OBJ {
 			return elements[0]
 		}
-		return &object.Array{Elements: elements}
+		
+		// 結果の表示
+		var elemStrs []string
+		for _, e := range elements {
+			elemStrs = append(elemStrs, e.Inspect())
+		}
+		logger.Debug("配列リテラルの評価完了: [%s], 要素数=%d", strings.Join(elemStrs, ", "), len(elements))
+		
+		result := &object.Array{Elements: elements}
+		// NOTE: ここで明示的に Array を返していることを確認
+		logger.Debug("配列オブジェクトを返します: %s (Type=%s)", result.Inspect(), result.Type())
+		return result
 	
 	case *ast.RangeExpression:
 		logger.Debug("範囲式を評価")
@@ -138,26 +166,10 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		return function
 
 	case *ast.InfixExpression:
-		logger.Debug("中置式を評価")
-		// パイプライン演算子と代入演算子のチェック
-		if node.Operator == "|>" {
-			return evalPipeline(node, env)
-		} else if node.Operator == ">>" || node.Operator == "=" {
-			return evalAssignment(node, env)
-		} else {
-			// その他の中置演算子
-			left := Eval(node.Left, env)
-			if left.Type() == object.ERROR_OBJ {
-				return left
-			}
-
-			right := Eval(node.Right, env)
-			if right.Type() == object.ERROR_OBJ {
-				return right
-			}
-
-			return evalInfixExpression(node.Operator, left, right)
-		}
+		logger.Debug("中置式を評価: %s", node.Operator)
+		
+		// パイプライン演算子、map/filter、および代入演算子の評価
+		return evalInfixExpression(node, env)
 
 	case *ast.CallExpression:
 		logger.Debug("関数呼び出し式を評価")

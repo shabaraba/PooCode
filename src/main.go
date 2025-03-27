@@ -38,6 +38,14 @@ func main() {
 	} else {
 		evaluator.SetBuiltinLogLevel(logger.LevelInfo)
 	}
+	
+	// パイプライン処理のデバッグレベルを設定
+	if config.GlobalConfig.ShowPipelineDebug {
+		evaluator.SetPipeDebugLevel(logger.LevelDebug)
+		logger.Debug("パイプライン処理のデバッグ出力を有効化しました")
+	} else {
+		evaluator.SetPipeDebugLevel(logger.LevelOff)
+	}
 
 	// ソースファイルの実行
 	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)

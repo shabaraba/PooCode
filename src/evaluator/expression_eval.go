@@ -6,6 +6,7 @@ import (
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
+	"github.com/uncode/token"
 )
 
 // evalExpressions は複数の式を評価する
@@ -20,6 +21,21 @@ func evalExpressions(exps []ast.Expression, env *object.Environment) []object.Ob
 	}
 	
 	return result
+}
+
+// evalStandardInfixExpression は標準的な中置式を評価する
+func evalStandardInfixExpression(node *ast.InfixExpression, env *object.Environment) object.Object {
+	left := Eval(node.Left, env)
+	if left.Type() == object.ERROR_OBJ {
+		return left
+	}
+	
+	right := Eval(node.Right, env)
+	if right.Type() == object.ERROR_OBJ {
+		return right
+	}
+	
+	return evalInfixExpression(node.Operator, left, right)
 }
 
 // evalInfixExpression は中置式を評価する

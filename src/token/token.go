@@ -59,6 +59,10 @@ const (
 	// パイプライン
 	PIPE     = "|>" // パイプライン
 	PIPE_PAR = "|"  // 並列パイプライン
+	
+	// 特殊パイプ演算子
+	MAP_PIPE = "MAP_PIPE" // map関数をパイプとして使用
+	FILTER_PIPE = "FILTER_PIPE" // filter関数をパイプとして使用
 
 	// キーワード
 	FUNCTION = "def"     // 関数定義
@@ -106,6 +110,8 @@ var keywords = map[string]TokenType{
 	"add":     IDENT, // 関数として扱う
 	"print":   IDENT, // print関数を明示的に追加
 	"show":    IDENT, // 代替としてshowも追加
+	"map":     MAP_PIPE, // mapをパイプとして追加
+	"filter":  FILTER_PIPE, // filterをパイプとして追加
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定する

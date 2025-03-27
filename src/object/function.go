@@ -6,13 +6,14 @@ import (
 
 // Function は関数を表す
 type Function struct {
-	Parameters []*Identifier
-	ASTBody    interface{} // ASTのBlockStatementを保持するフィールド
-	Env        *Environment
-	InputType  string
-	ReturnType string
-	Condition  interface{} // 条件式
-	Poo        Object      // 💩メンバ
+	Parameters  []*Identifier
+	ParamValues []Object     // 引数の値を保持（パイプラインで使用）
+	ASTBody     interface{}  // ASTのBlockStatementを保持するフィールド
+	Env         *Environment
+	InputType   string
+	ReturnType  string
+	Condition   interface{}  // 条件式
+	Poo         Object       // 💩メンバ
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
