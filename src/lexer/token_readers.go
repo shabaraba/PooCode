@@ -35,7 +35,15 @@ func (l *Lexer) readNumber() token.Token {
 
 	for isDigit(l.ch) {
 		l.readChar()
-		if l.ch == '.' && !isFloat {
+		// Check for float point
+		if l.ch == '.' {
+			// If the next char is also '.', then this is not a float
+			// but an integer followed by a range operator'..'
+			if l.peekChar() == '.' {
+				break // Exit the loop to return INT 
+			}
+			
+			// It's a decimal point
 			isFloat = true
 			l.readChar()
 		}

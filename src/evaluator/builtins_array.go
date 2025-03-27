@@ -5,7 +5,7 @@ import (
 )
 
 func registerArrayBuiltins() {
-	// map function
+		// map function
 	Builtins["map"] = &object.Builtin{
 		Name: "map",
 		Fn: func(args ...object.Object) object.Object {
@@ -18,28 +18,42 @@ func registerArrayBuiltins() {
 				return createError("First argument to map must be an array")
 			}
 			
-			fn, ok := args[1].(*object.Function)
-			if !ok {
+			// Check if the second argument is a function (either user-defined or builtin)
+			var mapFn func(object.Object) object.Object
+			
+			switch fn := args[1].(type) {
+			case *object.Function:
+				// User-defined function
+				mapFn = func(elem object.Object) object.Object {
+					extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+					extendedEnv.Set("🍕", elem)
+					
+					result := Eval(fn.ASTBody, extendedEnv)
+					
+					if errObj, ok := result.(*object.Error); ok {
+						return errObj
+					}
+					
+					if retVal, ok := result.(*object.ReturnValue); ok {
+						result = retVal.Value
+					}
+					
+					return result
+				}
+			case *object.Builtin:
+				// Builtin function
+				mapFn = func(elem object.Object) object.Object {
+					result := fn.Fn(elem)
+					return result
+				}
+			default:
 				return createError("Second argument to map must be a function")
 			}
 			
-			resultElements := make([]object.Object, 0)
+			resultElements := make([]object.Object, 0, len(arr.Elements))
 			
 			for _, elem := range arr.Elements {
-				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
-				extendedEnv.Set("🍕", elem)
-				
-				result := Eval(fn.ASTBody, extendedEnv)
-				
-				if errObj, ok := result.(*object.Error); ok {
-					return errObj
-				}
-				
-				if retVal, ok := result.(*object.ReturnValue); ok {
-					result = retVal.Value
-				}
-				
-				resultElements = append(resultElements, result)
+				resultElements = append(resultElements, mapFn(elem))
 			}
 			
 			return &object.Array{Elements: resultElements}
@@ -61,25 +75,46 @@ func registerArrayBuiltins() {
 				return createError("First argument to filter must be an array")
 			}
 			
-			fn, ok := args[1].(*object.Function)
-			if !ok {
+			// Check if the second argument is a function (either user-defined or builtin)
+			var filterFn func(object.Object) object.Object
+			
+			switch fn := args[1].(type) {
+			case *object.Function:
+				// User-defined function
+				filterFn = func(elem object.Object) object.Object {
+					extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+					extendedEnv.Set("🍕", elem)
+					
+					result := Eval(fn.ASTBody, extendedEnv)
+					
+					if errObj, ok := result.(*object.Error); ok {
+						return errObj
+					}
+					
+					if retVal, ok := result.(*object.ReturnValue); ok {
+						result = retVal.Value
+					}
+					
+					return result
+				}
+			case *object.Builtin:
+				// Builtin function
+				filterFn = func(elem object.Object) object.Object {
+					result := fn.Fn(elem)
+					return result
+				}
+			default:
 				return createError("Second argument to filter must be a function")
 			}
 			
-			resultElements := make([]object.Object, 0)
+			resultElements := make([]object.Object, 0, len(arr.Elements))
 			
 			for _, elem := range arr.Elements {
-				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
-				extendedEnv.Set("🍕", elem)
+				result := filterFn(elem)
 				
-				result := Eval(fn.ASTBody, extendedEnv)
-				
+				// Check for errors
 				if errObj, ok := result.(*object.Error); ok {
 					return errObj
-				}
-				
-				if retVal, ok := result.(*object.ReturnValue); ok {
-					result = retVal.Value
 				}
 				
 				if isTruthy(result) {

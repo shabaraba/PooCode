@@ -132,11 +132,21 @@ func (l *Lexer) NextToken() token.Token {
 	case ']':
 		tok = l.newToken(token.RBRACKET, string(l.ch))
 	case '.':
+		// Check for '..' (range operator)
 		if l.peekChar() == '.' {
 			ch := l.ch
 			l.readChar()
 			tok = l.newToken(token.DOTDOT, string(ch)+string(l.ch))
 		} else {
+			// Check if it's a floating point number
+			if isDigit(l.peekChar()) {
+				// This is part of a float, go back and let readNumber handle it
+				l.position--
+				l.readPosition--
+				l.column--
+				return l.readNumber()
+			}
+			// It's just a regular period
 			tok = l.newToken(token.DOT, string(l.ch))
 		}
 	case '\'':
