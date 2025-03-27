@@ -494,6 +494,39 @@ func IsSpecialLevelEnabled(level LogLevel) bool {
 	return GetLogger().IsSpecialLevelEnabled(level)
 }
 
+// IsLevelEnabled は指定したログレベルが現在の設定で有効かどうかを返す
+func (l *Logger) IsLevelEnabled(level LogLevel) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	// 特殊ログレベルの場合
+	if level >= LevelTypeInfo {
+		enabled, exists := l.specialLevels[level]
+		if !exists {
+			return false
+		}
+		return l.isEnabled && enabled
+	}
+
+	// 通常のログレベルの場合
+	return l.isEnabled && level <= l.globalLevel
+}
+
+// IsLevelEnabled はグローバルロガーを使用して、指定したログレベルが有効かを判定する
+func IsLevelEnabled(level LogLevel) bool {
+	return GetLogger().IsLevelEnabled(level)
+}
+
+// Log は指定したレベルでログを出力する（条件チェックなし）
+func (l *Logger) Log(level LogLevel, format string, args ...interface{}) {
+	l.log(level, format, args...)
+}
+
+// Log はグローバルロガーを使用して、指定したレベルでログを出力する
+func Log(level LogLevel, format string, args ...interface{}) {
+	GetLogger().Log(level, format, args...)
+}
+
 func SetOutput(w io.Writer) {
 	GetLogger().SetOutput(w)
 }
