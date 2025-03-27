@@ -5,6 +5,7 @@ import (
 
 	"github.com/uncode/ast"
 	"github.com/uncode/lexer"
+	"github.com/uncode/logger"
 	"github.com/uncode/token"
 )
 
@@ -97,6 +98,8 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerPrefix(token.PIZZA, p.parsePizzaLiteral)
 	p.registerPrefix(token.POO, p.parsePooLiteral)
 	p.registerPrefix(token.DOTDOT, p.parseRangeExpression)
+	// EOFトークンに対するダミー解析関数を登録
+	p.registerPrefix(token.EOF, p.parseEOF)
 
 	// 中置演算子の解析関数を登録
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -153,6 +156,13 @@ func (p *Parser) nextToken() {
 			p.peekToken = token.Token{Type: token.EOF, Literal: ""}
 		}
 	}
+}
+
+// parseEOF はEOFトークンに対する前置解析関数
+// EOFに到達したときに呼び出されるだけなので、実質的には何もしない
+func (p *Parser) parseEOF() ast.Expression {
+	logger.Debug("EOFトークンを検出しました（プログラムの終わり）")
+	return nil
 }
 
 // ParseProgram はプログラム全体を解析する

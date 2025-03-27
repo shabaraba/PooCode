@@ -1,0 +1,17 @@
+// Simple test for +> operator
+
+// Define a doubling function
+def double() : int -> int {
+    🍕 * 2 >> 💩
+}
+
+// Create a test array
+[1, 2, 3, 4, 5] >> numbers;
+
+// Display original
+"Original:" |> print;
+numbers |> print;
+
+// Use map operator
+"After doubling with +>:" |> print;
+numbers +> double |> print;
