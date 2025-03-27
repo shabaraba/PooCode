@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"github.com/uncode/ast"
+	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
@@ -35,7 +36,7 @@ func evalCallExpressionForPipeline(callExpr *ast.CallExpression, env *object.Env
 	if function, ok := fn.(*object.Function); ok {
 		// 引数付き関数を作成して返す
 		// 🍕については後で設定するので、ここでは引数だけを持った関数として返す
-		LogPipe("関数 '%s' に引数 %d 個を設定\n", funcName, len(args))
+		logger.Debug("関数 '%s' に引数 %d 個を設定\n", funcName, len(args))
 		
 		// 新しい関数オブジェクトを作成（パラメータと引数を持つ）
 		newFunction := &object.Function{

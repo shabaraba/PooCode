@@ -113,7 +113,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '+':
 		if l.peekChar() == '>' {
-			ch := l.ch
+			// Read but don't use the character - just advance position
 			l.readChar()
 			// Changed to use MAP_PIPE type but "map" literal for compatibility
 			tok = l.newToken(token.MAP_PIPE, "map")
@@ -122,7 +122,7 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '?':
 		if l.peekChar() == '>' {
-			ch := l.ch
+			// Read but don't use the character - just advance position
 			l.readChar()
 			// Changed to use FILTER_PIPE type but "filter" literal for compatibility
 			tok = l.newToken(token.FILTER_PIPE, "filter")

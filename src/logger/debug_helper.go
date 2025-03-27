@@ -2,10 +2,9 @@ package logger
 
 import "fmt"
 
-// LogTokenProcessing logs token processing information for debugging
-func LogTokenProcessing(format string, args ...interface{}) {
-	if CurrentLevel <= LevelDebug {
-		msg := fmt.Sprintf(format, args...)
-		fmt.Printf("[TOKEN-DEBUG] %s\n", msg)
-	}
+// TokenDebug logs token processing information for debugging
+// This is simplified to not depend on global state
+func TokenDebug(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("[TOKEN-DEBUG] %s\n", msg)
 }

@@ -1,0 +1,17 @@
+// Test for map operator
+
+// Create a test array
+[1..5] >> numbers;
+
+// Display the array
+"Original array:" |> print;
+numbers |> print;
+
+// Use the +> operator to multiply by 10
+"Using +> to map each element times 10:" |> print;
+numbers +> multiply(10) |> print;
+
+// Define a simple utility function
+def multiply(factor) : int -> int {
+    🍕 * factor >> 💩
+}

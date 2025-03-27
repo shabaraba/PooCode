@@ -7,7 +7,6 @@ import (
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
-	"github.com/uncode/token"
 )
 
 // カレント環境を保持するグローバル変数
@@ -169,7 +168,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 		logger.Debug("中置式を評価: %s", node.Operator)
 		
 		// パイプライン演算子、map/filter、および代入演算子の評価
-		return evalInfixExpression(node, env)
+		return evalInfixExpressionWithNode(node, env)
 
 	case *ast.CallExpression:
 		logger.Debug("関数呼び出し式を評価")

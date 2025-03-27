@@ -1,0 +1,9 @@
+// 簡単なmapテスト
+
+def is_even() : int -> bool {
+  🍕 % 2 == 0 >> 💩
+}
+
+[1, 2, 3, 4, 5] >> numbers
+numbers +> is_even >> result
+result |> print

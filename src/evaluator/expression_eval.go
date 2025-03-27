@@ -6,7 +6,6 @@ import (
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
-	"github.com/uncode/token"
 )
 
 // evalExpressions は複数の式を評価する

@@ -296,83 +296,12 @@ func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpres
 	return result
 }
 
-// evalCallExpressionForPipeline はパイプライン用に関数呼び出し式を評価する特別な関数
-func evalCallExpressionForPipeline(callExpr *ast.CallExpression, env *object.Environment) object.Object {
-	// 関数名を取得
-	var funcName string
-	if ident, ok := callExpr.Function.(*ast.Identifier); ok {
-		funcName = ident.Value
-	} else {
-		return createError("関数名を取得できません: %T", callExpr.Function)
-	}
-	
-	// 引数を評価
-	args := evalExpressions(callExpr.Arguments, env)
-	if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
-		return args[0]
-	}
-	
-	// 環境から関数を検索
-	fn, exists := env.Get(funcName)
-	if !exists {
-		// ビルトイン関数を確認
-		if builtin, ok := Builtins[funcName]; ok {
-			return builtin
-		}
-		return createError("関数 '%s' が見つかりません", funcName)
-	}
-	
-	// 関数オブジェクトの場合
-	if function, ok := fn.(*object.Function); ok {
-		// 引数付き関数を作成して返す
-		// 🍕については後で設定するので、ここでは引数だけを持った関数として返す
-		logger.Debug("関数 '%s' に引数 %d 個を設定\n", funcName, len(args))
-		
-		// 新しい関数オブジェクトを作成（パラメータと引数を持つ）
-		newFunction := &object.Function{
-			Parameters: function.Parameters,
-			ASTBody:    function.ASTBody,
-			Env:        function.Env,
-			InputType:  function.InputType,
-			ReturnType: function.ReturnType,
-			// 重要: 引数を保存
-			ParamValues: args,
-		}
-		
-		return newFunction
-	}
-	
-	// その他のケース（ビルトイン関数など）
-	return fn
-}
+// この部分は pipeline_call_eval.go と assignment_eval.go に移動しました
 
-// evalAssignment は>>演算子による代入を評価する
-func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.Object {
-	logger.Debug("代入演算子を検出しました")
-	// >>演算子の場合、右辺の変数に左辺の値を代入する
-	right := node.Right
+// pipeDebugLevel はパイプラインのデバッグレベルを保持します
+var pipeDebugLevel = logger.LevelDebug
 
-	// 右辺が識別子の場合は変数に代入
-	if ident, ok := right.(*ast.Identifier); ok {
-		left := Eval(node.Left, env)
-		if left.Type() == object.ERROR_OBJ {
-			return left
-		}
-
-		env.Set(ident.Value, left)
-		return left
-	}
-
-	// 右辺がPooLiteralの場合は戻り値として扱う
-	if _, ok := right.(*ast.PooLiteral); ok {
-		logger.Debug("💩への代入を検出しました - 戻り値として扱います")
-		left := Eval(node.Left, env)
-		if left.Type() == object.ERROR_OBJ {
-			return left
-		}
-		logger.Debug("💩に戻り値として %s を設定します\n", left.Inspect())
-		return &object.ReturnValue{Value: left}
-	}
-
-	return createError("代入先が識別子または💩ではありません: %T", right)
+// SetPipeDebugLevel はパイプラインのデバッグレベルを設定します
+func SetPipeDebugLevel(level logger.LogLevel) {
+	pipeDebugLevel = level
 }

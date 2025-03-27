@@ -1,0 +1,25 @@
+// Basic map test
+
+// Define a simple function
+def double() : int -> int {
+    🍕 * 2 >> 💩
+}
+
+// Create a test array
+[1..5] >> numbers;
+
+// Test the function directly
+"Testing double function:" |> print;
+double(3) |> print;
+
+// Test array printing
+"Array contents:" |> print;
+numbers |> print;
+
+// Use the new pipe operator with a direct print
+"Using map directly with print:" |> print;
+numbers +> print |> print;
+
+// Try with function reference
+"Doubling with map:" |> print;
+numbers |> map double |> print;
