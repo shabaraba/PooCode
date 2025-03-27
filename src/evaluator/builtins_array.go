@@ -1,10 +1,10 @@
 package evaluator
 
 import (
-\t\"fmt\"
-\t\"strings\"
-\t\"github.com/uncode/logger\"
-\t\"github.com/uncode/object\"
+	"fmt"
+	"strings"
+	"github.com/uncode/logger"
+	"github.com/uncode/object"
 )
 
 // log variables for debugging
@@ -12,266 +12,266 @@ var builtinLogLevel = logger.LevelTrace
 
 // logIfEnabled logs a message if logging is enabled for the given level
 func logIfEnabled(level logger.LogLevel, format string, args ...interface{}) {
-\tif logger.IsSpecialLevelEnabled(level) || logger.GetComponentLevel(logger.ComponentBuiltin) >= level {
-\t\tlogger.ComponentDebug(logger.ComponentBuiltin, format, args...)
-\t}
+	if logger.IsSpecialLevelEnabled(level) || logger.GetComponentLevel(logger.ComponentBuiltin) >= level {
+		logger.ComponentDebug(logger.ComponentBuiltin, format, args...)
+	}
 }
 
-// registerArrayBuiltins oM�#nD��p�{2Y�
+// registerArrayBuiltins は配列関連の組み込み関数を登録する
 func registerArrayBuiltins() {
-\t// M�#PWf�WkY��p
-\tBuiltins[\"join\"] = &object.Builtin{
-\t\tName: \"join\",
-\t\tFn: func(args ...object.Object) object.Object {
-\t\t\tlogIfEnabled(builtinLogLevel, \"join�pL|s�U�~W_: pp=%d\", len(args))
-\t\t\t
-\t\t\tif len(args) != 2 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"join�po2dnpLŁgY: %dH��~W_\", len(args))
-\t\t\t\treturn createError(\"join�po2dnpLŁgY: %dH��~W_\", len(args))
-\t\t\t}
-\t\t\t
-\t\t\t// ,1poM
-\t\t\tif args[0].Type() != object.ARRAY_OBJ {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"join�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t\treturn createError(\"join�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t}
-\t\t\tarray, _ := args[0].(*object.Array)
-\t\t\t
-\t\t\t// ,2po:��W
-\t\t\tif args[1].Type() != object.STRING_OBJ {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"join�pn,2po�WgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t\treturn createError(\"join�pn,2po�WgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t}
-\t\t\tdelimiter, _ := args[1].(*object.String)
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"join�p: M� p=%d, :��W='%s'\", len(array.Elements), delimiter.Value)
-\t\t\t
-\t\t\t// Mn� ��Wk	�
-\t\t\telements := make([]string, len(array.Elements))
-\t\t\tfor i, elem := range array.Elements {
-\t\t\t\tswitch e := elem.(type) {
-\t\t\t\tcase *object.String:
-\t\t\t\t\telements[i] = e.Value
-\t\t\t\tcase *object.Integer:
-\t\t\t\t\telements[i] = fmt.Sprintf(\"%d\", e.Value)
-\t\t\t\tcase *object.Boolean:
-\t\t\t\t\telements[i] = fmt.Sprintf(\"%t\", e.Value)
-\t\t\t\tdefault:
-\t\t\t\t\telements[i] = e.Inspect()
-\t\t\t\t}
-\t\t\t}
-\t\t\t
-\t\t\tresult := strings.Join(elements, delimiter.Value)
-\t\t\tlogIfEnabled(builtinLogLevel, \"join�p: P�='%s'\", result)
-\t\t\treturn &object.String{Value: result}
-\t\t},
-\t\tReturnType: object.STRING_OBJ,
-\t\tParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.STRING_OBJ},
-\t}
+	// 配列を連結して文字列にする関数
+	Builtins["join"] = &object.Builtin{
+		Name: "join",
+		Fn: func(args ...object.Object) object.Object {
+			logIfEnabled(builtinLogLevel, "join関数が呼び出されました: 引数数=%d", len(args))
+			
+			if len(args) \!= 2 {
+				logger.ComponentError(logger.ComponentBuiltin, "join関数は2つの引数が必要です: %d個与えられました", len(args))
+				return createError("join関数は2つの引数が必要です: %d個与えられました", len(args))
+			}
+			
+			// 第1引数は配列
+			if args[0].Type() \!= object.ARRAY_OBJ {
+				logger.ComponentError(logger.ComponentBuiltin, "join関数の第1引数は配列である必要があります: %s", args[0].Type())
+				return createError("join関数の第1引数は配列である必要があります: %s", args[0].Type())
+			}
+			array, _ := args[0].(*object.Array)
+			
+			// 第2引数は区切り文字
+			if args[1].Type() \!= object.STRING_OBJ {
+				logger.ComponentError(logger.ComponentBuiltin, "join関数の第2引数は文字列である必要があります: %s", args[1].Type())
+				return createError("join関数の第2引数は文字列である必要があります: %s", args[1].Type())
+			}
+			delimiter, _ := args[1].(*object.String)
+			
+			logIfEnabled(builtinLogLevel, "join関数: 配列要素数=%d, 区切り文字='%s'", len(array.Elements), delimiter.Value)
+			
+			// 配列の各要素を文字列に変換
+			elements := make([]string, len(array.Elements))
+			for i, elem := range array.Elements {
+				switch e := elem.(type) {
+				case *object.String:
+					elements[i] = e.Value
+				case *object.Integer:
+					elements[i] = fmt.Sprintf("%d", e.Value)
+				case *object.Boolean:
+					elements[i] = fmt.Sprintf("%t", e.Value)
+				default:
+					elements[i] = e.Inspect()
+				}
+			}
+			
+			result := strings.Join(elements, delimiter.Value)
+			logIfEnabled(builtinLogLevel, "join関数: 結果='%s'", result)
+			return &object.String{Value: result}
+		},
+		ReturnType: object.STRING_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.STRING_OBJ},
+	}
 
-\t// p$����\Y��p
-\tBuiltins[\"range\"] = &object.Builtin{
-\t\tName: \"range\",
-\t\tFn: func(args ...object.Object) object.Object {
-\t\t\tlogIfEnabled(builtinLogLevel, \"range�pL|s�U�~W_: pp=%d\", len(args))
-\t\t\t
-\t\t\t// pnp���ï: 1~_o2dnp��Q�Q�
-\t\t\tif len(args) < 1 || len(args) > 2 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"range�po1-2npLŁgY: %dH��~W_\", len(args))
-\t\t\t\treturn createError(\"range�po1-2npLŁgY: %dH��~W_\", len(args))
-\t\t\t}
-\t\t\t
-\t\t\tvar start, end int64
-\t\t\t
-\t\t\t// 1dnpn4: 0K�]n$~g
-\t\t\tif len(args) == 1 {
-\t\t\t\tif args[0].Type() != object.INTEGER_OBJ {
-\t\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"range�pnpotpgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t\t\treturn createError(\"range�pnpotpgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t\t}
-\t\t\t\tendVal, _ := args[0].(*object.Integer)
-\t\t\t\t
-\t\t\t\tstart = 0
-\t\t\t\tend = endVal.Value
-\t\t\t\tlogIfEnabled(builtinLogLevel, \"range�p: 0K�%d~gn��\", end)
-\t\t\t} else {
-\t\t\t\t// 2dnpn4: startK�end~g
-\t\t\t\tif args[0].Type() != object.INTEGER_OBJ || args[1].Type() != object.INTEGER_OBJ {
-\t\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"range�pnpotpgB�ŁLB�~Y\")
-\t\t\t\t\treturn createError(\"range�pnpotpgB�ŁLB�~Y\")
-\t\t\t\t}
-\t\t\t\t
-\t\t\t\tstartVal, _ := args[0].(*object.Integer)
-\t\t\t\tendVal, _ := args[1].(*object.Integer)
-\t\t\t\t
-\t\t\t\tstart = startVal.Value
-\t\t\t\tend = endVal.Value
-\t\t\t\tlogIfEnabled(builtinLogLevel, \"range�p: %dK�%d~gn��\", start, end)
-\t\t\t}
-\t\t\t
-\t\t\t// ��MnLB�Mn��'MD4oznM��Y
-\t\t\tif start > end {
-\t\t\t\tlogger.ComponentWarn(logger.ComponentBuiltin, \"range�p: ��$ %d LB�$ %d ��'MD_�zM��W~Y\", start, end)
-\t\t\t\treturn &object.Array{Elements: []object.Object{}}
-\t\t\t}
-\t\t\t
-\t\t\t// M�\
-\t\t\telements := make([]object.Object, end-start)
-\t\t\tfor i := start; i < end; i++ {
-\t\t\t\telements[i-start] = &object.Integer{Value: i}
-\t\t\t}
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"range�p: P�nM� p=%d\", len(elements))
-\t\t\treturn &object.Array{Elements: elements}
-\t\t},
-\t\tReturnType: object.ARRAY_OBJ,
-\t\tParamTypes: []object.ObjectType{object.INTEGER_OBJ, object.INTEGER_OBJ},
-\t}
-\t
-\t// map�p - Mn� k�p�i(Y�
-\tBuiltins[\"map\"] = &object.Builtin{
-\t\tName: \"map\",
-\t\tFn: func(args ...object.Object) object.Object {
-\t\t\tlogIfEnabled(builtinLogLevel, \"map�pL|s�U�~W_: pp=%d\", len(args))
-\t\t\t
-\t\t\t// pnp��ï
-\t\t\tif len(args) != 2 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"map�po2dnpLŁgY: M, �p\")
-\t\t\t\treturn createError(\"map�po2dnpLŁgY: M, �p\")
-\t\t\t}
-\t\t\t
-\t\t\t// ,1pLMK��ï
-\t\t\tarr, ok := args[0].(*object.Array)
-\t\t\tif !ok {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"map�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t\treturn createError(\"map�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t}
-\t\t\t
-\t\t\t// ,2pL�pK��ï
-\t\t\tfn, ok := args[1].(*object.Function)
-\t\t\tif !ok {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"map�pn,2po�pgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t\treturn createError(\"map�pn,2po�pgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t}
-\t\t\t
-\t\t\t// map�pnpn�����ozgB�ŁLB�
-\t\t\tif len(fn.Parameters) > 0 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"map�pk!U�_�po�������֋yMgoB�~[�\")
-\t\t\t\treturn createError(\"map�pk!U�_�po�������֋yMgoB�~[�\")
-\t\t\t}
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"map�p: M� p=%d\", len(arr.Elements))
-\t\t\t
-\t\t\t// P�nM
-\t\t\tresultElements := make([]object.Object, 0, len(arr.Elements))
-\t\t\t
-\t\t\t// Mn� k�p�i(
-\t\t\tfor i, elem := range arr.Elements {
-\t\t\t\tlogIfEnabled(builtinLogLevel, \"map�p: �  %d ��-: %s\", i, elem.Inspect())
-\t\t\t\t
-\t\t\t\t// �pn����5Wf<Uk�(n� �-�
-\t\t\t\textendedEnv := object.NewEnclosedEnvironment(fn.Env)
-\t\t\t\textendedEnv.Set(\"<U\", elem)
-\t\t\t\t
-\t\t\t\t// �p�U�
-\t\t\t\tresult := Eval(fn.ASTBody, extendedEnv)
-\t\t\t\t
-\t\t\t\t// �����ï
-\t\t\t\tif errObj, ok := result.(*object.Error); ok {
-\t\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"map�pn�-k���Lz: %s\", errObj.Message)
-\t\t\t\t\treturn errObj
-\t\t\t\t}
-\t\t\t\t
-\t\t\t\t// ReturnValue������
-\t\t\t\tif retVal, ok := result.(*object.ReturnValue); ok {
-\t\t\t\t\tresult = retVal.Value
-\t\t\t\t}
-\t\t\t\t
-\t\t\t\tlogIfEnabled(builtinLogLevel, \"map�p: �  %d n�P�: %s\", i, result.Inspect())
-\t\t\t\t
-\t\t\t\t// P��Mk��
-\t\t\t\tresultElements = append(resultElements, result)
-\t\t\t}
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"map�p: ���, P�nM� p=%d\", len(resultElements))
-\t\t\treturn &object.Array{Elements: resultElements}
-\t\t},
-\t\tReturnType: object.ARRAY_OBJ,
-\t\tParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
-\t}
-\t
-\t// filter�p - a�k�Y�� n���Y�
-\tBuiltins[\"filter\"] = &object.Builtin{
-\t\tName: \"filter\",
-\t\tFn: func(args ...object.Object) object.Object {
-\t\t\tlogIfEnabled(builtinLogLevel, \"filter�pL|s�U�~W_: pp=%d\", len(args))
-\t\t\t
-\t\t\t// pnp��ï
-\t\t\tif len(args) != 2 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"filter�po2dnpLŁgY: M, �p\")
-\t\t\t\treturn createError(\"filter�po2dnpLŁgY: M, �p\")
-\t\t\t}
-\t\t\t
-\t\t\t// ,1pLMK��ï
-\t\t\tarr, ok := args[0].(*object.Array)
-\t\t\tif !ok {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"filter�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t\treturn createError(\"filter�pn,1poMgB�ŁLB�~Y: %s\", args[0].Type())
-\t\t\t}
-\t\t\t
-\t\t\t// ,2pL�pK��ï
-\t\t\tfn, ok := args[1].(*object.Function)
-\t\t\tif !ok {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"filter�pn,2po�pgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t\treturn createError(\"filter�pn,2po�pgB�ŁLB�~Y: %s\", args[1].Type())
-\t\t\t}
-\t\t\t
-\t\t\t// filter�pnpn�����ozgB�ŁLB�
-\t\t\tif len(fn.Parameters) > 0 {
-\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"filter�pk!U�_�po�������֋yMgoB�~[�\")
-\t\t\t\treturn createError(\"filter�pk!U�_�po�������֋yMgoB�~[�\")
-\t\t\t}
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"filter�p: M� p=%d\", len(arr.Elements))
-\t\t\t
-\t\t\t// P�nM
-\t\t\tresultElements := make([]object.Object, 0)
-\t\t\t
-\t\t\t// Mn� ka��p�i(
-\t\t\tfor i, elem := range arr.Elements {
-\t\t\t\tlogIfEnabled(builtinLogLevel, \"filter�p: �  %d ��-: %s\", i, elem.Inspect())
-\t\t\t\t
-\t\t\t\t// �pn����5Wf<Uk�(n� �-�
-\t\t\t\textendedEnv := object.NewEnclosedEnvironment(fn.Env)
-\t\t\t\textendedEnv.Set(\"<U\", elem)
-\t\t\t\t
-\t\t\t\t// a��p�U�
-\t\t\t\tresult := Eval(fn.ASTBody, extendedEnv)
-\t\t\t\t
-\t\t\t\t// �����ï
-\t\t\t\tif errObj, ok := result.(*object.Error); ok {
-\t\t\t\t\tlogger.ComponentError(logger.ComponentBuiltin, \"filter�pn�-k���Lz: %s\", errObj.Message)
-\t\t\t\t\treturn errObj
-\t\t\t\t}
-\t\t\t\t
-\t\t\t\t// ReturnValue������
-\t\t\t\tif retVal, ok := result.(*object.ReturnValue); ok {
-\t\t\t\t\tresult = retVal.Value
-\t\t\t\t}
-\t\t\t\t
-\t\t\t\t// P�Ln4� �P�Mk��
-\t\t\t\tif isTruthy(result) {
-\t\t\t\t\tlogIfEnabled(builtinLogLevel, \"filter�p: �  %d oa���_W~Y\", i)
-\t\t\t\t\tresultElements = append(resultElements, elem)
-\t\t\t\t} else {
-\t\t\t\t\tlogIfEnabled(builtinLogLevel, \"filter�p: �  %d oa���_W~[�\", i)
-\t\t\t\t}
-\t\t\t}
-\t\t\t
-\t\t\tlogIfEnabled(builtinLogLevel, \"filter�p: ���, P�nM� p=%d\", len(resultElements))
-\t\t\treturn &object.Array{Elements: resultElements}
-\t\t},
-\t\tReturnType: object.ARRAY_OBJ,
-\t\tParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
-\t}
+	// 数値シーケンスを作成する関数
+	Builtins["range"] = &object.Builtin{
+		Name: "range",
+		Fn: func(args ...object.Object) object.Object {
+			logIfEnabled(builtinLogLevel, "range関数が呼び出されました: 引数数=%d", len(args))
+			
+			// 引数の数をチェック: 1または2つの引数を受け付ける
+			if len(args) < 1 || len(args) > 2 {
+				logger.ComponentError(logger.ComponentBuiltin, "range関数は1-2個の引数が必要です: %d個与えられました", len(args))
+				return createError("range関数は1-2個の引数が必要です: %d個与えられました", len(args))
+			}
+			
+			var start, end int64
+			
+			// 1つの引数の場合: 0からその値まで
+			if len(args) == 1 {
+				if args[0].Type() \!= object.INTEGER_OBJ {
+					logger.ComponentError(logger.ComponentBuiltin, "range関数の引数は整数である必要があります: %s", args[0].Type())
+					return createError("range関数の引数は整数である必要があります: %s", args[0].Type())
+				}
+				endVal, _ := args[0].(*object.Integer)
+				
+				start = 0
+				end = endVal.Value
+				logIfEnabled(builtinLogLevel, "range関数: 0から%dまでの範囲を生成", end)
+			} else {
+				// 2つの引数の場合: startからendまで
+				if args[0].Type() \!= object.INTEGER_OBJ || args[1].Type() \!= object.INTEGER_OBJ {
+					logger.ComponentError(logger.ComponentBuiltin, "range関数の引数は整数である必要があります")
+					return createError("range関数の引数は整数である必要があります")
+				}
+				
+				startVal, _ := args[0].(*object.Integer)
+				endVal, _ := args[1].(*object.Integer)
+				
+				start = startVal.Value
+				end = endVal.Value
+				logIfEnabled(builtinLogLevel, "range関数: %dから%dまでの範囲を生成", start, end)
+			}
+			
+			// 開始位置が終了位置より大きい場合は空の配列を返す
+			if start > end {
+				logger.ComponentWarn(logger.ComponentBuiltin, "range関数: 開始値 %d が終了値 %d より大きいため、空配列を返します", start, end)
+				return &object.Array{Elements: []object.Object{}}
+			}
+			
+			// 配列を作成
+			elements := make([]object.Object, end-start)
+			for i := start; i < end; i++ {
+				elements[i-start] = &object.Integer{Value: i}
+			}
+			
+			logIfEnabled(builtinLogLevel, "range関数: 結果の配列要素数=%d", len(elements))
+			return &object.Array{Elements: elements}
+		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.INTEGER_OBJ, object.INTEGER_OBJ},
+	}
+	
+	// map関数 - 配列の各要素に関数を適用する
+	Builtins["map"] = &object.Builtin{
+		Name: "map",
+		Fn: func(args ...object.Object) object.Object {
+			logIfEnabled(builtinLogLevel, "map関数が呼び出されました: 引数数=%d", len(args))
+			
+			// 引数の数チェック
+			if len(args) \!= 2 {
+				logger.ComponentError(logger.ComponentBuiltin, "map関数は2つの引数が必要です: 配列, 関数")
+				return createError("map関数は2つの引数が必要です: 配列, 関数")
+			}
+			
+			// 第1引数が配列かチェック
+			arr, ok := args[0].(*object.Array)
+			if \!ok {
+				logger.ComponentError(logger.ComponentBuiltin, "map関数の第1引数は配列である必要があります: %s", args[0].Type())
+				return createError("map関数の第1引数は配列である必要があります: %s", args[0].Type())
+			}
+			
+			// 第2引数が関数かチェック
+			fn, ok := args[1].(*object.Function)
+			if \!ok {
+				logger.ComponentError(logger.ComponentBuiltin, "map関数の第2引数は関数である必要があります: %s", args[1].Type())
+				return createError("map関数の第2引数は関数である必要があります: %s", args[1].Type())
+			}
+			
+			// map関数の引数のパラメータは空である必要がある
+			if len(fn.Parameters) > 0 {
+				logger.ComponentError(logger.ComponentBuiltin, "map関数に渡された関数はパラメーターを取るべきではありません")
+				return createError("map関数に渡された関数はパラメーターを取るべきではありません")
+			}
+			
+			logIfEnabled(builtinLogLevel, "map関数: 配列要素数=%d", len(arr.Elements))
+			
+			// 結果の配列
+			resultElements := make([]object.Object, 0, len(arr.Elements))
+			
+			// 配列の各要素に関数を適用
+			for i, elem := range arr.Elements {
+				logIfEnabled(builtinLogLevel, "map関数: 要素 %d を処理中: %s", i, elem.Inspect())
+				
+				// 関数の環境を拡張して🍕に現在の要素を設定
+				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+				extendedEnv.Set("🍕", elem)
+				
+				// 関数を評価
+				result := Eval(fn.ASTBody, extendedEnv)
+				
+				// エラーチェック
+				if errObj, ok := result.(*object.Error); ok {
+					logger.ComponentError(logger.ComponentBuiltin, "map関数の処理中にエラーが発生: %s", errObj.Message)
+					return errObj
+				}
+				
+				// ReturnValueをアンラップ
+				if retVal, ok := result.(*object.ReturnValue); ok {
+					result = retVal.Value
+				}
+				
+				logIfEnabled(builtinLogLevel, "map関数: 要素 %d の処理結果: %s", i, result.Inspect())
+				
+				// 結果を配列に追加
+				resultElements = append(resultElements, result)
+			}
+			
+			logIfEnabled(builtinLogLevel, "map関数: 処理完了, 結果の配列要素数=%d", len(resultElements))
+			return &object.Array{Elements: resultElements}
+		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
+	}
+	
+	// filter関数 - 条件に合致する要素のみを抽出する
+	Builtins["filter"] = &object.Builtin{
+		Name: "filter",
+		Fn: func(args ...object.Object) object.Object {
+			logIfEnabled(builtinLogLevel, "filter関数が呼び出されました: 引数数=%d", len(args))
+			
+			// 引数の数チェック
+			if len(args) \!= 2 {
+				logger.ComponentError(logger.ComponentBuiltin, "filter関数は2つの引数が必要です: 配列, 関数")
+				return createError("filter関数は2つの引数が必要です: 配列, 関数")
+			}
+			
+			// 第1引数が配列かチェック
+			arr, ok := args[0].(*object.Array)
+			if \!ok {
+				logger.ComponentError(logger.ComponentBuiltin, "filter関数の第1引数は配列である必要があります: %s", args[0].Type())
+				return createError("filter関数の第1引数は配列である必要があります: %s", args[0].Type())
+			}
+			
+			// 第2引数が関数かチェック
+			fn, ok := args[1].(*object.Function)
+			if \!ok {
+				logger.ComponentError(logger.ComponentBuiltin, "filter関数の第2引数は関数である必要があります: %s", args[1].Type())
+				return createError("filter関数の第2引数は関数である必要があります: %s", args[1].Type())
+			}
+			
+			// filter関数の引数のパラメータは空である必要がある
+			if len(fn.Parameters) > 0 {
+				logger.ComponentError(logger.ComponentBuiltin, "filter関数に渡された関数はパラメーターを取るべきではありません")
+				return createError("filter関数に渡された関数はパラメーターを取るべきではありません")
+			}
+			
+			logIfEnabled(builtinLogLevel, "filter関数: 配列要素数=%d", len(arr.Elements))
+			
+			// 結果の配列
+			resultElements := make([]object.Object, 0)
+			
+			// 配列の各要素に条件関数を適用
+			for i, elem := range arr.Elements {
+				logIfEnabled(builtinLogLevel, "filter関数: 要素 %d を処理中: %s", i, elem.Inspect())
+				
+				// 関数の環境を拡張して🍕に現在の要素を設定
+				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+				extendedEnv.Set("🍕", elem)
+				
+				// 条件関数を評価
+				result := Eval(fn.ASTBody, extendedEnv)
+				
+				// エラーチェック
+				if errObj, ok := result.(*object.Error); ok {
+					logger.ComponentError(logger.ComponentBuiltin, "filter関数の処理中にエラーが発生: %s", errObj.Message)
+					return errObj
+				}
+				
+				// ReturnValueをアンラップ
+				if retVal, ok := result.(*object.ReturnValue); ok {
+					result = retVal.Value
+				}
+				
+				// 結果が真の場合、要素を結果配列に追加
+				if isTruthy(result) {
+					logIfEnabled(builtinLogLevel, "filter関数: 要素 %d は条件を満たします", i)
+					resultElements = append(resultElements, elem)
+				} else {
+					logIfEnabled(builtinLogLevel, "filter関数: 要素 %d は条件を満たしません", i)
+				}
+			}
+			
+			logIfEnabled(builtinLogLevel, "filter関数: 処理完了, 結果の配列要素数=%d", len(resultElements))
+			return &object.Array{Elements: resultElements}
+		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
+	}
 }
