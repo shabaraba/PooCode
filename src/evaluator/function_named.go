@@ -65,7 +65,13 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 関数が1つだけの場合は直接適用
 	if len(functions) == 1 {
 		logger.Debug("関数が1つだけ見つかりました")
-		return applyFunctionWithPizza(functions[0], args)
+		result := applyFunctionWithPizza(functions[0], args)
+		if result != nil {
+			return result
+		}
+		// nilが返された場合は、引数が合わなかった
+		logger.Debug("単独関数の引数が合いませんでした")
+		return createEvalError("関数 '%s' の引数が合いません", name)
 	}
 
 	logger.Debug("複数の関数が見つかりました: %d", len(functions))
@@ -133,7 +139,12 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 		if isTrue {
 			logger.Debug("条件が真であるため、この関数を使用します")
-			return applyFunctionWithPizza(fn, args)
+			result := applyFunctionWithPizza(fn, args)
+			if result != nil {
+				return result
+			}
+			// nilが返された場合は、パラメータとして引数が合わなかった
+			logger.Debug("条件付き関数の引数が合いませんでした")
 		} else {
 			logger.Debug("条件が偽であるため、この関数をスキップします")
 		}
@@ -143,7 +154,12 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	logger.Debug("デフォルト関数を %d 個見つけました", len(defaultFuncs))
 	if len(defaultFuncs) > 0 {
 		logger.Debug("デフォルト関数を使用します")
-		return applyFunctionWithPizza(defaultFuncs[0], args)
+		result := applyFunctionWithPizza(defaultFuncs[0], args)
+		if result != nil {
+			return result
+		}
+		// nilが返された場合は、パラメータとして引数が合わなかった
+		logger.Debug("デフォルト関数の引数が合いませんでした")
 	}
 
 	// 適用可能な関数が見つからない場合
@@ -168,14 +184,18 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 
 		// 通常の引数セット
 		for i, param := range fn.Parameters {
-			if i < len(args) {
+			if i < len(args) - 1 {  // 最初の引数はすでに🍕にセットしたので残りの引数のみ処理
 				extendedEnv.Set(param.Value, args[i+1])
 			} else {
-				return createEvalError("引数の数が足りません: 期待=%d, 実際=%d", len(fn.Parameters), len(args))
+				// 引数が足りない場合はエラーとはせず、その関数は適用しない
+				// プログラム例では多数の条件付き関数がある可能性があるため
+				return nil
 			}
 		}
 	} else if len(fn.Parameters) > 0 {
-		return createEvalError("引数が足りません: 期待=%d, 実際=0", len(fn.Parameters))
+		// 引数が必要なのに渡されていない場合はnilを返す
+		// これにより後続の条件付き関数やデフォルト関数が試行される
+		return nil
 	}
 
 	// 関数本体を評価
