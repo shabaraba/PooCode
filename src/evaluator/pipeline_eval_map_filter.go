@@ -4,11 +4,10 @@ import (
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
-	"github.com/uncode/token"
 )
 
-// evalInfixExpression は中置式を評価する
-func evalInfixExpression(node *ast.InfixExpression, env *object.Environment) object.Object {
+// evalInfixExpressionWithNode は中置式を評価する
+func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environment) object.Object {
 	logger.Debug("中置式を評価します: %s", node.Operator)
 
 	switch node.Operator {
