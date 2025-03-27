@@ -191,7 +191,15 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	
 	// パイプの右側の式を解析する
 	// パイプの種類に応じた処理
-	if pipeToken.Type == token.MAP_PIPE || pipeToken.Type == token.FILTER_PIPE {
+	pipeType := pipeToken.Type
+	pipeOp := pipeToken.Literal
+	
+	// デバッグ情報を追加
+	logger.Debug("パイプタイプ解析: Type=%s, Literal=%s", pipeType, pipeOp)
+	
+	// map/filter演算子のケース（`+>` や `?>` または関数名 `map` や `filter`）
+	if pipeType == token.MAP_PIPE || pipeType == token.FILTER_PIPE || 
+	   (pipeOp == "map" || pipeOp == "filter") {
 		// map/filter演算子の特別処理
 		// トークンタイプに基づいて関数名を設定
 		funcName := "map"

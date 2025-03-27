@@ -11,12 +11,12 @@ func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environm
 	logger.Debug("中置式を評価します: %s", node.Operator)
 
 	switch node.Operator {
-	case "+>": // map演算子
-		logger.Debug("map パイプ演算子 (+>) を検出しました")
+	case "+>", "map": // map演算子
+		logger.Debug("map パイプ演算子 (%s) を検出しました", node.Operator)
 		// map関数の処理を実行
 		return evalMapOperation(node, env)
-	case "?>": // filter演算子
-		logger.Debug("filter パイプ演算子 (?>) を検出しました")
+	case "?>", "filter": // filter演算子
+		logger.Debug("filter パイプ演算子 (%s) を検出しました", node.Operator)
 		// filter関数の処理を実行
 		return evalFilterOperation(node, env)
 	case "|>": // 標準パイプライン
@@ -44,6 +44,9 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 
 	// 左辺値の評価（通常は配列）
 	left := Eval(node.Left, env)
+	if left == nil {
+		return createError("mapオペレーション: 左辺の評価結果がnilです")
+	}
 	if left.Type() == object.ERROR_OBJ {
 		return left
 	}
@@ -77,7 +80,7 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 
 			// 引数の評価
 			funcArgs = evalExpressions(right.Arguments, env)
-			if len(funcArgs) > 0 && funcArgs[0].Type() == object.ERROR_OBJ {
+			if len(funcArgs) > 0 && funcArgs[0] != nil && funcArgs[0].Type() == object.ERROR_OBJ {
 				return funcArgs[0]
 			}
 		} else {
@@ -98,7 +101,9 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 	var mapArgs []object.Object
 	mapArgs = append(mapArgs, left)       // 第1引数: 配列
 	mapArgs = append(mapArgs, funcObj)    // 第2引数: 関数
-	mapArgs = append(mapArgs, funcArgs...) // 追加引数
+	if funcArgs != nil {
+		mapArgs = append(mapArgs, funcArgs...) // 追加引数
+	}
 
 	// map関数の実行
 	logger.Debug("map関数実行: 引数数=%d", len(mapArgs))
@@ -111,6 +116,9 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 
 	// 左辺値の評価（通常は配列）
 	left := Eval(node.Left, env)
+	if left == nil {
+		return createError("filterオペレーション: 左辺の評価結果がnilです")
+	}
 	if left.Type() == object.ERROR_OBJ {
 		return left
 	}
@@ -144,7 +152,7 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 
 			// 引数の評価
 			funcArgs = evalExpressions(right.Arguments, env)
-			if len(funcArgs) > 0 && funcArgs[0].Type() == object.ERROR_OBJ {
+			if len(funcArgs) > 0 && funcArgs[0] != nil && funcArgs[0].Type() == object.ERROR_OBJ {
 				return funcArgs[0]
 			}
 		} else {
@@ -165,7 +173,9 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	var filterArgs []object.Object
 	filterArgs = append(filterArgs, left)       // 第1引数: 配列
 	filterArgs = append(filterArgs, funcObj)    // 第2引数: 関数
-	filterArgs = append(filterArgs, funcArgs...) // 追加引数
+	if funcArgs != nil {
+		filterArgs = append(filterArgs, funcArgs...) // 追加引数
+	}
 
 	// filter関数の実行
 	logger.Debug("filter関数実行: 引数数=%d", len(filterArgs))
