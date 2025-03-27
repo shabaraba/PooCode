@@ -172,7 +172,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	pipeToken := p.curToken
 	
 	// デバッグ出力
-	logger.Trace("パイプライン式の解析開始：演算子=%s, 左辺=%s", pipeToken.Literal, left.String())
+	logger.ParserDebug("パイプライン式の解析開始：演算子=%s, 左辺=%s", pipeToken.Literal, left.String())
 	
 	// パイプ演算子の優先順位を取得
 	precedence := p.curPrecedence()
@@ -181,7 +181,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	p.nextToken()
 	
 	// 現在のトークンと次のトークンを記録（デバッグ用）
-	logger.Trace("パイプライン右辺の解析中：現在のトークン=%s, 次のトークン=%s", 
+	logger.ParserDebug("パイプライン右辺の解析中：現在のトークン=%s, 次のトークン=%s", 
 		p.curToken.Literal, p.peekToken.Literal)
 	
 	// パイプの右側の式を解析する
@@ -189,7 +189,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	rightExp := p.parseExpression(precedence)
 	
 	// 解析された右辺の式を記録
-	logger.Trace("パイプライン右辺の解析結果：タイプ=%T, 値=%s", rightExp, rightExp.String())
+	logger.ParserDebug("パイプライン右辺の解析結果：タイプ=%T, 値=%s", rightExp, rightExp.String())
 	
 	// パイプタイプに応じて処理を分ける
 	if pipeToken.Type == token.PIPE_PAR {
@@ -205,42 +205,71 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 		
 		// 識別子の後に引数が続く場合の特別処理
 		if ident, ok := rightExp.(*ast.Identifier); ok {
-			logger.Trace("識別子 '%s' が検出されました。次のトークンをチェック中...", ident.Value)
+			logger.ParserDebug("識別子 '%s' が検出されました。次のトークンをチェック中...", ident.Value)
 			
-			// ピークトークンを確認して、「>>」や「|>」などのパイプライン・代入演算子でない場合、
-			// かつセミコロンでない場合は、次のトークンは引数として扱う
+			// 次のトークンが識別子、整数、文字列、配列など、有効な引数となりうるトークンであれば
+			// それを関数の引数として処理する
 			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) &&
+			   !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.RBRACE) &&
+			   !p.peekTokenIs(token.RBRACKET) && !p.peekTokenIs(token.COMMA) {
 				
-				logger.Trace("引数として処理可能なトークンが続きます: %s", p.peekToken.Literal)
+				logger.ParserDebug("引数として処理可能なトークンが続きます: %s (%s)", p.peekToken.Literal, p.peekToken.Type)
 				
 				// 次のトークンを取得
 				p.nextToken()
 				
-				// 引数を取得
-				var arg ast.Expression
+				// 引数を収集
+				var args []ast.Expression
 				
-				// 現在のトークンがピザの場合、特別処理
+				// 最初の引数を解析
 				if p.curToken.Type == token.PIZZA {
-					// 🍕トークンそのものを引数として扱う
-					arg = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-					logger.Trace("🍕が引数として検出されました")
+					// 🍕トークンが引数の場合、特別処理
+					arg := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+					args = append(args, arg)
+					logger.ParserDebug("🍕が第1引数として検出されました")
 				} else {
 					// 通常の引数解析
-					arg = p.parseExpression(LOWEST)
+					arg := p.parseExpression(LOWEST)
+					args = append(args, arg)
+					logger.ParserDebug("解析された第1引数: %s (タイプ: %T)", arg.String(), arg)
 				}
 				
-				logger.Trace("解析された引数: %s (タイプ: %T)", arg.String(), arg)
+				// さらに引数がある場合
+				for p.peekTokenIs(token.IDENT) || p.peekTokenIs(token.INT) || 
+					p.peekTokenIs(token.STRING) || p.peekTokenIs(token.BOOLEAN) ||
+					p.peekTokenIs(token.PIZZA) || p.peekTokenIs(token.LBRACKET) {
+					
+					p.nextToken()
+					
+					if p.curToken.Type == token.PIZZA {
+						// 🍕トークンが引数の場合、特別処理
+						arg := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+						args = append(args, arg)
+						logger.ParserDebug("🍕が追加の引数として検出されました")
+					} else {
+						// 通常の引数解析
+						arg := p.parseExpression(LOWEST)
+						args = append(args, arg)
+						logger.ParserDebug("解析された追加引数: %s (タイプ: %T)", arg.String(), arg)
+					}
+					
+					// パイプやセミコロンが来たらループを抜ける
+					if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
+					   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
+						break
+					}
+				}
 				
 				// CallExpressionを生成
 				callExpr := &ast.CallExpression{
 					Token:     pipeToken,
 					Function:  ident,
-					Arguments: []ast.Expression{arg},
+					Arguments: args,
 				}
 				
 				// パイプライン式の右辺としてCallExpressionを使用
-				logger.Trace("関数呼び出し式を生成: %s(引数: %s)", ident.Value, arg.String())
+				logger.ParserDebug("関数呼び出し式を生成: %s(引数: %d個)", ident.Value, len(args))
 				return &ast.InfixExpression{
 					Token:    pipeToken,
 					Operator: pipeToken.Literal,
@@ -248,7 +277,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 					Right:    callExpr,
 				}
 			} else {
-				logger.Trace("引数なしの識別子: %s、次のトークン: %s", ident.Value, p.peekToken.Literal)
+				logger.ParserDebug("引数なしの識別子: %s、次のトークン: %s", ident.Value, p.peekToken.Literal)
 			}
 			
 			// 引数がない場合は通常のパイプライン

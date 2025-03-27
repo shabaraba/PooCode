@@ -120,10 +120,12 @@ func ParseFlags() error {
 		// 特殊デバッグログレベルも有効化
 		GlobalConfig.SpecialLogLevels[logger.LevelTypeInfo] = GlobalConfig.ShowTypeInfo
 		GlobalConfig.SpecialLogLevels[logger.LevelEvalDebug] = GlobalConfig.ShowEvalDebug
+		GlobalConfig.SpecialLogLevels[logger.LevelParserDebug] = GlobalConfig.ShowParserDebug
 	} else {
 		// デバッグモードでない場合の設定
 		GlobalConfig.SpecialLogLevels[logger.LevelTypeInfo] = GlobalConfig.ShowTypeInfo
 		GlobalConfig.SpecialLogLevels[logger.LevelEvalDebug] = GlobalConfig.ShowEvalDebug
+		GlobalConfig.SpecialLogLevels[logger.LevelParserDebug] = GlobalConfig.ShowParserDebug
 	}
 
 	// ソースファイルのパス取得
@@ -164,6 +166,7 @@ func SetupLogger() error {
 	
 	if GlobalConfig.ShowParserDebug && GlobalConfig.ComponentLogLevels[logger.ComponentParser] == 0 {
 		logger.SetComponentLevel(logger.ComponentParser, logger.LevelDebug)
+		logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	}
 	
 	if GlobalConfig.ShowEvalDebug && GlobalConfig.ComponentLogLevels[logger.ComponentEval] == 0 {

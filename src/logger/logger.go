@@ -24,6 +24,7 @@ const (
 	// 特殊デバッグ情報レベル
 	LevelTypeInfo  // 型情報のみを表示
 	LevelEvalDebug // 評価器専用デバッグ情報
+	LevelParserDebug // パーサー専用デバッグ情報
 )
 
 // コンポーネント種別を表す型
@@ -41,24 +42,26 @@ const (
 
 // LevelNames はログレベルと名前のマッピング
 var LevelNames = map[LogLevel]string{
-	LevelOff:      "OFF",
-	LevelError:    "ERROR",
-	LevelWarn:     "WARN",
-	LevelInfo:     "INFO",
-	LevelDebug:    "DEBUG",
-	LevelTrace:    "TRACE",
-	LevelTypeInfo: "TYPE",
-	LevelEvalDebug: "EVAL",
+	LevelOff:        "OFF",
+	LevelError:      "ERROR",
+	LevelWarn:       "WARN",
+	LevelInfo:       "INFO",
+	LevelDebug:      "DEBUG",
+	LevelTrace:      "TRACE",
+	LevelTypeInfo:   "TYPE",
+	LevelEvalDebug:  "EVAL",
+	LevelParserDebug: "PARSER",
 }
 
 var levelColors = map[LogLevel]string{
-	LevelError:    "\033[31m", // 赤
-	LevelWarn:     "\033[33m", // 黄
-	LevelInfo:     "\033[32m", // 緑
-	LevelDebug:    "\033[36m", // シアン
-	LevelTrace:    "\033[35m", // マゼンタ
-	LevelTypeInfo: "\033[34m", // 青
-	LevelEvalDebug: "\033[33;1m", // 太字黄色
+	LevelError:      "\033[31m", // 赤
+	LevelWarn:       "\033[33m", // 黄
+	LevelInfo:       "\033[32m", // 緑
+	LevelDebug:      "\033[36m", // シアン
+	LevelTrace:      "\033[35m", // マゼンタ
+	LevelTypeInfo:   "\033[34m", // 青
+	LevelEvalDebug:  "\033[33;1m", // 太字黄色
+	LevelParserDebug: "\033[34;1m", // 太字青色
 }
 
 const (
@@ -152,6 +155,7 @@ func NewLogger(options ...LoggerOption) *Logger {
 	// デフォルトの特殊ログレベル設定（無効）
 	logger.specialLevels[LevelTypeInfo] = false
 	logger.specialLevels[LevelEvalDebug] = false
+	logger.specialLevels[LevelParserDebug] = false
 	
 	// オプションを適用
 	for _, option := range options {
@@ -438,6 +442,11 @@ func (l *Logger) EvalDebug(format string, args ...interface{}) {
 	l.log(LevelEvalDebug, format, args...)
 }
 
+// ParserDebug はパーサー専用デバッグ情報を記録する
+func (l *Logger) ParserDebug(format string, args ...interface{}) {
+	l.log(LevelParserDebug, format, args...)
+}
+
 // コンポーネント指定付きログ関数群
 // ComponentError はコンポーネント指定付きでエラーレベルのログを記録する
 func (l *Logger) ComponentError(component ComponentType, format string, args ...interface{}) {
@@ -566,6 +575,10 @@ func EvalDebug(format string, args ...interface{}) {
 	GetLogger().EvalDebug(format, args...)
 }
 
+func ParserDebug(format string, args ...interface{}) {
+	GetLogger().ParserDebug(format, args...)
+}
+
 // ParseLogLevel は文字列からログレベルを解析する
 func ParseLogLevel(levelStr string) LogLevel {
 	switch levelStr {
@@ -585,6 +598,8 @@ func ParseLogLevel(levelStr string) LogLevel {
 		return LevelTypeInfo
 	case "EVAL":
 		return LevelEvalDebug
+	case "PARSER":
+		return LevelParserDebug
 	default:
 		return LevelInfo // デフォルトはINFO
 	}

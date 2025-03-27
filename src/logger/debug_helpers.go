@@ -12,6 +12,11 @@ func IsEvalDebugEnabled() bool {
 	return GetLogger().IsSpecialLevelEnabled(LevelEvalDebug)
 }
 
+// IsParserDebugEnabled はパーサー専用デバッグログが有効かどうかを返す
+func IsParserDebugEnabled() bool {
+	return GetLogger().IsSpecialLevelEnabled(LevelParserDebug)
+}
+
 // EnableDebug は通常デバッグログを有効にする
 func EnableDebug() {
 	GetLogger().SetComponentLevel(ComponentGlobal, LevelDebug)
@@ -30,4 +35,14 @@ func EnableEvalDebug() {
 // DisableEvalDebug は評価器専用デバッグログを無効にする
 func DisableEvalDebug() {
 	GetLogger().SetSpecialLevelEnabled(LevelEvalDebug, false)
+}
+
+// EnableParserDebug はパーサー専用デバッグログを有効にする
+func EnableParserDebug() {
+	GetLogger().SetSpecialLevelEnabled(LevelParserDebug, true)
+}
+
+// DisableParserDebug はパーサー専用デバッグログを無効にする
+func DisableParserDebug() {
+	GetLogger().SetSpecialLevelEnabled(LevelParserDebug, false)
 }
