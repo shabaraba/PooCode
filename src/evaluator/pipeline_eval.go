@@ -66,7 +66,8 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	// 右辺の式がCallExpressionの場合（関数呼び出し）
 	if callExpr, ok := node.Right.(*ast.CallExpression); ok {
 		logger.Debug("パイプラインの右辺がCallExpressionです")
-		return evalPipelineWithCallExpression(left, callExpr, tempEnv)
+		result = evalPipelineWithCallExpression(left, callExpr, tempEnv)
+		return result
 	} else {
 		// 右辺が識別子の場合（関数名のみ）
 		if ident, ok := node.Right.(*ast.Identifier); ok {
@@ -96,7 +97,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	return result
 }
 
-// evalPipelineWithCallExpression は関数呼び出しを含むパイプライン処理を評価する
+// パイプライン処理で関数呼び出しを評価する（改善版）
 func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpression, env *object.Environment) object.Object {
 	// 関数名を取得
 	var funcName string
@@ -108,8 +109,10 @@ func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpres
 
 	// 引数を評価（一時環境で評価することで🍕の影響を分離）
 	args := evalExpressions(callExpr.Arguments, env)
-	if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
-		return args[0]
+	for _, arg := range args {
+		if arg.Type() == object.ERROR_OBJ {
+			return arg
+		}
 	}
 
 	// デバッグ出力
@@ -138,35 +141,4 @@ func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpres
 	result := applyNamedFunction(env, funcName, allArgs)
 	logger.Debug("関数 '%s' の適用結果: %s\n", funcName, result.Inspect())
 	return result
-}
-
-// evalAssignment は>>演算子による代入を評価する
-func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.Object {
-	logger.Debug("代入演算子を検出しました")
-	// >>演算子の場合、右辺の変数に左辺の値を代入する
-	right := node.Right
-
-	// 右辺が識別子の場合は変数に代入
-	if ident, ok := right.(*ast.Identifier); ok {
-		left := Eval(node.Left, env)
-		if left.Type() == object.ERROR_OBJ {
-			return left
-		}
-
-		env.Set(ident.Value, left)
-		return left
-	}
-
-	// 右辺がPooLiteralの場合は戻り値として扱う
-	if _, ok := right.(*ast.PooLiteral); ok {
-		logger.Debug("💩への代入を検出しました - 戻り値として扱います")
-		left := Eval(node.Left, env)
-		if left.Type() == object.ERROR_OBJ {
-			return left
-		}
-		logger.Debug("💩に戻り値として %s を設定します\n", left.Inspect())
-		return &object.ReturnValue{Value: left}
-	}
-
-	return createEvalError("代入先が識別子または💩ではありません: %T", right)
 }
