@@ -45,6 +45,30 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.BooleanLiteral:
 		logger.Debug("真偽値リテラルを評価")
 		return &object.Boolean{Value: node.Value}
+		
+	case *ast.ArrayLiteral:
+		logger.Debug("配列リテラルを評価")
+		elements := evalExpressions(node.Elements, env)
+		if len(elements) > 0 && elements[0].Type() == object.ERROR_OBJ {
+			return elements[0]
+		}
+		return &object.Array{Elements: elements}
+	
+	case *ast.RangeExpression:
+		logger.Debug("範囲式を評価")
+		return evalRangeExpression(node, env)
+	
+	case *ast.IndexExpression:
+		logger.Debug("インデックス式を評価")
+		left := Eval(node.Left, env)
+		if left.Type() == object.ERROR_OBJ {
+			return left
+		}
+		index := Eval(node.Index, env)
+		if index.Type() == object.ERROR_OBJ {
+			return index
+		}
+		return evalIndexExpression(left, index, env)
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
