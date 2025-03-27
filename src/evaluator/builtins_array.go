@@ -127,3 +127,26 @@ func registerArrayBuiltins() {
 		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
 	}
 }
+				
+				// Check for errors
+				if errObj, ok := result.(*object.Error); ok {
+					return errObj
+				}
+				
+				// Unwrap return value
+				if retVal, ok := result.(*object.ReturnValue); ok {
+					result = retVal.Value
+				}
+				
+				// Only add element if condition is true
+				if isTruthy(result) {
+					resultElements = append(resultElements, elem)
+				}
+			}
+			
+			return &object.Array{Elements: resultElements}
+		},
+		ReturnType: object.ARRAY_OBJ,
+		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
+	}
+}
