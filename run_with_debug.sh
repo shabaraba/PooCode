@@ -23,4 +23,4 @@ echo "テストファイル $FILE を実行しています（デバッグモー�
   --eval-log-level=$EVAL_LOG_LEVEL \
   --builtin-log-level=$BUILTIN_LOG_LEVEL \
   --runtime-log-level=$RUNTIME_LOG_LEVEL \
-  --color --timestamp $FILE | tee ai/output_debug.log
+  --color --timestamp --show-parser $FILE | tee ai/output_debug.log
