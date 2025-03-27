@@ -66,7 +66,7 @@ func testStringObject(t *testing.T, obj object.Object, expected string) bool {
 
 // testNullObject は評価結果がNULLオブジェクトであるかチェックする
 func testNullObject(t *testing.T, obj object.Object) bool {
-	if obj != NULL {
+	if obj != NullObj {
 		t.Errorf("object is not NULL. got=%T (%+v)", obj, obj)
 		return false
 	}

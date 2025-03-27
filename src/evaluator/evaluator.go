@@ -10,6 +10,18 @@ import (
 
 // Eval は抽象構文木を評価する
 func Eval(node interface{}, env *object.Environment) object.Object {
+	// ノードがnilの場合はNULLを返す
+	if node == nil {
+		logger.Warn("nilノードが評価されました")
+		return NullObj
+	}
+	
+	// 環境がnilの場合はデフォルト環境を作成
+	if env == nil {
+		logger.Warn("nil環境が渡されました。デフォルト環境を作成します")
+		env = object.NewEnvironment()
+	}
+
 	logger.Debug("評価中のノード: %T", node)
 	logger.EvalDebug("<<<評価器デバッグ専用ログ>>> 評価中のノード: %T", node)
 

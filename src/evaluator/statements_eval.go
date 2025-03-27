@@ -11,7 +11,15 @@ import (
 func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 	var result object.Object = NullObj
 
+	// プログラムが空の場合はNULLを返す
+	if program == nil || len(program.Statements) == 0 {
+		return NullObj
+	}
+	
 	for _, statement := range program.Statements {
+		if statement == nil {
+			continue
+		}
 		result = Eval(statement, env)
 	}
 	
