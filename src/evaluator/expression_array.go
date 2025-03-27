@@ -14,12 +14,23 @@ func evalRangeExpression(node *ast.RangeExpression, env *object.Environment) obj
 		if startObj.Type() == object.ERROR_OBJ {
 			return startObj
 		}
+	} else {
+		// Default start for [..end] is 1
+		startObj = &object.Integer{Value: 1}
 	}
 	
 	if node.End != nil {
 		endObj = Eval(node.End, env)
 		if endObj.Type() == object.ERROR_OBJ {
 			return endObj
+		}
+	} else {
+		// Default end for [start..] is startObj + 10 (just a convention for this language)
+		if startObj.Type() == object.INTEGER_OBJ {
+			endObj = &object.Integer{Value: startObj.(*object.Integer).Value + 9}
+		} else {
+			// If start is not an integer, default to empty array
+			return &object.Array{Elements: []object.Object{}}
 		}
 	}
 	

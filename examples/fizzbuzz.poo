@@ -23,7 +23,7 @@ def showNumber(num) : str -> str {
     🍕 >> 💩;
 }
  
-def fizzbuzz(): int -> str {
+def fizzbuzz() : int -> str {
     🍕 |> print;
     "" >> result;
     
@@ -31,9 +31,5 @@ def fizzbuzz(): int -> str {
     🍕 |> showFizz |> add result |> showNumber 🍕 >> 💩;
 }
 
-1 |> fizzbuzz |> print;
-2 |> fizzbuzz |> print;
-3 |> fizzbuzz |> print;
-4 |> fizzbuzz |> print;
-5 |> fizzbuzz |> print;
-15 |> fizzbuzz |> print;
+//1 |> fizzbuzz |> print;
+[1..20] |> map fizzbuzz |> print;

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yourproject/ast"  // Update this import path to match your project
+	"github.com/uncode/ast"
 )
 
 const (

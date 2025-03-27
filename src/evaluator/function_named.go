@@ -80,9 +80,6 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	var conditionalFuncs []*object.Function
 	var defaultFuncs []*object.Function
 	
-	// NULLオブジェクト
-	var NullObj = &object.Null{}
-
 	for _, fn := range functions {
 		if fn.Condition != nil {
 			conditionalFuncs = append(conditionalFuncs, fn)

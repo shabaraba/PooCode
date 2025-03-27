@@ -94,6 +94,7 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerPrefix(token.CLASS, p.parseClassLiteral)
 	p.registerPrefix(token.PIZZA, p.parsePizzaLiteral)
 	p.registerPrefix(token.POO, p.parsePooLiteral)
+	p.registerPrefix(token.DOTDOT, p.parseRangeExpression)
 
 	// 中置演算子の解析関数を登録
 	p.registerInfix(token.PLUS, p.parseInfixExpression)

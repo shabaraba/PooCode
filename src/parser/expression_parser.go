@@ -111,13 +111,8 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 			}
 		}
 		
-		// スライス式を返す
-		sliceExp := &ast.IndexExpression{
-			Token: p.curToken,
-			Left:  left,
-			Index: rangeExp,
-		}
-		return sliceExp
+		// 範囲式を直接返す
+		return rangeExp
 	}
 	
 	// 通常の添字またはスライス表記の開始値
@@ -146,13 +141,8 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 			}
 		}
 		
-		// スライス式を返す
-		sliceExp := &ast.IndexExpression{
-			Token: p.curToken,
-			Left:  left,
-			Index: rangeExp,
-		}
-		return sliceExp
+		// 範囲式を直接返す
+		return rangeExp
 	}
 	
 	// 通常の添字アクセスの場合
