@@ -113,19 +113,19 @@ func (l *Lexer) NextToken() token.Token {
 		}
 	case '+':
 		if l.peekChar() == '>' {
-			// Read but don't use the character - just advance position
+			ch := l.ch
 			l.readChar()
-			// Changed to use MAP_PIPE type but "map" literal for compatibility
-			tok = l.newToken(token.MAP_PIPE, "map")
+			// 実際の演算子をリテラルとして使用
+			tok = l.newToken(token.MAP_PIPE, string(ch)+string(l.ch))
 		} else {
 			tok = l.newToken(token.PLUS, string(l.ch))
 		}
 	case '?':
 		if l.peekChar() == '>' {
-			// Read but don't use the character - just advance position
+			ch := l.ch
 			l.readChar()
-			// Changed to use FILTER_PIPE type but "filter" literal for compatibility
-			tok = l.newToken(token.FILTER_PIPE, "filter")
+			// 実際の演算子をリテラルとして使用
+			tok = l.newToken(token.FILTER_PIPE, string(ch)+string(l.ch))
 		} else {
 			tok = l.newToken(token.ILLEGAL, string(l.ch))
 		}

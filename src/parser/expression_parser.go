@@ -199,11 +199,11 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	
 	// map/filter演算子のケース（`+>` や `?>` または関数名 `map` や `filter`）
 	if pipeType == token.MAP_PIPE || pipeType == token.FILTER_PIPE || 
-	   (pipeOp == "map" || pipeOp == "filter") {
+	   (pipeOp == "map" || pipeOp == "filter" || pipeOp == "+>" || pipeOp == "?>") {
 		// map/filter演算子の特別処理
 		// トークンタイプに基づいて関数名を設定
 		funcName := "map"
-		if pipeToken.Type == token.FILTER_PIPE {
+		if pipeToken.Type == token.FILTER_PIPE || pipeOp == "filter" || pipeOp == "?>" {
 			funcName = "filter"
 		}
 		mapIdent := &ast.Identifier{Token: pipeToken, Value: funcName}
