@@ -111,3 +111,39 @@ func TestSpecialCharacters(t *testing.T) {
 		}
 	}
 }
+
+// TestEscapeSequencesInStrings はエスケープシーケンスを含む文字列のテスト
+func TestEscapeSequencesInStrings(t *testing.T) {
+	input := `"Line1\nLine2\tTabbed\r\nCarriage Return"
+"Double quotes \" inside string"
+"Backslash \\ character"
+"Mixed escapes: \n\t\r\\\"\'"
+"Unknown escape: \z should keep both chars"
+`
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{token.STRING, "Line1\nLine2\tTabbed\r\nCarriage Return"},
+		{token.STRING, "Double quotes \" inside string"},
+		{token.STRING, "Backslash \\ character"},
+		{token.STRING, "Mixed escapes: \n\t\r\\\"\'"},
+		{token.STRING, "Unknown escape: \\z should keep both chars"},
+		{token.EOF, ""},
+	}
+
+	l := NewLexer(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q", i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong.\nexpected=%q,\ngot=%q", i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
