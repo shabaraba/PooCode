@@ -115,7 +115,8 @@ func (l *Lexer) NextToken() token.Token {
 		if l.peekChar() == '>' {
 			ch := l.ch
 			l.readChar()
-			tok = l.newToken(token.MAP_PIPE, string(ch)+string(l.ch))
+			// Changed to use MAP_PIPE type but "map" literal for compatibility
+			tok = l.newToken(token.MAP_PIPE, "map")
 		} else {
 			tok = l.newToken(token.PLUS, string(l.ch))
 		}
@@ -123,7 +124,8 @@ func (l *Lexer) NextToken() token.Token {
 		if l.peekChar() == '>' {
 			ch := l.ch
 			l.readChar()
-			tok = l.newToken(token.FILTER_PIPE, string(ch)+string(l.ch))
+			// Changed to use FILTER_PIPE type but "filter" literal for compatibility
+			tok = l.newToken(token.FILTER_PIPE, "filter")
 		} else {
 			tok = l.newToken(token.ILLEGAL, string(l.ch))
 		}
