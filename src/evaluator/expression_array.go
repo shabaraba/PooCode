@@ -129,12 +129,6 @@ func evalIndexExpression(left, index object.Object, env *object.Environment) obj
 func evalArrayIndexExpression(array, index object.Object) object.Object {
 	arrayObj := array.(*object.Array)
 	
-	// Handle range expressions for slicing
-	if index.Type() == object.NULL_OBJ {
-		// This is a special case for test purposes
-		return &object.Array{Elements: []object.Object{}}
-	}
-	
 	// Single index access
 	if idx, ok := index.(*object.Integer); ok {
 		return evalArraySingleIndex(arrayObj, idx.Value)

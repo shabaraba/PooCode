@@ -1,63 +1,59 @@
 package evaluator
 
 import (
-	"fmt"
-	"strings"
-	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
 
-// registerArrayBuiltins は配列関連の組み込み関数を登録する
+// registerArrayBuiltins registers array-related builtin functions
 func registerArrayBuiltins() {
-	// map関数 - 配列の各要素に関数を適用する
+	// map function - applies a function to each element of an array
 	Builtins["map"] = &object.Builtin{
 		Name: "map",
 		Fn: func(args ...object.Object) object.Object {
-			// 引数の数チェック
-			if len(args) != 2 {
-				return createError("map関数は2つの引数が必要です: 配列, 関数")
+			// Check number of arguments
+			if len(args) \!= 2 {
+				return createError("map function requires 2 arguments: array, function")
 			}
 			
-			// 第1引数が配列かチェック
+			// Check first argument is an array
 			arr, ok := args[0].(*object.Array)
-			if !ok {
-				return createError("map関数の第1引数は配列である必要があります: %s", args[0].Type())
+			if \!ok {
+				return createError("First argument to map must be an array, got: %s", args[0].Type())
 			}
 			
-			// 第2引数が関数かチェック
+			// Check second argument is a function
 			fn, ok := args[1].(*object.Function)
-			if !ok {
-				return createError("map関数の第2引数は関数である必要があります: %s", args[1].Type())
+			if \!ok {
+				return createError("Second argument to map must be a function, got: %s", args[1].Type())
 			}
 			
-			// map関数の引数のパラメータは空である必要がある
+			// Function should not have parameters
 			if len(fn.Parameters) > 0 {
-				return createError("map関数に渡された関数はパラメーターを取るべきではありません")
+				return createError("Function passed to map should not take parameters")
 			}
 			
-			// 結果の配列
+			// Map each element
 			resultElements := make([]object.Object, 0, len(arr.Elements))
 			
-			// 配列の各要素に関数を適用
 			for _, elem := range arr.Elements {
-				// 関数の環境を拡張して🍕に現在の要素を設定
+				// Create extended environment with 🍕 set to current element
 				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 				extendedEnv.Set("🍕", elem)
 				
-				// 関数を評価
+				// Evaluate function with element
 				result := Eval(fn.ASTBody, extendedEnv)
 				
-				// エラーチェック
+				// Check for errors
 				if errObj, ok := result.(*object.Error); ok {
 					return errObj
 				}
 				
-				// ReturnValueをアンラップ
+				// Unwrap return value
 				if retVal, ok := result.(*object.ReturnValue); ok {
 					result = retVal.Value
 				}
 				
-				// 結果を配列に追加
+				// Add result to array
 				resultElements = append(resultElements, result)
 			}
 			
@@ -67,66 +63,42 @@ func registerArrayBuiltins() {
 		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
 	}
 	
-	// filter関数 - 条件に合致する要素のみを抽出する
+	// filter function - filters elements based on a condition function
 	Builtins["filter"] = &object.Builtin{
 		Name: "filter",
 		Fn: func(args ...object.Object) object.Object {
-			// 引数の数チェック
-			if len(args) != 2 {
-				return createError("filter関数は2つの引数が必要です: 配列, 関数")
+			// Check number of arguments
+			if len(args) \!= 2 {
+				return createError("filter function requires 2 arguments: array, function")
 			}
 			
-			// 第1引数が配列かチェック
+			// Check first argument is an array
 			arr, ok := args[0].(*object.Array)
-			if !ok {
-				return createError("filter関数の第1引数は配列である必要があります: %s", args[0].Type())
+			if \!ok {
+				return createError("First argument to filter must be an array, got: %s", args[0].Type())
 			}
 			
-			// 第2引数が関数かチェック
+			// Check second argument is a function
 			fn, ok := args[1].(*object.Function)
-			if !ok {
-				return createError("filter関数の第2引数は関数である必要があります: %s", args[1].Type())
+			if \!ok {
+				return createError("Second argument to filter must be a function, got: %s", args[1].Type())
 			}
 			
-			// filter関数の引数のパラメータは空である必要がある
+			// Function should not have parameters
 			if len(fn.Parameters) > 0 {
-				return createError("filter関数に渡された関数はパラメーターを取るべきではありません")
+				return createError("Function passed to filter should not take parameters")
 			}
 			
-			// 結果の配列
+			// Filter elements
 			resultElements := make([]object.Object, 0)
 			
-			// 配列の各要素に条件関数を適用
 			for _, elem := range arr.Elements {
-				// 関数の環境を拡張して🍕に現在の要素を設定
+				// Create extended environment with 🍕 set to current element
 				extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 				extendedEnv.Set("🍕", elem)
 				
-				// 条件関数を評価
+				// Evaluate condition function with element
 				result := Eval(fn.ASTBody, extendedEnv)
-				
-				// エラーチェック
-				if errObj, ok := result.(*object.Error); ok {
-					return errObj
-				}
-				
-				// ReturnValueをアンラップ
-				if retVal, ok := result.(*object.ReturnValue); ok {
-					result = retVal.Value
-				}
-				
-				// 結果が真の場合、要素を結果配列に追加
-				if isTruthy(result) {
-					resultElements = append(resultElements, elem)
-				}
-			}
-			
-			return &object.Array{Elements: resultElements}
-		},
-		ReturnType: object.ARRAY_OBJ,
-		ParamTypes: []object.ObjectType{object.ARRAY_OBJ, object.FUNCTION_OBJ},
-	}
-}
 				
 				// Check for errors
 				if errObj, ok := result.(*object.Error); ok {
