@@ -40,10 +40,10 @@
   - [x] 負のインデックスのサポート
 
 ## 不具合修正
-- [ ] evaluatorやfunctionのデバッグが--debugオプションつけても表示されない
-  - [ ] 特定フラグの処理確認(show-eval, show-builtin)
-  - [ ] logger.EvalDebug/logger.Debug呼び出し箇所の確認
-  - [ ] 条件付きデバッグ出力の実装
+- [x] evaluatorやfunctionのデバッグが--debugオプションつけても表示されない
+  - [x] 特定フラグの処理確認(show-eval, show-builtin)
+  - [x] logger.EvalDebug/logger.Debug呼び出し箇所の確認
+  - [x] 条件付きデバッグ出力の実装
 - [ ] パイプ後の関数の引数に値がうまく渡らない
   - [ ] パイプライン評価時の引数処理確認
   - [ ] 引数の受け渡しデバッグログ追加

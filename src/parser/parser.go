@@ -48,6 +48,7 @@ var precedences = map[token.TokenType]int{
 	token.OR:           LOGICAL,
 	token.PIPE:         PIPE,
 	token.PIPE_PAR:     PIPE,
+	token.DOTDOT:       SUM, // 範囲演算子の優先順位
 }
 
 type (

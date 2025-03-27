@@ -54,6 +54,7 @@ const (
 	LBRACKET  = "[" // 左角括弧
 	RBRACKET  = "]" // 右角括弧
 	DOT       = "." // ドット
+	DOTDOT    = ".." // 範囲演算子
 
 	// パイプライン
 	PIPE     = "|>" // パイプライン

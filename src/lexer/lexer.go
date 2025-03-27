@@ -132,7 +132,13 @@ func (l *Lexer) NextToken() token.Token {
 	case ']':
 		tok = l.newToken(token.RBRACKET, string(l.ch))
 	case '.':
-		tok = l.newToken(token.DOT, string(l.ch))
+		if l.peekChar() == '.' {
+			ch := l.ch
+			l.readChar()
+			tok = l.newToken(token.DOTDOT, string(ch)+string(l.ch))
+		} else {
+			tok = l.newToken(token.DOT, string(l.ch))
+		}
 	case '\'':
 		if l.peekChar() == 's' {
 			ch := l.ch

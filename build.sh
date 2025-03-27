@@ -27,9 +27,9 @@ echo "uncodeインタプリタをビルドしています..." | tee ai/output.lo
 
 if [ "$DEBUG" = true ]; then
   echo "デバッグモードでビルドしています..." | tee -a ai/output.log
-  cd src && GO111MODULE=on go build -o ../bin/uncode -ldflags "-X main.debugMode=true" ./cmd/uncode/main.go 2>&1 | tee -a ../ai/output.log
+  cd src && GO111MODULE=on go build -o ../bin/uncode -ldflags "-X main.debugMode=true" ./main.go 2>&1 | tee -a ../ai/output.log
 else
-  cd src && GO111MODULE=on go build -o ../bin/uncode ./cmd/uncode/main.go 2>&1 | tee -a ../ai/output.log
+  cd src && GO111MODULE=on go build -o ../bin/uncode ./main.go 2>&1 | tee -a ../ai/output.log
 fi
 
 if [ ${PIPESTATUS[0]} -eq 0 ]; then

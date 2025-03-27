@@ -116,3 +116,26 @@ func (ie *IndexExpression) String() string {
 	out.WriteString("])")
 	return out.String()
 }
+
+// RangeExpression は範囲式を表すノード
+type RangeExpression struct {
+	Token token.Token // '..' トークン
+	Start Expression  // 開始値
+	End   Expression  // 終了値
+}
+
+func (re *RangeExpression) expressionNode()      {}
+func (re *RangeExpression) TokenLiteral() string { return re.Token.Literal }
+func (re *RangeExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("(")
+	if re.Start != nil {
+		out.WriteString(re.Start.String())
+	}
+	out.WriteString("..")
+	if re.End != nil {
+		out.WriteString(re.End.String())
+	}
+	out.WriteString(")")
+	return out.String()
+}

@@ -99,6 +99,87 @@ func (p *Parser) parseBooleanLiteral() ast.Expression {
 // parseArrayLiteral は配列リテラルを解析する
 func (p *Parser) parseArrayLiteral() ast.Expression {
 	array := &ast.ArrayLiteral{Token: p.curToken}
+	
+	p.nextToken() // [の次のトークンへ
+	
+	// 範囲式の場合 ([start..end])
+	if p.curTokenIs(token.INT) || p.curTokenIs(token.IDENT) || p.curTokenIs(token.STRING) {
+		startExp := p.parseExpression(LOWEST)
+		
+		if p.peekTokenIs(token.DOTDOT) {
+			p.nextToken() // ..へ
+			rangeExp := &ast.RangeExpression{
+				Token: p.curToken,
+				Start: startExp,
+			}
+			
+			p.nextToken() // ..の次のトークンへ
+			
+			// 終了値を解析
+			if !p.curTokenIs(token.RBRACKET) {
+				rangeExp.End = p.parseExpression(LOWEST)
+				if !p.expectPeek(token.RBRACKET) {
+					return nil
+				}
+			} else {
+				// [start..] の形式（終了値なし）
+				// この場合はEndをnilのままにする
+			}
+			
+			return rangeExp
+		} else if p.curTokenIs(token.DOTDOT) {
+			// [..end] の形式（開始値なし）
+			rangeExp := &ast.RangeExpression{
+				Token: p.curToken,
+				Start: nil,
+			}
+			
+			p.nextToken() // ..の次のトークンへ
+			
+			// 終了値を解析
+			if !p.curTokenIs(token.RBRACKET) {
+				rangeExp.End = p.parseExpression(LOWEST)
+				if !p.expectPeek(token.RBRACKET) {
+					return nil
+				}
+			} else {
+				// [..] の形式（両方なし）
+				// この場合はStartもEndもnilのまま
+			}
+			
+			return rangeExp
+		}
+		
+		// 通常の配列の場合、最初の要素を解析した後に戻す
+		p.position--
+		p.curToken = p.tokens[p.position]
+		if p.position+1 < len(p.tokens) {
+			p.peekToken = p.tokens[p.position+1]
+		}
+	} else if p.curTokenIs(token.DOTDOT) {
+		// [..end] の形式（開始値なし）
+		rangeExp := &ast.RangeExpression{
+			Token: p.curToken,
+			Start: nil,
+		}
+		
+		p.nextToken() // ..の次のトークンへ
+		
+		// 終了値を解析
+		if !p.curTokenIs(token.RBRACKET) {
+			rangeExp.End = p.parseExpression(LOWEST)
+			if !p.expectPeek(token.RBRACKET) {
+				return nil
+			}
+		} else {
+			// [..] の形式（両方なし）
+			// この場合はStartもEndもnilのまま
+		}
+		
+		return rangeExp
+	}
+	
+	// 通常の配列の場合
 	array.Elements = p.parseExpressionList(token.RBRACKET)
 	return array
 }

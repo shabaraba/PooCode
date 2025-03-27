@@ -87,8 +87,75 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	exp := &ast.IndexExpression{Token: p.curToken, Left: left}
 
 	p.nextToken()
+	
+	// スライス表記の処理 (array[start..end])
+	if p.curTokenIs(token.DOTDOT) {
+		// array[..end] の形式
+		rangeExp := &ast.RangeExpression{
+			Token: p.curToken,
+			Start: nil,
+		}
+		
+		p.nextToken() // ..の次のトークンへ
+		
+		// 終了値を解析
+		if !p.curTokenIs(token.RBRACKET) {
+			rangeExp.End = p.parseExpression(LOWEST)
+			if !p.expectPeek(token.RBRACKET) {
+				return nil
+			}
+		} else {
+			// array[..] の形式（両方なし）
+			if !p.expectPeek(token.RBRACKET) {
+				return nil
+			}
+		}
+		
+		// スライス式を返す
+		sliceExp := &ast.IndexExpression{
+			Token: p.curToken,
+			Left:  left,
+			Index: rangeExp,
+		}
+		return sliceExp
+	}
+	
+	// 通常の添字またはスライス表記の開始値
 	exp.Index = p.parseExpression(LOWEST)
-
+	
+	// array[start..end] または array[start..] の形式の場合
+	if p.peekTokenIs(token.DOTDOT) {
+		p.nextToken() // ..へ
+		rangeExp := &ast.RangeExpression{
+			Token: p.curToken,
+			Start: exp.Index, // すでに解析した開始値
+		}
+		
+		p.nextToken() // ..の次のトークンへ
+		
+		// 終了値を解析
+		if !p.curTokenIs(token.RBRACKET) {
+			rangeExp.End = p.parseExpression(LOWEST)
+			if !p.expectPeek(token.RBRACKET) {
+				return nil
+			}
+		} else {
+			// array[start..] の形式（終了値なし）
+			if !p.expectPeek(token.RBRACKET) {
+				return nil
+			}
+		}
+		
+		// スライス式を返す
+		sliceExp := &ast.IndexExpression{
+			Token: p.curToken,
+			Left:  left,
+			Index: rangeExp,
+		}
+		return sliceExp
+	}
+	
+	// 通常の添字アクセスの場合
 	if !p.expectPeek(token.RBRACKET) {
 		return nil
 	}
