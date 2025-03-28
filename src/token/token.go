@@ -106,10 +106,7 @@ var keywords = map[string]TokenType{
 	"true":    BOOLEAN,
 	"false":   BOOLEAN,
 	"eq":      EQ,
-	"add":     PLUS, // 加算を表す関数ですが、直接+に変換するとパイプラインでエラーになるため
-	// "add":     IDENT, // 関数として扱う
-	// "print":   IDENT, // print関数を明示的に追加
-	// "show":    IDENT, // 代替としてshowも追加
+	"add":     IDENT, // 加算を表す関数ですが、直接+に変換するとパイプラインでエラーになるため関数として扱う
 }
 
 // LookupIdent は識別子がキーワードかどうかを判定する
