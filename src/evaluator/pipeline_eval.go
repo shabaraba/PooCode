@@ -13,9 +13,10 @@ import (
 // 注意: 条件付き関数の評価では型を厳密に比較するため、この変換は慎重に使用する必要がある
 func maybeConvertToInteger(obj object.Object) object.Object {
 	// 条件式の比較では型変換を抑制する
-	inConditionEval := false // 注意: 実際の実装ではより適切な方法で判定する
-	if inConditionEval {
-		return obj // 条件式評価中は型変換を行わない
+	if currentFunction != nil && currentFunction.Condition != nil {
+		// 条件式評価中は型変換を行わない
+		logger.Debug("条件式評価中のため、型変換を抑制します")
+		return obj
 	}
 	
 	if obj.Type() != object.STRING_OBJ {
