@@ -1,0 +1,17 @@
+// Simple test for conditional functions
+
+// Conditional function - only when pizza equals 1
+def test_cond() if 🍕 == 1 : int -> string {
+    "Condition true"
+}
+
+// Default function - when condition is false
+def test_cond(): int -> string {
+    "Condition false"
+}
+
+// Run test
+"Test results:" |> print;
+0 |> test_cond |> print;
+1 |> test_cond |> print;
+2 |> test_cond |> print;
