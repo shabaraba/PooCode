@@ -1,0 +1,1 @@
+def testFunc() { "Hello, World" >> 💩; } testFunc() |> print;

@@ -1,0 +1,12 @@
+def showBuzz() if 🍕 % 5 == 0 : int -> str {
+    "Buzz" >> 💩;
+}
+def showBuzz() : int -> str {
+    "" >> 💩;
+}
+
+def showTest() : int -> str {
+    🍕 |> showBuzz >> 💩;
+}
+
+3 |> showTest |> print;
