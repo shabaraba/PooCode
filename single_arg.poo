@@ -1,0 +1,6 @@
+// 単一引数の関数
+def greet(name) {
+    "Hello, " + name + "\!" >> 💩
+}
+
+greet("Claude") |> print;

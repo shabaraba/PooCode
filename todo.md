@@ -38,6 +38,8 @@
   - [x] 配列スライス構文の実装（[start..end], [..end], [start..] など）
   - [x] map, filter 高階関数の実装
   - [x] 負のインデックスのサポート
+  - [x] mapを+>パイプ、filterを?>パイプとして実装する
+
 
 ## 不具合修正
 - [x] evaluatorやfunctionのデバッグが--debugオプションつけても表示されない

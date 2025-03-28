@@ -108,7 +108,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	return result
 }
 
-// evalPipelineWithCallExpression は関数呼び出しを含むパイプライン処理を評価する
+// パイプライン処理で関数呼び出しを評価する（改善版）
 func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpression, env *object.Environment) object.Object {
 	// 関数名を取得
 	var funcName string
@@ -120,157 +120,27 @@ func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpres
 		logger.Debug("関数呼び出し式の関数名: %s\n", funcName)
 	} else {
 		logger.Debug("関数呼び出し式が識別子ではありません: %T\n", callExpr.Function)
-		
-		// map add_num(100) のような特殊なケースを処理
-		if nestedCallExpr, ok := callExpr.Function.(*ast.CallExpression); ok {
-			logger.Debug("入れ子の関数呼び出しを検出しました: %T\n", nestedCallExpr)
-
-			// まず、内側の関数名を取得
-			if innerIdent, ok := nestedCallExpr.Function.(*ast.Identifier); ok {
-				// 内側の関数名（例: add_num）
-				innerFuncName := innerIdent.Value
-				logger.Debug("内側の関数名: %s\n", innerFuncName)
-				
-				// 内側の関数に対応する関数オブジェクトを環境から取得
-				funcObj, exists := env.Get(innerFuncName)
-				if !exists {
-					return createError("関数 '%s' が見つかりません", innerFuncName)
-				}
-				
-				// 引数を評価
-				args := evalExpressions(nestedCallExpr.Arguments, env)
-				if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
-					return args[0]
-				}
-				
-				logger.Debug("内側の関数の引数: %d 個\n", len(args))
-				for i, arg := range args {
-					logger.Debug("  引数 %d: %s\n", i, arg.Inspect())
-				}
-				
-				// 外側の関数名（例: map）を取得
-				// 現在の文脈では通常「map」
-				outerFuncName := "map"
-				logger.Debug("外側の関数名: %s\n", outerFuncName)
-				
-				// map ビルトイン関数を取得
-				builtin, ok := Builtins[outerFuncName]
-				if !ok {
-					return createError("ビルトイン関数 '%s' が見つかりません", outerFuncName)
-				}
-				
-				// 内側の関数と引数をまとめて配列に渡す
-				switch fn := funcObj.(type) {
-				case *object.Function:
-					// ユーザー定義関数の場合は引数を設定した新しい関数を作成
-					logger.Debug("ユーザー定義関数に引数をセット: %s\n", innerFuncName)
-					
-					newFunc := &object.Function{
-						Parameters:  fn.Parameters,
-						ParamValues: args,  // 重要: 引数を保存
-						ASTBody:     fn.ASTBody,
-						Env:         fn.Env,
-						InputType:   fn.InputType,
-						ReturnType:  fn.ReturnType,
-					}
-					
-					// 配列と関数を引数リストにして map 関数を呼び出す
-					mapArgs := []object.Object{left, newFunc}
-					return builtin.Fn(mapArgs...)
-					
-				case *object.Builtin:
-					// ビルトイン関数の場合
-					logger.Debug("ビルトイン関数として処理: %s\n", innerFuncName)
-					
-					// ビルトイン関数と引数を一緒に渡す
-					mapArgs := []object.Object{left, fn}
-					mapArgs = append(mapArgs, args...)
-					return builtin.Fn(mapArgs...)
-					
-				default:
-					return createError("'%s' は有効な関数ではありません: %T", innerFuncName, funcObj)
-				}
-			} else {
-				return createError("入れ子の関数呼び出しの関数名が識別子ではありません: %T", nestedCallExpr.Function)
-			}
-		} else {
-			return createError("パイプラインの右側の関数名を取得できません: %T", callExpr.Function)
-		}
 	}
 
 	// 通常のケース: 右側がシンプルな関数呼び出し（例: func(arg1, arg2)）
 	// 引数を評価（一時環境で評価することで🍕の影響を分離）
 	args := evalExpressions(callExpr.Arguments, env)
-	if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
-		return args[0]
+	for _, arg := range args {
+		if arg.Type() == object.ERROR_OBJ {
+			return arg
+		}
 	}
 
 	// デバッグ出力
 	logger.Debug("パイプラインの関数名: %s, 左辺値: %s, 引数: %v\n",
 		funcName, left.Inspect(), args)
-	
-	// 特殊ケース: map(add_num(100))のようなケースを処理
-	if funcName == "map" && len(args) == 1 {
-		if fn, ok := args[0].(*object.Function); ok {
-			if len(fn.Parameters) > 0 && len(callExpr.Arguments) > 1 {
-				// map(add_num(100))のようなケース
-				logger.Debug("特殊なmap呼び出し検出: map(func(arg))\n")
-				
-				// 第1引数は配列、第2引数は関数（すでに引数付きで評価済み）
-				specialArgs := []object.Object{left, args[0]}
-				
-				// map関数を呼び出し
-				if builtin, ok := Builtins[funcName]; ok {
-					return builtin.Fn(specialArgs...)
-				}
-			}
-		}
-	}
 
-	// mapやfilterなどのビルトイン関数の特別処理
-	if funcName == "map" || funcName == "filter" {
-		// mapやfilterのケースでは、第一引数は配列、第二引数は関数
-		logger.Debug("map/filter関数のための特別処理を行います\n")
-		
-		// 左辺の値が配列かどうかを確認
-		_, isArray := left.(*object.Array)
-		if !isArray {
-			logger.Warn("map/filter関数には配列が必要ですが、受け取ったのは %s です\n", left.Type())
-		}
-		
-		if len(args) == 0 {
-			// 第一引数は左辺の値（配列）
-			logger.Debug("map/filter: 引数がないため、左辺の値のみを使用します\n")
-			args = []object.Object{left}
-		} else {
-			// 関数名を取得できた場合（ユーザー定義関数名など）
-			if args[0].Type() == object.STRING_OBJ {
-				logger.Debug("map/filter: 第1引数が文字列 '%s' です - 関数名として扱います\n", args[0].Inspect())
-				
-				// 環境から関数を探す
-				funcNameStr := args[0].(*object.String).Value
-				if fn, ok := env.Get(funcNameStr); ok {
-					logger.Debug("環境から関数 '%s' を見つけました\n", funcNameStr)
-					
-					// 関数を第2引数として設定し直す
-					args[0] = fn
-				}
-			}
-			
-			// 第二引数以降は変更なし（例: map add_num 100 -> [left, add_num, 100]）
-			logger.Debug("map/filter: 引数リストを作成します: 左辺の値 + %d 個の引数\n", len(args))
-			allArgs := []object.Object{left}
-			allArgs = append(allArgs, args...)
-			args = allArgs
-		}
-	} else {
-		// 通常の関数呼び出しの場合（例: 左辺 |> func arg1 arg2）
-		// 全引数リストを作成（第一引数は左辺の値、第二引数以降は関数呼び出しの引数）
-		logger.Debug("通常の関数呼び出し: 引数リストを作成します\n")
-		allArgs := []object.Object{left}
-		allArgs = append(allArgs, args...)
-		args = allArgs
-	}
+	// 通常の関数呼び出しの場合（例: 左辺 |> func arg1 arg2）
+	// 全引数リストを作成（第一引数は左辺の値、第二引数以降は関数呼び出しの引数）
+	logger.Debug("通常の関数呼び出し: 引数リストを作成します\n")
+	allArgs := []object.Object{left}
+	allArgs = append(allArgs, args...)
+	args = allArgs
 
 	// デバッグ: 最終的な引数リストを表示
 	logger.Debug("関数呼び出しに渡す最終引数リスト: %d 個\n", len(args))
@@ -305,3 +175,4 @@ var pipeDebugLevel = logger.LevelDebug
 func SetPipeDebugLevel(level logger.LogLevel) {
 	pipeDebugLevel = level
 }
+
