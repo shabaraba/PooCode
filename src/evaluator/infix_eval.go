@@ -17,9 +17,21 @@ func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environm
 	case ">>", ">>=":
 		// リダイレクト演算子（代入/追加）
 		return evalAssignment(node, env)
-	case "=", ":=", "+=", "-=", "*=", "/=", "%=":
+	case "=", ":=":
 		// 代入演算子
-		return evalAssignmentOperator(node, env)
+		return evalAssignment(node, env)
+	case "+>", "map": // map演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
+		}
+		// map関数の処理を実行
+		return evalMapOperation(node, env)
+	case "?>", "filter": // filter演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
+		}
+		// filter関数の処理を実行
+		return evalFilterOperation(node, env)
 	}
 
 	// ピザリテラルが含まれる場合のチェック

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	
 	"github.com/uncode/ast"
-	"github.com/uncode/config"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )

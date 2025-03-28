@@ -2,7 +2,6 @@ package evaluator
 
 import (
 	"github.com/uncode/ast"
-	"github.com/uncode/config"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -34,7 +33,7 @@ func evalConditionalExpression(fn *object.Function, args []object.Object, env *o
 	// 条件式が存在しない場合はtrueを返す
 	if fn.Condition == nil {
 		logConditionDebug("条件式が存在しないため、常にtrueとして評価します")
-		return true, TrueObj
+		return true, &object.Boolean{Value: true}
 	}
 
 	logConditionDebug("条件式の評価を開始します")
