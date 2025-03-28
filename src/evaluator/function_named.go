@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+	
 	"github.com/uncode/ast"
 	"github.com/uncode/config"
 	"github.com/uncode/logger"
@@ -77,17 +79,44 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 	logger.Debug("複数の関数が見つかりました: %d", len(functions))
 
-	// 条件付き関数と条件なし関数をグループ化
+	// 条件付き関数と条件なし関数を正確にグループ化
 	var conditionalFuncs []*object.Function
 	var defaultFuncs []*object.Function
 
-	for _, fn := range functions {
-		if fn.Condition != nil {
+	// デバッグ情報
+	logger.Debug("関数 '%s' を %d 個の候補から分類します", name, len(functions))
+
+	for i, fn := range functions {
+		// 厳密なnilチェックで条件式の有無を判定
+		hasCondition := fn.Condition != nil
+		
+		if hasCondition {
+			// 条件付き関数のみを条件付き関数として分類
 			conditionalFuncs = append(conditionalFuncs, fn)
+			logger.Debug("  関数候補 %d: 条件付き関数として分類（条件式: %v）", i+1, fn.Condition)
+			// 追加デバッグ - 関数のすべての属性を表示
+			params := ""
+			for _, p := range fn.Parameters {
+				params += p.Value + ", "
+			}
+			logger.Debug("    詳細: 入力型=%s, 戻り値型=%s, パラメータ=[%s]", 
+				fn.InputType, fn.ReturnType, params)
 		} else {
+			// 条件式がないものはデフォルト関数として分類
 			defaultFuncs = append(defaultFuncs, fn)
+			logger.Debug("  関数候補 %d: デフォルト関数として分類（条件式なし）", i+1)
+			// 追加デバッグ - 関数のすべての属性を表示
+			params := ""
+			for _, p := range fn.Parameters {
+				params += p.Value + ", "
+			}
+			logger.Debug("    詳細: 入力型=%s, 戻り値型=%s, パラメータ=[%s]", 
+				fn.InputType, fn.ReturnType, params)
 		}
 	}
+	
+	logger.Debug("分類結果: 条件付き関数=%d個, デフォルト関数=%d個", 
+		len(conditionalFuncs), len(defaultFuncs))
 
 	// まず条件付き関数を検索して評価
 	logger.Debug("条件付き関数を %d 個見つけました\n", len(conditionalFuncs))
@@ -113,6 +142,15 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 		// 条件式を評価するための環境を作成
 		condEnv := object.NewEnclosedEnvironment(funcEnv)
+		
+		// 条件式を評価前に🍕変数の型情報をデバッグ出力
+		if config.GlobalConfig.ShowConditionDebug {
+			if pizzaVal, ok := condEnv.Get("🍕"); ok {
+				logger.Debug("条件式評価前の🍕変数: %s (%s)", pizzaVal.Inspect(), pizzaVal.Type())
+			} else {
+				logger.Debug("条件式評価前の🍕変数: 未設定")
+			}
+		}
 
 		// 条件式を評価
 		condResult := Eval(fn.Condition, condEnv)
@@ -154,6 +192,20 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 	// 条件付き関数が該当しなかった場合、デフォルト関数を使用
 	logger.Debug("デフォルト関数を %d 個見つけました", len(defaultFuncs))
+	
+	// デフォルト関数がなく、条件付き関数の条件がすべて偽の場合、
+	// 専用の名前（funcName#default）でデフォルト関数を探してみる
+	if len(defaultFuncs) == 0 {
+		defaultFuncName := fmt.Sprintf("%s#default", name)
+		logger.Debug("デフォルト関数が見つからないので、'%s' を探します...", defaultFuncName)
+		if obj, ok := env.Get(defaultFuncName); ok {
+			if function, ok := obj.(*object.Function); ok {
+				logger.Debug("専用名でデフォルト関数 '%s' が見つかりました", defaultFuncName)
+				defaultFuncs = append(defaultFuncs, function)
+			}
+		}
+	}
+	
 	if len(defaultFuncs) > 0 {
 		logger.Debug("デフォルト関数を使用します")
 		result := applyFunctionWithPizza(defaultFuncs[0], args)
@@ -162,6 +214,16 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		}
 		// nilが返された場合は、パラメータとして引数が合わなかった
 		logger.Debug("デフォルト関数の引数が合いませんでした")
+	} else {
+		// 最後の手段: すべての関数を対象に、条件なしで呼び出し試行
+		logger.Debug("最終手段: すべての関数を条件なしで呼び出し試行中")
+		for _, fn := range functions {
+			logger.Debug("関数 '%s' を条件なしで呼び出し試行", name)
+			result := applyFunctionWithPizza(fn, args)
+			if result != nil && result.Type() != object.ERROR_OBJ {
+				return result
+			}
+		}
 	}
 
 	// 適用可能な関数が見つからない場合
@@ -185,10 +247,15 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 
 	// 引数をバインド
 	if len(args) > 0 {
-		// 第1引数は必ず🍕にセット
+		// 第1引数は🍕に設定
+		// 🍕値を環境変数として設定（後方互換性のため）
 		logger.Debug("第1引数を🍕にセット: %s", args[0].Inspect())
 		extendedEnv.Set("🍕", args[0])
 		LogArgumentBinding(funcName, "🍕", args[0])
+		
+		// 新しい実装: 🍕値を関数オブジェクト自体に設定
+		logger.Debug("関数オブジェクトに🍕値を直接設定: %s", args[0].Inspect())
+		fn.SetPizzaValue(args[0])
 		
 		// パラメータがある場合、パラメータに引数をバインド
 		// これには二つのケースがある:
@@ -235,9 +302,20 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 		return createEvalError("関数の本体がBlockStatementではありません")
 	}
 
+	// 現在の関数コンテキストを保存
+	prevFunction := currentFunction
+	
+	// 現在の関数コンテキストを設定
+	logger.Debug("現在の関数コンテキストを設定: %s", funcName)
+	currentFunction = fn
+	
 	logger.Debug("関数 '%s' の本体を評価中...", funcName)
 	evaluated := evalBlockStatement(astBody, extendedEnv)
 	logger.Debug("関数 '%s' の評価結果: %s (%T)", funcName, evaluated.Inspect(), evaluated)
+	
+	// 元の関数コンテキストを復元
+	logger.Debug("元の関数コンテキストを復元")
+	currentFunction = prevFunction
 
 	// ReturnValue の場合は Value を抽出
 	if returnValue, ok := evaluated.(*object.ReturnValue); ok {

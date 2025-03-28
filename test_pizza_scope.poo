@@ -1,0 +1,55 @@
+// ピザ変数のスコープテスト
+// グローバルな🍕変数を設定
+10 >> 🍕;
+
+// 初期値を確認
+"Global 🍕:" |> print;
+🍕 |> print;
+
+// 関数内での🍕値
+def function1(): int -> int {
+    "Inside function1, 🍕:" |> print;
+    🍕 |> print;
+    🍕 + 5 >> 💩
+}
+
+// テスト実行
+20 |> function1 |> print;
+
+// グローバルな🍕変数の状態を確認
+"After function1, global 🍕:" |> print;
+🍕 |> print;
+
+// 別の関数でも確認
+def function2(): int -> int {
+    "Inside function2, 🍕:" |> print;
+    🍕 |> print;
+    🍕 * 2 >> 💩
+}
+
+30 |> function2 |> print;
+
+// グローバルな🍕変数の状態を再確認
+"After function2, global 🍕:" |> print;
+🍕 |> print;
+
+// ネストした関数呼び出し
+def outer(): int -> int {
+    "Inside outer, 🍕:" |> print;
+    🍕 |> print;
+    
+    // 内部で別の値で関数を呼び出し
+    "Calling inner from outer with value 100:" |> print;
+    100 |> function1 |> print;
+    
+    // 外部関数の🍕値を使用
+    "Back in outer, 🍕:" |> print;
+    🍕 |> print;
+    🍕 + 10 >> 💩
+}
+
+50 |> outer |> print;
+
+// 最終的なグローバル🍕変数の状態
+"Final global 🍕:" |> print;
+🍕 |> print;

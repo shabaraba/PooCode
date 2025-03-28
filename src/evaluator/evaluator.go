@@ -13,6 +13,9 @@ import (
 // カレント環境を保持するグローバル変数
 var currentEnv *object.Environment
 
+// 現在実行中の関数を保持するグローバル変数
+var currentFunction *object.Function
+
 // GetEvalEnv は現在の評価環境を取得する
 func GetEvalEnv() *object.Environment {
 	if currentEnv == nil {
@@ -100,10 +103,21 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
-		// 🍕はパイプラインで渡された値を参照する特別な変数
+		// 現在の関数コンテキストを取得
+		// カレント関数オブジェクトを取得（後で追加するグローバル変数）
+		if currentFunction != nil {
+			logger.Debug("現在の関数オブジェクトから🍕値を取得します")
+			if pizzaVal := currentFunction.GetPizzaValue(); pizzaVal != nil {
+				return pizzaVal
+			}
+		}
+		
+		// 後方互換性のために環境変数もチェック
 		if val, ok := env.Get("🍕"); ok {
+			logger.Debug("環境から🍕値を取得しました")
 			return val
 		}
+		
 		return createError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 
 	case *ast.PooLiteral:
