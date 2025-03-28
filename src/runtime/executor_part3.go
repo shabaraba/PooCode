@@ -1,3 +1,13 @@
+package runtime
+
+import (
+	"fmt"
+
+	"github.com/uncode/ast"
+	"github.com/uncode/logger"
+	"github.com/uncode/object"
+)
+
 // preRegisterFunctions は ASTをトラバースして関数定義を事前に環境に登録する
 func preRegisterFunctions(program *ast.Program, env *object.Environment) {
 	if program == nil || len(program.Statements) == 0 {

@@ -1,3 +1,14 @@
+package runtime
+
+import (
+	"fmt"
+
+	"github.com/uncode/ast"
+	"github.com/uncode/evaluator"
+	"github.com/uncode/logger"
+	"github.com/uncode/object"
+)
+
 // SetupBuiltins は組み込み関数を環境に設定する
 func SetupBuiltins(env *object.Environment) {
 	// プリント関数を追加
