@@ -50,47 +50,12 @@ func LogArgumentBinding(funcName string, paramName string, value object.Object) 
 	}
 }
 
-// evalInfixExpressionWithNode は中置式を評価する
-func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environment) object.Object {
-	logger.Debug("中置式を評価します: %s", node.Operator)
-
-	switch node.Operator {
-	case "+>", "map": // map演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
-		}
-		// map関数の処理を実行
-		return evalMapOperation(node, env)
-	case "?>", "filter": // filter演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
-		}
-		// filter関数の処理を実行
-		return evalFilterOperation(node, env)
-	case "|>": // 標準パイプライン
-		logger.Debug("標準パイプライン演算子 (|>) を検出しました")
-		return evalPipeline(node, env)
-	case "|": // 並列パイプ
-		logger.Debug("並列パイプ演算子 (|) を検出しました")
-		// 並列パイプの処理は通常評価
-		return evalStandardInfixExpression(node, env)
-	case ">>": // 代入演算子
-		logger.Debug("代入演算子 (>>) を検出しました")
-		return evalAssignment(node, env)
-	case "=": // 通常の代入演算子
-		logger.Debug("通常の代入演算子 (=) を検出しました")
-		return evalAssignment(node, env)
-	default:
-		// その他の演算子は通常の中置式評価
-		return evalStandardInfixExpression(node, env)
-	}
-}
-
 // evalMapOperation はmap演算子(+>)を処理する
+// 単一値と配列の両方に対応するように修正
 func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object.Object {
 	logger.Debug("mapパイプライン演算子(+>)の処理を開始")
 
-	// 左辺値の評価（通常は配列）
+	// 左辺値の評価
 	left := Eval(node.Left, env)
 	if left == nil {
 		return createError("mapオペレーション: 左辺の評価結果がnilです")
@@ -99,13 +64,21 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 		return left
 	}
 	
-	// 配列であることを確認
-	arr, ok := left.(*object.Array)
-	if !ok {
-		return createError("map演算子の左辺は配列である必要があります")
+	// 配列か単一の値かを確認し、適切な処理を行う
+	var elements []object.Object
+	var isSingleValue bool
+	
+	if arrayObj, ok := left.(*object.Array); ok {
+		// 配列の場合はその要素を使用
+		elements = arrayObj.Elements
+		isSingleValue = false
+		logger.Debug("+> 左辺の評価結果: 配列 %s (タイプ: %s)", left.Inspect(), left.Type())
+	} else {
+		// 単一の値の場合は要素1つの配列として扱う
+		elements = []object.Object{left}
+		isSingleValue = true
+		logger.Debug("+> 左辺の評価結果: 単一値 %s (タイプ: %s) を要素1つの配列として扱います", left.Inspect(), left.Type())
 	}
-
-	logger.Debug("+> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
 
 	// 右辺値の評価（関数または関数呼び出し）
 	var funcName string
@@ -133,23 +106,26 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 			return createError("関数呼び出し式の関数部分が識別子ではありません: %T", right.Function)
 		}
 		
-		// 別のケース（CallExpressionの処理）は元のコードをそのまま利用
-		leftElements := arr.Elements
-		// マップ処理の実行
-		resultElements := make([]object.Object, 0, len(leftElements))
-		for _, leftElement := range leftElements {
-			result := evalPipelineWithCallExpression(leftElement, right, env)
+		// CallExpressionの場合、各要素に対してevalPipelineWithCallExpressionを適用
+		resultElements := make([]object.Object, 0, len(elements))
+		for _, element := range elements {
+			result := evalPipelineWithCallExpression(element, right, env)
 			resultElements = append(resultElements, result)
+		}
+		
+		// 単一値モードの場合は最初の結果だけを返す
+		if isSingleValue && len(resultElements) > 0 {
+			return resultElements[0]
 		}
 		return &object.Array{Elements: resultElements}
 	default:
 		return createError("map演算子の右辺が関数または識別子ではありません: %T", node.Right)
 	}
 
-	// 直接配列の各要素に対して処理を行う
-	resultElements := make([]object.Object, 0, len(arr.Elements))
+	// 直接各要素に対して処理を行う
+	resultElements := make([]object.Object, 0, len(elements))
 	
-	for _, elem := range arr.Elements {
+	for _, elem := range elements {
 		// 一時環境を作成し、🍕に要素をセット
 		tempEnv := object.NewEnclosedEnvironment(env)
 		tempEnv.Set("🍕", elem)
@@ -189,16 +165,22 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 		resultElements = append(resultElements, result)
 	}
 	
+	// 単一値モードの場合は最初の結果だけを返す
+	if isSingleValue && len(resultElements) > 0 {
+		return resultElements[0]
+	}
+	
 	return &object.Array{Elements: resultElements}
 }
 
 // evalFilterOperation はfilter演算子(?>)を処理する
+// 左辺が単一値の場合のサポートも追加
 func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) object.Object {
 	if logger.IsLevelEnabled(mapFilterDebugLevel) {
 		logger.Debug("filter演算子(?>)の処理を開始")
 	}
 
-	// 左辺値の評価（通常は配列）
+	// 左辺値の評価
 	left := Eval(node.Left, env)
 	if left == nil {
 		return createError("filterオペレーション: 左辺の評価結果がnilです")
@@ -207,14 +189,20 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 		return left
 	}
 	
-	// 配列であることを確認
-	arr, ok := left.(*object.Array)
-	if !ok {
-		return createError("filter演算子の左辺は配列である必要があります")
-	}
-
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Debug("?> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
+	// 配列か単一の値かを確認し、適切な処理を行う
+	var elements []object.Object
+	var isSingleValue bool
+	
+	if arrayObj, ok := left.(*object.Array); ok {
+		// 配列の場合はその要素を使用
+		elements = arrayObj.Elements
+		isSingleValue = false
+		logger.Debug("?> 左辺の評価結果: 配列 %s (タイプ: %s)", left.Inspect(), left.Type())
+	} else {
+		// 単一の値の場合は要素1つの配列として扱う
+		elements = []object.Object{left}
+		isSingleValue = true
+		logger.Debug("?> 左辺の評価結果: 単一値 %s (タイプ: %s) を要素1つの配列として扱います", left.Inspect(), left.Type())
 	}
 
 	// 右辺値の評価（関数または関数呼び出し）
@@ -250,18 +238,25 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 		}
 		
 		// CallExpressionの場合、evalPipelineWithCallExpressionを使用して評価
-		leftElements := arr.Elements
-		// フィルター処理の実行
 		resultElements := make([]object.Object, 0)
-		for _, leftElement := range leftElements {
+		for _, element := range elements {
 			// 各要素に対して関数を適用
-			result := evalPipelineWithCallExpression(leftElement, right, env)
+			result := evalPipelineWithCallExpression(element, right, env)
 			
 			// 結果がtruthyな場合のみ結果に含める
 			if isTruthy(result) {
-				resultElements = append(resultElements, leftElement)
+				resultElements = append(resultElements, element)
 			}
 		}
+		
+		// 単一値モードの場合、結果があれば元の値を、なければnullを返す
+		if isSingleValue {
+			if len(resultElements) > 0 {
+				return left // 元の単一値を返す
+			}
+			return NULL
+		}
+		
 		return &object.Array{Elements: resultElements}
 	default:
 		return createError("filter演算子の右辺が関数または識別子ではありません: %T", node.Right)
@@ -270,7 +265,7 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	// 直接配列の各要素に対して処理を行う
 	resultElements := make([]object.Object, 0)
 	
-	for _, elem := range arr.Elements {
+	for _, elem := range elements {
 		// 一時環境を作成し、🍕に要素をセット
 		tempEnv := object.NewEnclosedEnvironment(env)
 		tempEnv.Set("🍕", elem)
@@ -315,6 +310,14 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 		if isTruthy(result) {
 			resultElements = append(resultElements, elem)
 		}
+	}
+	
+	// 単一値モードの場合、結果があれば元の値を、なければnullを返す
+	if isSingleValue {
+		if len(resultElements) > 0 {
+			return left // 元の単一値を返す
+		}
+		return NULL
 	}
 	
 	return &object.Array{Elements: resultElements}

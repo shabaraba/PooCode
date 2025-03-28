@@ -1,0 +1,12 @@
+// map_single_value_simple.poo - +> 演算子の単一値対応テスト (シンプル版)
+
+// 条件関数を定義（単純に数値を2倍にする）
+def double() : int -> int {
+    print("double関数が呼ばれました。入力値: " + to_string(🍕));
+    🍕 * 2 >> 💩
+}
+
+// 単一値に対するテスト
+print("=== 単一値に対するテスト ===");
+4 +> double |> print;  // 本来なら8が出力されるはず
+

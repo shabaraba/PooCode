@@ -10,26 +10,40 @@ import (
 
 // maybeConvertToInteger は文字列を整数に変換する試みを行う
 // 特に、パイプラインからのprint結果などを数値に変換するのに役立つ
+// 注意: 条件付き関数の評価では型を厳密に比較するため、この変換は慎重に使用する必要がある
 func maybeConvertToInteger(obj object.Object) object.Object {
+	// 条件式の比較では型変換を抑制する
+	if currentFunction != nil && currentFunction.Condition != nil {
+		// 条件式評価中は型変換を行わない
+		logger.Debug("条件式評価中のため、型変換を抑制します")
+		return obj
+	}
+	
 	if obj.Type() != object.STRING_OBJ {
 		return obj // 文字列以外はそのまま返す
 	}
 
 	strValue := obj.(*object.String).Value
+	
+	logger.Debug("maybeConvertToInteger: 文字列 '%s' の変換を試みます", strValue)
 
 	// 文字列が数値として解釈可能かを試みる
 	if intValue, err := strconv.ParseInt(strValue, 10, 64); err == nil {
+		logger.Debug("文字列 '%s' を整数 %d に変換しました", strValue, intValue)
 		return &object.Integer{Value: intValue}
 	}
 
 	// 特定の文字列だけを変換する
 	if strValue == "0" {
+		logger.Debug("文字列 '0' を整数 0 に変換しました")
 		return &object.Integer{Value: 0}
 	} else if strValue == "1" {
+		logger.Debug("文字列 '1' を整数 1 に変換しました")
 		return &object.Integer{Value: 1}
 	}
 
 	// 変換できなければそのまま返す
+	logger.Debug("文字列 '%s' は整数に変換できませんでした", strValue)
 	return obj
 }
 
@@ -56,10 +70,18 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	tempEnv := object.NewEnclosedEnvironment(env)
 	
 	// 明示的に🍕変数に左辺の値を設定（条件式の評価で必要）
-	logger.Debug("パイプラインで🍕に値を明示的に設定します: %s\n", left.Inspect())
+	logger.Debug("パイプラインで🍕に値を明示的に設定します: %s (%s)\n", left.Inspect(), left.Type())
 	// nullを無視（printの結果などがnullの場合に問題が発生）
 	if left.Type() != object.NULL_OBJ {
+		// 文字列から整数への自動変換を抑制（条件付き関数で型の不一致問題を解決）
 		tempEnv.Set("🍕", left)
+		
+		// パイプラインの入力の型と内容を詳細に記録
+		if left.Type() == object.STRING_OBJ {
+			logger.Debug("パイプライン入力は文字列型です。自動変換を抑制します。内容: %s", left.Inspect())
+		} else if left.Type() == object.INTEGER_OBJ {
+			logger.Debug("パイプライン入力は整数型です: %d", left.(*object.Integer).Value)
+		}
 	} else {
 		logger.Debug("左辺値がnullのため、🍕の設定をスキップします")
 	}

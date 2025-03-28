@@ -54,6 +54,14 @@ func main() {
 	} else {
 		evaluator.SetMapFilterDebugLevel(logger.LevelOff)
 	}
+	
+	// 条件式評価のデバッグレベルを設定
+	if config.GlobalConfig.ShowConditionDebug {
+		evaluator.SetConditionDebugLevel(logger.LevelDebug)
+		logger.Debug("条件式評価のデバッグ出力を有効化しました")
+	} else {
+		evaluator.SetConditionDebugLevel(logger.LevelOff)
+	}
 
 	// ソースファイルの実行
 	result, err := runtime.ExecuteSourceFile(config.GlobalConfig.SourceFile)

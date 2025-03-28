@@ -1,32 +1,26 @@
-def test_add_normal(): void -> int {
-    1 |> add 2 >> 💩
+// 単純な条件付き関数テスト
+def test_simple() if 🍕 == 1 : int -> int {
+    10 >> 💩
 }
 
-def test_add_pipe(): void -> void {
-    // パイプライン経由での加算をテスト
-    1 |> add 2 |> print
+def test_simple(): int -> int {
+    20 >> 💩
 }
 
-def test_add_direct(): void -> void {
-    // 直接呼び出しでの加算をテスト
-     1 add 2 |> print
+// 明示的な等価比較テスト
+def equals_1(x): int -> boolean {
+    x == 1 >> 💩
 }
 
-test_add_normal |> print // 期待値: 3
-test_add_pipe    // 期待値: 出力 3
-test_add_direct  // 期待値: 出力 3
+// テスト実行
+"入力 0 での条件式テスト:" |> print;
+0 |> test_simple |> print;
 
-// 条件付き関数テスト
-def test_cond(num) if 🍕 == 1 : int -> int {
-    // 🍕が1の場合は加算して返す
-    🍕 |> add 10 >> 💩
-}
+"入力 1 での条件式テスト:" |> print;
+1 |> test_simple |> print;
 
-def test_cond(num): int -> int {
-    // それ以外は2倍して返す
-    🍕 |> add 🍕 >> 💩
-}
-
-0 |> test_cond 1 |> print // 期待値: 0 (0+0=0)
-1 |> test_cond 1 |> print // 期待値: 11 (1+10=11)
-2 |> test_cond 1 |> print // 期待値: 4 (2+2=4)
+"明示的な等価比較:" |> print;
+"0 == 1:" |> print;
+0 |> equals_1 |> print;
+"1 == 1:" |> print;
+1 |> equals_1 |> print;

@@ -14,6 +14,7 @@ type Function struct {
 	ReturnType  string
 	Condition   interface{}  // 条件式
 	Poo         Object       // 💩メンバ
+	Pizza       Object       // 🍕メンバ - 関数固有の入力値を保持
 }
 
 func (f *Function) Type() ObjectType { return FUNCTION_OBJ }
@@ -27,6 +28,19 @@ func (f *Function) GetPooValue() Object {
 	return f.Poo
 }
 func (f *Function) SetPooValue(val Object) { f.Poo = val }
+
+// GetPizzaValue は関数の🍕値を取得する
+func (f *Function) GetPizzaValue() Object {
+	if f.Pizza == nil {
+		// Pizzaがnilの場合はエラーではなくnilを返す
+		// 評価器側でエラーを生成する必要がある場合に対応
+		return nil
+	}
+	return f.Pizza
+}
+
+// SetPizzaValue は関数の🍕値を設定する
+func (f *Function) SetPizzaValue(val Object) { f.Pizza = val }
 
 // Name は関数の名前を取得する
 // 環境内で定義されている関数名を特定する必要がある場合に使用

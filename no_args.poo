@@ -1,6 +1,0 @@
-// 引数なしテスト
-def hello() {
-    "Hello, World\!" >> 💩
-}
-
-hello() |> print;

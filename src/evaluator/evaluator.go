@@ -13,6 +13,9 @@ import (
 // カレント環境を保持するグローバル変数
 var currentEnv *object.Environment
 
+// 現在実行中の関数を保持するグローバル変数
+var currentFunction *object.Function
+
 // GetEvalEnv は現在の評価環境を取得する
 func GetEvalEnv() *object.Environment {
 	if currentEnv == nil {
@@ -100,10 +103,22 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
-		// 🍕はパイプラインで渡された値を参照する特別な変数
+
+		// 優先順位1: 関数オブジェクトから🍕値を取得
+		if currentFunction != nil {
+			if pizzaVal := currentFunction.GetPizzaValue(); pizzaVal != nil {
+				logger.Debug("関数オブジェクトから🍕値を取得: %s", pizzaVal.Inspect())
+				return pizzaVal
+			}
+		}
+
+		// 優先順位2: 環境から🍕値を取得（バックアップ）
 		if val, ok := env.Get("🍕"); ok {
+			logger.Debug("環境から🍕値を取得しました: %s", val.Inspect())
 			return val
 		}
+		
+		logger.Debug("🍕値が見つかりません")
 		return createError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 
 	case *ast.PooLiteral:
@@ -173,7 +188,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.InfixExpression:
 		logger.Debug("中置式を評価: %s", node.Operator)
 		
-		// パイプライン演算子、map/filter、および代入演算子の評価
+		// 別ファイルに移動した中置式評価関数を使用
 		return evalInfixExpressionWithNode(node, env)
 
 	case *ast.CallExpression:
