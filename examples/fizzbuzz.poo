@@ -23,5 +23,5 @@ def showTest() : int -> str {
     🍕 |> showBuzz >> 💩;
 }
 
-5 |> showBuzz |> print;
-// [1..20] +> showBuzz +> print;
+//5 |> showBuzz |> print;
+[1..20] +> showBuzz +> print;
