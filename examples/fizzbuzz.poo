@@ -12,21 +12,16 @@ def showBuzz() : int -> str {
     "" >> 💩;
 }
 
-def showNumber() if (🍕 % 3 == 0) || (🍕 % 5 == 0) : int -> str {
-    "" >> 💩;
+def showNumber(num) if 🍕 == "" : str -> str {
+    num |> to_string >> 💩;
 }
-def showNumber() : int -> str {
-    🍕 |> to_string >> 💩;
+def showNumber() : str -> str {
+    🍕 >> 💩;
 }
  
 def showTest() : int -> str {
-    "" >> result;
-    
-    🍕 |> showFizz |> add result >> result;
-    🍕 |> showBuzz |> add result >> result;
-    🍕 |> showNumber |> add result >> result;
-    
-    result >> 💩;
+    🍕 |> showBuzz >> 💩;
 }
 
-[1..20] +> showTest +> print;
+5 |> showBuzz |> print;
+// [1..20] +> showBuzz +> print;
