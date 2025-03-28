@@ -50,41 +50,7 @@ func LogArgumentBinding(funcName string, paramName string, value object.Object) 
 	}
 }
 
-// evalInfixExpressionWithNode は中置式を評価する
-func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environment) object.Object {
-	logger.Debug("中置式を評価します: %s", node.Operator)
-
-	switch node.Operator {
-	case "+>", "map": // map演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
-		}
-		// map関数の処理を実行
-		return evalMapOperation(node, env)
-	case "?>", "filter": // filter演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
-		}
-		// filter関数の処理を実行
-		return evalFilterOperation(node, env)
-	case "|>": // 標準パイプライン
-		logger.Debug("標準パイプライン演算子 (|>) を検出しました")
-		return evalPipeline(node, env)
-	case "|": // 並列パイプ
-		logger.Debug("並列パイプ演算子 (|) を検出しました")
-		// 並列パイプの処理は通常評価
-		return evalStandardInfixExpression(node, env)
-	case ">>": // 代入演算子
-		logger.Debug("代入演算子 (>>) を検出しました")
-		return evalAssignment(node, env)
-	case "=": // 通常の代入演算子
-		logger.Debug("通常の代入演算子 (=) を検出しました")
-		return evalAssignment(node, env)
-	default:
-		// その他の演算子は通常の中置式評価
-		return evalStandardInfixExpression(node, env)
-	}
-}
+// Note: evalInfixExpressionWithNode は infix_eval.go に移動されました
 
 // evalMapOperation はmap演算子(+>)を処理する
 func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object.Object {
