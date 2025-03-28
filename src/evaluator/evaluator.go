@@ -104,19 +104,18 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
 
-		// 重要: 最初に環境から直接🍕値を取得する (条件式評価のため)
+		// 優先順位1: 関数オブジェクトから🍕値を取得
+		if currentFunction != nil {
+			if pizzaVal := currentFunction.GetPizzaValue(); pizzaVal != nil {
+				logger.Debug("関数オブジェクトから🍕値を取得: %s", pizzaVal.Inspect())
+				return pizzaVal
+			}
+		}
+
+		// 優先順位2: 環境から🍕値を取得（バックアップ）
 		if val, ok := env.Get("🍕"); ok {
 			logger.Debug("環境から🍕値を取得しました: %s", val.Inspect())
 			return val
-		}
-
-		// 関数コンテキストから🍕値を取得（関数本体評価時）
-		if currentFunction != nil {
-			logger.Debug("現在の関数オブジェクトから🍕値を取得します")
-			if pizzaVal := currentFunction.GetPizzaValue(); pizzaVal != nil {
-				logger.Debug("関数オブジェクトから取得した🍕値: %s", pizzaVal.Inspect())
-				return pizzaVal
-			}
 		}
 		
 		logger.Debug("🍕値が見つかりません")
@@ -189,7 +188,7 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.InfixExpression:
 		logger.Debug("中置式を評価: %s", node.Operator)
 		
-		// パイプライン演算子、map/filter、および代入演算子の評価
+		// 別ファイルに移動した中置式評価関数を使用
 		return evalInfixExpressionWithNode(node, env)
 
 	case *ast.CallExpression:

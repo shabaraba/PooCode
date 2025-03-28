@@ -131,81 +131,15 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	for i, fn := range conditionalFuncs {
 		logger.Debug("条件付き関数候補 %d を評価中...\n", i+1)
 
-		// 条件式の詳細を表示（ShowConditionDebugがtrueの場合のみ）
-		if config.GlobalConfig.ShowConditionDebug {
-			logger.Debug("-------- 条件式の詳細評価 --------")
-			logger.Debug("条件式: %v", fn.Condition)
-
-			// AST構造をより詳細に表示
-			if infixExpr, ok := fn.Condition.(*ast.InfixExpression); ok {
-				logger.Debug("条件式タイプ: 中置式")
-				logger.Debug("  演算子: %s", infixExpr.Operator)
-				logger.Debug("  左辺: %T - %v", infixExpr.Left, infixExpr.Left)
-				logger.Debug("  右辺: %T - %v", infixExpr.Right, infixExpr.Right)
-			} else {
-				logger.Debug("条件式タイプ: %T", fn.Condition)
-			}
-			logger.Debug("----------------------------------")
-		}
-
-		// 条件式を評価するための環境を作成
-		// 重要: 条件式評価には独立した環境を使用し、関数の環境に依存しないようにする
-		// 修正: 完全に独立した環境を作成し、親環境へのリンクは持たない
-		condEnv := object.NewEnvironment()
+		// 条件式評価の共通関数を使用
+		isTrue, condResult := evalConditionalExpression(fn, args, env)
 		
-		// 条件式評価のための🍕変数のセットアップ 
-		// この部分が重要: 条件式評価時も同じ引数値を🍕としてセットする
-		if len(args) > 0 {
-			// 条件式用の環境に直接🍕をセット - クリティカルな修正ポイント
-			logger.Debug("条件式評価用の環境に🍕値 %s を直接セットします", args[0].Inspect())
-			condEnv.Set("🍕", args[0])
-			
-			// 関数オブジェクトにも同じ🍕値を直接設定（一貫性のため）
-			fn.SetPizzaValue(args[0])
-			
-			// 追加デバッグ情報
-			logger.Debug("条件式評価用の🍕値セット完了: %s", args[0].Inspect())
-		}
-		
-		// 条件式を評価前に🍕変数の型情報をデバッグ出力
-		if config.GlobalConfig.ShowConditionDebug {
-			if pizzaVal, ok := condEnv.Get("🍕"); ok {
-				logger.Debug("条件式評価前の🍕変数: %s (%s)", pizzaVal.Inspect(), pizzaVal.Type())
-			} else {
-				logger.Debug("条件式評価前の🍕変数: 未設定")
-			}
-		}
-
-		// 条件式を評価
-		condResult := Eval(fn.Condition, condEnv)
-
-		if config.GlobalConfig.ShowConditionDebug {
-			logger.Debug("条件式の評価結果: %s", condResult.Inspect())
-			logger.Debug("条件式の評価結果のタイプ: %s", condResult.Type())
-		}
-
-		// エラーが発生した場合、詳細を出力
-		if condResult.Type() == object.ERROR_OBJ {
-			logger.Debug("条件評価でエラーが発生しました: %s", condResult.Inspect())
+		// エラーが発生した場合、そのエラーを返す
+		if condResult != nil && condResult.Type() == object.ERROR_OBJ {
 			return condResult
 		}
 
 		// 条件が真なら、この関数を使用
-		// Booleanオブジェクトの場合はそのValueを使用、それ以外の場合はisTruthyで評価
-		isTrue := false
-		if condResult.Type() == object.BOOLEAN_OBJ {
-			// Boolean型の場合はそのValue値を直接使用
-			isTrue = condResult.(*object.Boolean).Value
-			logger.Debug("条件式の真偽値（Boolean型）: %v", isTrue)
-		} else {
-			// Boolean以外の型は isTruthy 関数で変換
-			isTrue = isTruthy(condResult)
-			logger.Debug("条件式の評価結果（非Boolean型）が %v と判定されました", isTrue)
-		}
-		
-		// 条件評価結果の詳細ログ
-		logger.Debug("条件式 '%v' の最終評価結果: %v", fn.Condition, isTrue)
-
 		if isTrue {
 			logger.Debug("条件が真であるため、この関数を使用します")
 			matchedCondFunc = fn
