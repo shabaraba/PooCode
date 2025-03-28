@@ -16,8 +16,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// デバッグ: 環境内のすべての変数を表示
 	logger.Debug("現在の環境に登録されている変数:")
 	for k, v := range env.GetVariables() {
-		logger.Debug("  %s: %s\n", k, v.Type())
+		logger.Debug("  %s: %s", k, v.Type())
 	}
+	logger.Debug("")
 
 	// 修正: 引数の数を制限（パイプライン以外）
 	// パイプラインではない通常の呼び出しの場合、引数は1つだけ
@@ -79,7 +80,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 条件付き関数と条件なし関数をグループ化
 	var conditionalFuncs []*object.Function
 	var defaultFuncs []*object.Function
-	
+
 	for _, fn := range functions {
 		if fn.Condition != nil {
 			conditionalFuncs = append(conditionalFuncs, fn)

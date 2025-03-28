@@ -1,0 +1,7 @@
+// シンプルなテスト関数
+def test_simple() {
+    "Hello from test_simple function" |> print
+}
+
+// 関数を呼び出し
+test_simple()

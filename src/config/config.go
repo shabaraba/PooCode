@@ -11,23 +11,24 @@ import (
 
 // Config はアプリケーション全体の設定を保持する構造体
 type Config struct {
-	SourceFile         string
-	DebugMode          bool
-	LogLevel           logger.LogLevel
-	ComponentLogLevels map[logger.ComponentType]logger.LogLevel
-	SpecialLogLevels   map[logger.LogLevel]bool  // 特殊なログレベルの有効/無効
-	LogFile            string
-	OutputFile         string
-	ColorOutput        bool
-	ShowTimestamp      bool
-	ShowTypeInfo       bool
-	ShowLexerDebug     bool
-	ShowParserDebug    bool
-	ShowEvalDebug      bool
+	SourceFile           string
+	DebugMode            bool
+	LogLevel             logger.LogLevel
+	ComponentLogLevels   map[logger.ComponentType]logger.LogLevel
+	SpecialLogLevels     map[logger.LogLevel]bool  // 特殊なログレベルの有効/無効
+	LogFile              string
+	OutputFile           string
+	ColorOutput          bool
+	ShowTimestamp        bool
+	ShowTypeInfo         bool
+	ShowLexerDebug       bool
+	ShowParserDebug      bool
+	ShowEvalDebug        bool
 	ShowBuiltinDebug     bool
 	ShowConditionDebug   bool // 条件式の評価デバッグ表示
 	ShowPipelineDebug    bool // パイプライン処理のデバッグ表示
 	ShowMapFilterDebug   bool // map/filter演算子のデバッグ表示
+	PreregisterFunctions bool // 関数を事前に登録する
 }
 
 // GlobalConfig はアプリケーション全体で使用される設定
@@ -70,6 +71,7 @@ func ParseFlags() error {
 	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowPipelineDebug, "show-pipeline", false, "パイプライン処理のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowMapFilterDebug, "show-map-filter", false, "map/filter演算子のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.PreregisterFunctions, "preregister", true, "関数を事前に登録する (ASTを2回走査)")
 
 	// ログレベルをフラグで指定できるようにする
 	logLevelStr := flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
@@ -257,6 +259,7 @@ func PrintUsage() {
 	flag.BoolVar(&GlobalConfig.ShowConditionDebug, "show-condition", false, "条件式評価のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowPipelineDebug, "show-pipeline", false, "パイプライン処理のデバッグ情報を表示する")
 	flag.BoolVar(&GlobalConfig.ShowMapFilterDebug, "show-map-filter", false, "map/filter演算子のデバッグ情報を表示する")
+	flag.BoolVar(&GlobalConfig.PreregisterFunctions, "preregister", true, "関数を事前に登録する (ASTを2回走査)")
 	
 	flag.String("log-level", "", "グローバルログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")
 	flag.String("lexer-log-level", "", "レキサーのログレベル (OFF, ERROR, WARN, INFO, DEBUG, TRACE)")

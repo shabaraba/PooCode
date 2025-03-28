@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/uncode/ast"
+	"github.com/uncode/config"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -139,26 +140,31 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			Condition:  node.Condition,
 		}
 
-		// 関数に名前がある場合は環境に登録
+		// 関数に名前がある場合は環境に登録（事前登録が無効の場合または匿名関数の場合のみ）
 		if node.Name != nil {
-			logger.Debug("関数名 %s を環境に登録します", node.Name.Value)
-
-			// 条件付き関数の場合、特別な名前で登録（上書きを防ぐため）
-			if node.Condition != nil {
-				// 既存の同名関数の数をカウント
-				existingFuncs := env.GetAllFunctionsByName(node.Name.Value)
-				uniqueName := fmt.Sprintf("%s#%d", node.Name.Value, len(existingFuncs))
-
-				logger.Debug("条件付き関数 '%s' を '%s' として登録します", node.Name.Value, uniqueName)
-
-				// 特別な名前で登録
-				env.Set(uniqueName, function)
-
-				// 検索用に元の名前も関連付け
-				env.Set(node.Name.Value, function)
+			// 事前登録が有効かつ名前付き関数の場合、登録をスキップ
+			if config.GlobalConfig.PreregisterFunctions && node.Name.Value != "" {
+				logger.Debug("関数 '%s' は事前登録されているため、再登録をスキップします", node.Name.Value)
 			} else {
-				// 条件なし関数は通常通り登録
-				env.Set(node.Name.Value, function)
+				logger.Debug("関数名 %s を環境に登録します", node.Name.Value)
+
+				// 条件付き関数の場合、特別な名前で登録（上書きを防ぐため）
+				if node.Condition != nil {
+					// 既存の同名関数の数をカウント
+					existingFuncs := env.GetAllFunctionsByName(node.Name.Value)
+					uniqueName := fmt.Sprintf("%s#%d", node.Name.Value, len(existingFuncs))
+
+					logger.Debug("条件付き関数 '%s' を '%s' として登録します", node.Name.Value, uniqueName)
+
+					// 特別な名前で登録
+					env.Set(uniqueName, function)
+
+					// 検索用に元の名前も関連付け
+					env.Set(node.Name.Value, function)
+				} else {
+					// 条件なし関数は通常通り登録
+					env.Set(node.Name.Value, function)
+				}
 			}
 		}
 
