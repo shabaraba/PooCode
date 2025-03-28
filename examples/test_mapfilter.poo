@@ -1,0 +1,40 @@
+// Define a test function to double values
+def double(): int -> int {
+    🍕 * 2 >> 💩
+}
+
+// Define a test function to check even numbers
+def is_even(): int -> bool {
+    🍕 % 2 == 0 >> 💩
+}
+
+// Define a test function to add a number
+def add_num(num): int -> int {
+    🍕 + num >> 💩
+}
+
+// Test program for map (+>) and filter (?>) operators
+print("Testing map and filter operators");
+
+// Original array
+arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+print("\nOriginal array:");
+arr |> map print;
+
+// Using +> operator (map)
+print("\nUsing +> operator to double:");
+arr +> double |> map print;
+
+// Using ?> operator (filter)
+print("\nUsing ?> operator to find even numbers:");
+arr ?> is_even |> map print;
+
+// Chaining operators
+print("\nChaining operators: double then filter even:");
+arr +> double ?> is_even |> map print;
+
+// Using with function arguments
+print("\nUsing +> with function arguments (add 100):");
+arr +> add_num(100) |> map print;
+
+print("\nProgram completed");

@@ -1,0 +1,9 @@
+	case '?':
+		if l.peekChar() == '>' {
+			ch := l.ch
+			l.readChar()
+			// 実際の演算子をリテラルとして使用
+			tok = l.newToken(token.FILTER_PIPE, string(ch)+string(l.ch))
+		} else {
+			tok = l.newToken(token.ILLEGAL, string(l.ch))
+		}

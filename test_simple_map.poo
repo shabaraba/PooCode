@@ -1,0 +1,13 @@
+// Simple test for +> operator
+
+// Define a doubling function
+def double() {
+    🍕 * 2 >> 💩
+}
+
+// Test with array literal directly
+print("Original array:");
+print([1, 2, 3, 4, 5]);
+
+print("Using +> operator:");
+[1, 2, 3, 4, 5] +> double |> print;

@@ -12,14 +12,14 @@ def add_num(num): int -> int {
 print("Program started");
 
 // Use built-in print function with map
-[1..10] |> map print;
+[1..10] +> print;
 
 // Use our custom double function with map
 print("\nDoubled values:");
-[1..10] |> map double |> map print;
+[1..10] +> double +> print;
 
 // Use a function with argument
 print("\nAdd 100 to each value:");
-[1..10] |> map add_num(100) |> map print;
+[1..10] +> add_num 100  +> print;
 
 print("Program completed");

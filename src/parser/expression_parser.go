@@ -197,211 +197,211 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 	// デバッグ情報を追加
 	logger.Debug("パイプタイプ解析: Type=%s, Literal=%s", pipeType, pipeOp)
 	
-	// map/filter演算子のケース（`+>` や `?>` または関数名 `map` や `filter`）
-	if pipeType == token.MAP_PIPE || pipeType == token.FILTER_PIPE || 
-	   (pipeOp == "map" || pipeOp == "filter") {
-		// map/filter演算子の特別処理
-		// トークンタイプに基づいて関数名を設定
-		funcName := "map"
-		if pipeToken.Type == token.FILTER_PIPE {
-			funcName = "filter"
-		}
-		mapIdent := &ast.Identifier{Token: pipeToken, Value: funcName}
-		logger.ParserDebug("特殊パイプタイプ(%s)を検出: %s として処理", pipeToken.Literal, funcName)
-		
-		// 次のトークンが識別子またはその他の有効な引数なら、関数と引数として扱う
-		if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-		   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-			
-			// 次のトークンを取得
-			p.nextToken()
-			
-			// 関数引数を処理（関数名）
-			var funcIdentifier ast.Expression
-			
-			// 呼び出し式かどうかを確認（関数名の後に括弧が続く場合）
-			if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
-				// 識別子を保存
-				ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-				
-				// 括弧に進む
-				p.nextToken()
-				
-				// 関数呼び出し式としてパース
-				funcIdentifier = &ast.CallExpression{
-					Token:     p.curToken,
-					Function:  ident,
-					Arguments: p.parseExpressionList(token.RPAREN),
-				}
-				
-				logger.ParserDebug("関数呼び出しとして解析: %s (引数付き)", ident.Value)
-			} else {
-				// 通常の識別子として処理
-				funcIdentifier = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-				
-				// 追加引数があるか確認
-				var funcArgs []ast.Expression
-				
-				// 可能性のある引数トークンを確認
-				if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-				   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-					
-					// 追加の引数を処理
-					for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-						!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-						
-						p.nextToken()
-						arg := p.parseExpression(LOWEST)
-						funcArgs = append(funcArgs, arg)
-						
-						logger.ParserDebug("関数への追加引数: %s (タイプ: %T)", arg.String(), arg)
-						
-						// 次のトークンがパイプやセミコロンなら終了
-						if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
-						   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
-							break
-						}
-					}
-				}
-				
-				// 引数がある場合は関数呼び出し式を作成
-				if len(funcArgs) > 0 {
-					funcIdentifier = &ast.CallExpression{
-						Token:     pipeToken,
-						Function:  funcIdentifier,
-						Arguments: funcArgs,
-					}
-					logger.ParserDebug("関数呼び出しを生成: %s(引数: %d個)", p.curToken.Literal, len(funcArgs))
-				}
-			}
-			
-			// マップ関数呼び出しのための引数リストを作成
-			var mapArgs []ast.Expression
-			
-			// 関数（または関数呼び出し式）自体を引数として追加
-			if funcIdentifier != nil {
-				mapArgs = append(mapArgs, funcIdentifier)
-				
-				// map関数呼び出しを作成
-				callExpr := &ast.CallExpression{
-					Token:     pipeToken,
-					Function:  mapIdent,
-					Arguments: mapArgs,
-				}
-				
-				logger.ParserDebug("map関数呼び出しを生成: map()、引数数=%d", len(mapArgs))
-				
-				// InfixExpressionを作成
-				return &ast.InfixExpression{
-					Token:    pipeToken,
-					Operator: pipeToken.Literal,
-					Left:     left,
-					Right:    callExpr,
-				}
-			} else {
-				logger.ParserDebug("funcIdentifierがnilです。エラー式を返します")
-				return createErrorExpression(pipeToken, "関数識別子の解析に失敗しました")
-			}
-		}
-	} else if p.curTokenIs(token.IDENT) && p.curToken.Literal == "filter" {
-		// filter専用の処理
-		filterIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-		
-		// 次のトークンが識別子またはその他の有効な引数なら、関数と引数として扱う
-		if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-		   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-			
-			// 次のトークンを取得
-			p.nextToken()
-			
-			// 関数引数を処理（関数名）
-			var funcIdentifier ast.Expression
-			
-			// 呼び出し式かどうかを確認（関数名の後に括弧が続く場合）
-			if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
-				// 識別子を保存
-				ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-				
-				// 括弧に進む
-				p.nextToken()
-				
-				// 関数呼び出し式としてパース
-				funcIdentifier = &ast.CallExpression{
-					Token:     p.curToken,
-					Function:  ident,
-					Arguments: p.parseExpressionList(token.RPAREN),
-				}
-				
-				logger.ParserDebug("関数呼び出しとして解析: %s (引数付き)", ident.Value)
-			} else {
-				// 通常の識別子として処理
-				funcIdentifier = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-				
-				// 追加引数があるか確認
-				var funcArgs []ast.Expression
-				
-				// 可能性のある引数トークンを確認
-				if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-				   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-					
-					// 追加の引数を処理
-					for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
-						!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
-						
-						p.nextToken()
-						arg := p.parseExpression(LOWEST)
-						funcArgs = append(funcArgs, arg)
-						
-						logger.ParserDebug("関数への追加引数: %s (タイプ: %T)", arg.String(), arg)
-						
-						// 次のトークンがパイプやセミコロンなら終了
-						if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
-						   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
-							break
-						}
-					}
-				}
-				
-				// 引数がある場合は関数呼び出し式を作成
-				if len(funcArgs) > 0 {
-					funcIdentifier = &ast.CallExpression{
-						Token:     pipeToken,
-						Function:  funcIdentifier,
-						Arguments: funcArgs,
-					}
-					logger.ParserDebug("関数呼び出しを生成: %s(引数: %d個)", p.curToken.Literal, len(funcArgs))
-				}
-			}
-			
-			// filter関数呼び出しのための引数リストを作成
-			var filterArgs []ast.Expression
-			
-			// 関数（または関数呼び出し式）自体を引数として追加
-			if funcIdentifier != nil {
-				filterArgs = append(filterArgs, funcIdentifier)
-				
-				// filter関数呼び出しを作成
-				callExpr := &ast.CallExpression{
-					Token:     pipeToken,
-					Function:  filterIdent,
-					Arguments: filterArgs,
-				}
-				
-				logger.ParserDebug("filter関数呼び出しを生成: filter()、引数数=%d", len(filterArgs))
-				
-				// InfixExpressionを作成
-				return &ast.InfixExpression{
-					Token:    pipeToken,
-					Operator: pipeToken.Literal,
-					Left:     left,
-					Right:    callExpr,
-				}
-			} else {
-				logger.ParserDebug("funcIdentifierがnilです。エラー式を返します")
-				return createErrorExpression(pipeToken, "関数識別子の解析に失敗しました")
-			}
-		}
-	}
+	// map/filter演算子のケース（`+>` や `?>`）
+	// if pipeType == token.MAP_PIPE || pipeType == token.FILTER_PIPE || 
+	//    (pipeOp == "+>" || pipeOp == "?>") {
+	// 	// map/filter演算子の特別処理
+	// 	// トークンタイプに基づいて関数名を設定
+	// 	funcName := "map"
+	// 	if pipeToken.Type == token.FILTER_PIPE || pipeOp == "filter" || pipeOp == "?>" {
+	// 		funcName = "filter"
+	// 	}
+	// 	mapIdent := &ast.Identifier{Token: pipeToken, Value: funcName}
+	// 	logger.ParserDebug("特殊パイプタイプ(%s)を検出: %s として処理", pipeToken.Literal, funcName)
+	//
+	// 	// 次のトークンが識別子またはその他の有効な引数なら、関数と引数として扱う
+	// 	if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 	   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 		// 次のトークンを取得
+	// 		p.nextToken()
+	//
+	// 		// 関数引数を処理（関数名）
+	// 		var funcIdentifier ast.Expression
+	//
+	// 		// 呼び出し式かどうかを確認（関数名の後に括弧が続く場合）
+	// 		if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
+	// 			// 識別子を保存
+	// 			ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	//
+	// 			// 括弧に進む
+	// 			p.nextToken()
+	//
+	// 			// 関数呼び出し式としてパース
+	// 			funcIdentifier = &ast.CallExpression{
+	// 				Token:     p.curToken,
+	// 				Function:  ident,
+	// 				Arguments: p.parseExpressionList(token.RPAREN),
+	// 			}
+	//
+	// 			logger.ParserDebug("関数呼び出しとして解析: %s (引数付き)", ident.Value)
+	// 		} else {
+	// 			// 通常の識別子として処理
+	// 			funcIdentifier = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	//
+	// 			// 追加引数があるか確認
+	// 			var funcArgs []ast.Expression
+	//
+	// 			// 可能性のある引数トークンを確認
+	// 			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 				// 追加の引数を処理
+	// 				for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 					!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 					p.nextToken()
+	// 					arg := p.parseExpression(LOWEST)
+	// 					funcArgs = append(funcArgs, arg)
+	//
+	// 					logger.ParserDebug("関数への追加引数: %s (タイプ: %T)", arg.String(), arg)
+	//
+	// 					// 次のトークンがパイプやセミコロンなら終了
+	// 					if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
+	// 					   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
+	// 						break
+	// 					}
+	// 				}
+	// 			}
+	//
+	// 			// 引数がある場合は関数呼び出し式を作成
+	// 			if len(funcArgs) > 0 {
+	// 				funcIdentifier = &ast.CallExpression{
+	// 					Token:     pipeToken,
+	// 					Function:  funcIdentifier,
+	// 					Arguments: funcArgs,
+	// 				}
+	// 				logger.ParserDebug("関数呼び出しを生成: %s(引数: %d個)", p.curToken.Literal, len(funcArgs))
+	// 			}
+	// 		}
+	//
+	// 		// マップ関数呼び出しのための引数リストを作成
+	// 		var mapArgs []ast.Expression
+	//
+	// 		// 関数（または関数呼び出し式）自体を引数として追加
+	// 		if funcIdentifier != nil {
+	// 			mapArgs = append(mapArgs, funcIdentifier)
+	//
+	// 			// map関数呼び出しを作成
+	// 			callExpr := &ast.CallExpression{
+	// 				Token:     pipeToken,
+	// 				Function:  mapIdent,
+	// 				Arguments: mapArgs,
+	// 			}
+	//
+	// 			logger.ParserDebug("map関数呼び出しを生成: map()、引数数=%d", len(mapArgs))
+	//
+	// 			// InfixExpressionを作成
+	// 			return &ast.InfixExpression{
+	// 				Token:    pipeToken,
+	// 				Operator: pipeToken.Literal,
+	// 				Left:     left,
+	// 				Right:    callExpr,
+	// 			}
+	// 		} else {
+	// 			logger.ParserDebug("funcIdentifierがnilです。エラー式を返します")
+	// 			return createErrorExpression(pipeToken, "関数識別子の解析に失敗しました")
+	// 		}
+	// 	}
+	// } else if p.curTokenIs(token.IDENT) && p.curToken.Literal == "filter" {
+	// 	// filter専用の処理
+	// 	filterIdent := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	//
+	// 	// 次のトークンが識別子またはその他の有効な引数なら、関数と引数として扱う
+	// 	if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 	   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 		// 次のトークンを取得
+	// 		p.nextToken()
+	//
+	// 		// 関数引数を処理（関数名）
+	// 		var funcIdentifier ast.Expression
+	//
+	// 		// 呼び出し式かどうかを確認（関数名の後に括弧が続く場合）
+	// 		if p.curTokenIs(token.IDENT) && p.peekTokenIs(token.LPAREN) {
+	// 			// 識別子を保存
+	// 			ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	//
+	// 			// 括弧に進む
+	// 			p.nextToken()
+	//
+	// 			// 関数呼び出し式としてパース
+	// 			funcIdentifier = &ast.CallExpression{
+	// 				Token:     p.curToken,
+	// 				Function:  ident,
+	// 				Arguments: p.parseExpressionList(token.RPAREN),
+	// 			}
+	//
+	// 			logger.ParserDebug("関数呼び出しとして解析: %s (引数付き)", ident.Value)
+	// 		} else {
+	// 			// 通常の識別子として処理
+	// 			funcIdentifier = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	//
+	// 			// 追加引数があるか確認
+	// 			var funcArgs []ast.Expression
+	//
+	// 			// 可能性のある引数トークンを確認
+	// 			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 				// 追加の引数を処理
+	// 				for !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+	// 					!p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) {
+	//
+	// 					p.nextToken()
+	// 					arg := p.parseExpression(LOWEST)
+	// 					funcArgs = append(funcArgs, arg)
+	//
+	// 					logger.ParserDebug("関数への追加引数: %s (タイプ: %T)", arg.String(), arg)
+	//
+	// 					// 次のトークンがパイプやセミコロンなら終了
+	// 					if p.peekTokenIs(token.PIPE) || p.peekTokenIs(token.PIPE_PAR) || 
+	// 					   p.peekTokenIs(token.ASSIGN) || p.peekTokenIs(token.SEMICOLON) {
+	// 						break
+	// 					}
+	// 				}
+	// 			}
+	//
+	// 			// 引数がある場合は関数呼び出し式を作成
+	// 			if len(funcArgs) > 0 {
+	// 				funcIdentifier = &ast.CallExpression{
+	// 					Token:     pipeToken,
+	// 					Function:  funcIdentifier,
+	// 					Arguments: funcArgs,
+	// 				}
+	// 				logger.ParserDebug("関数呼び出しを生成: %s(引数: %d個)", p.curToken.Literal, len(funcArgs))
+	// 			}
+	// 		}
+	//
+	// 		// filter関数呼び出しのための引数リストを作成
+	// 		var filterArgs []ast.Expression
+	//
+	// 		// 関数（または関数呼び出し式）自体を引数として追加
+	// 		if funcIdentifier != nil {
+	// 			filterArgs = append(filterArgs, funcIdentifier)
+	//
+	// 			// filter関数呼び出しを作成
+	// 			callExpr := &ast.CallExpression{
+	// 				Token:     pipeToken,
+	// 				Function:  filterIdent,
+	// 				Arguments: filterArgs,
+	// 			}
+	//
+	// 			logger.ParserDebug("filter関数呼び出しを生成: filter()、引数数=%d", len(filterArgs))
+	//
+	// 			// InfixExpressionを作成
+	// 			return &ast.InfixExpression{
+	// 				Token:    pipeToken,
+	// 				Operator: pipeToken.Literal,
+	// 				Left:     left,
+	// 				Right:    callExpr,
+	// 			}
+	// 		} else {
+	// 			logger.ParserDebug("funcIdentifierがnilです。エラー式を返します")
+	// 			return createErrorExpression(pipeToken, "関数識別子の解析に失敗しました")
+	// 		}
+	// 	}
+	// }
 	
 	// 通常のパイプライン処理
 	// 右辺が関数名やその他の式である場合
@@ -435,6 +435,7 @@ func (p *Parser) parsePipeExpression(left ast.Expression) ast.Expression {
 			// 次のトークンが識別子、整数、文字列、配列など、有効な引数となりうるトークンであれば
 			// それを関数の引数として処理する
 			if !p.peekTokenIs(token.PIPE) && !p.peekTokenIs(token.PIPE_PAR) && 
+			   !p.peekTokenIs(token.MAP_PIPE) && !p.peekTokenIs(token.FILTER_PIPE) &&
 			   !p.peekTokenIs(token.ASSIGN) && !p.peekTokenIs(token.SEMICOLON) &&
 			   !p.peekTokenIs(token.RPAREN) && !p.peekTokenIs(token.RBRACE) &&
 			   !p.peekTokenIs(token.RBRACKET) && !p.peekTokenIs(token.COMMA) {
