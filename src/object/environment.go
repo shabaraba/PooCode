@@ -44,7 +44,7 @@ func (e *Environment) GetNextFunction(name string, currentFn *Function) *Functio
 	// フラットな関数リストを作成
 	var functions []*Function
 	var collectFunctions func(*Environment)
-	
+
 	collectFunctions = func(env *Environment) {
 		// 現在の環境から同名の関数を探す
 		if obj, ok := env.store[name]; ok {
@@ -55,20 +55,20 @@ func (e *Environment) GetNextFunction(name string, currentFn *Function) *Functio
 				}
 			}
 		}
-		
+
 		// 外部環境も検索
 		if env.outer != nil {
 			collectFunctions(env.outer)
 		}
 	}
-	
+
 	collectFunctions(e)
-	
+
 	// 見つかった関数がなければnilを返す
 	if len(functions) == 0 {
 		return nil
 	}
-	
+
 	// 最初に見つかった別の関数を返す
 	return functions[0]
 }
@@ -78,48 +78,39 @@ func (e *Environment) GetNextFunction(name string, currentFn *Function) *Functio
 func (e *Environment) GetAllFunctionsByName(name string) []*Function {
 	var functions []*Function
 	var collectFunctions func(*Environment)
-	
+
 	// 既に処理済みの関数オブジェクトを記録するマップ
 	// ポインタ比較で重複を排除
-	processed := make(map[*Function]bool)
-	
+	// processed := make(map[*Function]bool)
+
 	collectFunctions = func(env *Environment) {
-		// 現在の環境から同名の関数を探す
-		if obj, ok := env.store[name]; ok {
-			// 単一のオブジェクト（通常の値やシングルトン関数）の場合
-			if fn, ok := obj.(*Function); ok {
-				// まだ処理済みでなければ追加
-				if !processed[fn] {
-					processed[fn] = true
-					functions = append(functions, fn)
-				}
-			}
-		}
-		
 		// 条件付き関数は複数定義できるようにするために特殊な名前で保存されている可能性がある
 		// 例: "name#1", "name#2" などの形式で同じname向けの複数の関数が定義されている可能性
 		// そのようなキーも検索し、関数オブジェクトを取得
 		for key, obj := range env.store {
-			// 「name#」で始まるエントリを探す
-			if len(key) > len(name) && key[:len(name)+1] == name+"#" {
+			if (key == name) {
+				logger.Debug("%#v", obj)
+			}
+			if (key == name) || (len(key) > len(name) && key[:len(name)+1] == name+"#") {
 				if fn, ok := obj.(*Function); ok {
-					// まだ処理済みでなければ追加
-					if !processed[fn] {
-						processed[fn] = true
 						functions = append(functions, fn)
-					}
+					// // まだ処理済みでなければ追加
+					// if !processed[fn] {
+					// 	processed[fn] = true
+					// 	functions = append(functions, fn)
+					// }
 				}
 			}
 		}
-		
+
 		// 外部環境も検索
 		if env.outer != nil {
 			collectFunctions(env.outer)
 		}
 	}
-	
+
 	collectFunctions(e)
-	
+
 	// デバッグ情報
 	logger.Debug("関数 '%s' の候補を %d 個見つけました", name, len(functions))
 	for i, fn := range functions {
@@ -130,7 +121,7 @@ func (e *Environment) GetAllFunctionsByName(name string) []*Function {
 		}
 		logger.Trace("  関数候補 %d: 条件=%s", i+1, hasCondition)
 	}
-	
+
 	return functions
 }
 
@@ -138,12 +129,12 @@ func (e *Environment) GetAllFunctionsByName(name string) []*Function {
 func (e *Environment) GetVariables() map[string]Object {
 	// 現在の環境のすべての変数を取得
 	vars := make(map[string]Object)
-	
+
 	// まず現在の環境の変数をコピー
 	for k, v := range e.store {
 		vars[k] = v
 	}
-	
+
 	// 外部環境の変数も取得（ただし、内部環境で上書きされている場合は取得しない）
 	if e.outer != nil {
 		for k, v := range e.outer.GetVariables() {
@@ -152,6 +143,7 @@ func (e *Environment) GetVariables() map[string]Object {
 			}
 		}
 	}
-	
+
 	return vars
 }
+

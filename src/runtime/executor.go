@@ -204,6 +204,7 @@ func preRegisterFunctions(program *ast.Program, env *object.Environment) {
 				}
 			}
 		}
+		logger.Debug("")
 	}
 
 	// 第二パス: すべてのステートメントを再度走査して、埋もれた関数定義を見つける
@@ -219,7 +220,6 @@ func preRegisterFunctions(program *ast.Program, env *object.Environment) {
 	logger.Debug("関数の事前登録が完了しました。%d 個の関数を登録しました", registeredCount)
 }
 
-// ExecuteSourceFile はソースファイルを読み込んで実行する
 func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 	result := &SourceCodeResult{
 		ExitCode: 0,
@@ -277,7 +277,8 @@ func ExecuteSourceFile(filePath string) (*SourceCodeResult, error) {
 	// 関数の事前登録を実行（設定が有効な場合のみ）
 	if config.GlobalConfig.PreregisterFunctions {
 		logger.Debug("関数の事前登録機能が有効です")
-		preRegisterFunctions(program, env)
+		// preRegisterFunctions(program, env)
+		evaluator.PreregisterFunctions(program, env)
 	}
 
 	// 型情報のデバッグ出力を設定

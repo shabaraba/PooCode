@@ -1,6 +1,0 @@
-// Simple test with debug log
-print("Debug test");
-
-// Define a simple array
-arr = [1, 2, 3];
-print(arr);

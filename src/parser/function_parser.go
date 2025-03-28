@@ -11,11 +11,13 @@ import (
 // parseFunctionLiteral は関数リテラルを解析する
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
+	logger.Debug("関数リテラルの解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
 
 	// 関数名があれば解析
 	if p.peekTokenIs(token.IDENT) {
 		p.nextToken()
 		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		logger.Debug("関数名を解析: %s", lit.Name.Value)
 	}
 
 	// 修正: 括弧を使った関数定義と括弧なしの関数定義の両方をサポート
@@ -26,17 +28,24 @@ func (p *Parser) parseFunctionLiteral() ast.Expression {
 		// 引数は1つだけサポート
 		param := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
 		lit.Parameters = []*ast.Identifier{param}
+		logger.Debug("括弧なしパラメータを解析: %s", param.Value)
 	} else if p.peekTokenIs(token.LPAREN) {
 		// 括弧ありのパラメータ定義: def func(param) { ... }
 		p.nextToken() // (
 		lit.Parameters = p.parseFunctionParameters()
+		logger.Debug("括弧ありパラメータを解析: %d個", len(lit.Parameters))
 	}
 
 	// 条件付き関数定義の条件部分を解析
 	if p.peekTokenIs(token.IF) {
 		p.nextToken() // if
 		p.nextToken()
+		logger.Debug("条件式の解析開始: 現在のトークン=%s", p.curToken.Literal)
 		lit.Condition = p.parseExpression(LOWEST)
+		logger.Debug("条件式の解析完了: %v", lit.Condition)
+	} else {
+		logger.Debug("条件なし関数として解析")
+		lit.Condition = nil // 明示的にnilに設定（念のため）
 	}
 
 	// 型注釈があれば解析
