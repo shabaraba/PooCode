@@ -120,6 +120,10 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 	// まず条件付き関数を検索して評価
 	logger.Debug("条件付き関数を %d 個見つけました\n", len(conditionalFuncs))
+	
+	// 条件が真となった関数を格納する変数
+	var matchedCondFunc *object.Function
+	
 	for i, fn := range conditionalFuncs {
 		logger.Debug("条件付き関数候補 %d を評価中...\n", i+1)
 
@@ -142,6 +146,17 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 		// 条件式を評価するための環境を作成
 		condEnv := object.NewEnclosedEnvironment(funcEnv)
+		
+		// 条件式評価のための🍕変数のセットアップ 
+		// この部分が重要: 条件式評価時も同じ引数値を🍕としてセットする
+		if len(args) > 0 {
+			// 条件式用の環境にも🍕をセット
+			logger.Debug("条件式評価用の環境でも🍕に値 %s をセットします", args[0].Inspect())
+			condEnv.Set("🍕", args[0])
+			
+			// 関数オブジェクトにも🍕値を直接設定（評価時に参照できるように）
+			fn.SetPizzaValue(args[0])
+		}
 		
 		// 条件式を評価前に🍕変数の型情報をデバッグ出力
 		if config.GlobalConfig.ShowConditionDebug {
@@ -179,15 +194,22 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 
 		if isTrue {
 			logger.Debug("条件が真であるため、この関数を使用します")
-			result := applyFunctionWithPizza(fn, args)
-			if result != nil {
-				return result
-			}
-			// nilが返された場合は、パラメータとして引数が合わなかった
-			logger.Debug("条件付き関数の引数が合いませんでした")
+			matchedCondFunc = fn
+			break // 条件が真となった最初の関数を採用して処理を終了
 		} else {
 			logger.Debug("条件が偽であるため、この関数をスキップします")
 		}
+	}
+	
+	// 条件に一致する関数が見つかった場合、その関数を実行
+	if matchedCondFunc != nil {
+		logger.Debug("条件に一致する関数を実行します")
+		result := applyFunctionWithPizza(matchedCondFunc, args)
+		if result != nil {
+			return result
+		}
+		// nilが返された場合は、パラメータとして引数が合わなかった
+		logger.Debug("条件付き関数の引数が合いませんでした")
 	}
 
 	// 条件付き関数が該当しなかった場合、デフォルト関数を使用

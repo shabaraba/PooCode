@@ -94,6 +94,7 @@ func registerFunction(fn *ast.FunctionLiteral, env *object.Environment, register
 	// すでに登録済みかチェック
 	if _, exists := registered[funcName]; exists {
 		logger.Debug("関数 '%s' は既に登録されています", funcName)
+		
 		// 条件付き関数の場合は名前を変えて追加登録する
 		if fn.Condition != nil {
 			existingFuncs := env.GetAllFunctionsByName(funcName)
@@ -114,6 +115,7 @@ func registerFunction(fn *ast.FunctionLiteral, env *object.Environment, register
 			logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' として追加登録しました", 
 				funcName, uniqueName)
 		}
+		
 		return
 	}
 	
@@ -123,12 +125,21 @@ func registerFunction(fn *ast.FunctionLiteral, env *object.Environment, register
 	// 登録済みマップに記録
 	registered[funcName] = true
 	
-	// 条件付き関数の場合、個別の名前でも登録
+	// 専用の名前でも登録（条件付き関数か条件なし関数か）
 	if fn.Condition != nil {
+		// 条件付き関数の場合
 		uniqueName := fmt.Sprintf("%s#0", funcName)
 		if obj, ok := env.Get(funcName); ok {
 			env.Set(uniqueName, obj)
 			logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' としても登録しました", 
+				funcName, uniqueName)
+		}
+	} else {
+		// 条件なし関数の場合はデフォルト関数として登録
+		uniqueName := fmt.Sprintf("%s#default", funcName)
+		if obj, ok := env.Get(funcName); ok {
+			env.Set(uniqueName, obj)
+			logger.Debug("関数事前登録: デフォルト関数 '%s' を '%s' としても登録しました", 
 				funcName, uniqueName)
 		}
 	}
@@ -219,8 +230,8 @@ func findNestedFunctions(node interface{}, env *object.Environment, registered m
 		findNestedFunctions(n.Left, env, registered)
 		findNestedFunctions(n.Right, env, registered)
 		
-	// ifを使ったケースを削除または修正
-		
+	// ast.IfExpressionへの参照を削除 (そのような型が定義されていない）
+	
 	case *ast.CallExpression:
 		// 関数式と引数を処理
 		findNestedFunctions(n.Function, env, registered)
