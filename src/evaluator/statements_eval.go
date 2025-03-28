@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"github.com/uncode/ast"
+	"github.com/uncode/config"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -13,6 +14,14 @@ func evalProgram(program *ast.Program, env *object.Environment) object.Object {
 	// プログラムが空の場合はNULLを返す
 	if program == nil || len(program.Statements) == 0 {
 		return NullObj
+	}
+	
+	// 事前関数登録を実行（設定が有効な場合のみ）
+	if config.GlobalConfig.PreregisterFunctions {
+		logger.Debug("プログラム評価前に関数の事前登録を実行します")
+		PreregisterFunctions(program, env)
+	} else {
+		logger.Debug("関数の事前登録はスキップされました（設定が無効です）")
 	}
 	
 	for _, statement := range program.Statements {

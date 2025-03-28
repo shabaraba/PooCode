@@ -1,0 +1,37 @@
+// テスト1: 通常の定義と呼び出し
+def normalFunc() : int -> str {
+    "Normal: " + (🍕 |> to_string) >> 💩;
+}
+
+// テスト2: コメントアウトの直後の関数定義
+// this is a comment line
+def funcAfterComment() : int -> str {
+    "After Comment: " + (🍕 |> to_string) >> 💩;
+}
+
+// テスト3: 関数呼び出しがコメントアウトされた後の定義と呼び出し
+def funcWithCommentedCall() : int -> str {
+    "Function with commented call: " + (🍕 |> to_string) >> 💩;
+}
+
+// 10 |> funcWithCommentedCall |> print;
+20 |> funcWithCommentedCall |> print;
+
+// テスト4: 関数呼び出しコメントの後の定義と呼び出し
+// 30 |> someFunc |> print;
+def funcAfterCommentedCall() : int -> str {
+    "After commented call: " + (🍕 |> to_string) >> 💩;
+}
+40 |> funcAfterCommentedCall |> print;
+
+// オリジナルの問題の再現
+def showTest() : int -> str {
+    🍕 |> print;
+    "" >> result;
+    
+    🍕 |> to_string >> 💩;
+}
+
+5 |> showTest |> print;
+// 6 |> showTest |> print;
+[1..3] +> showTest +> print;

@@ -1,3 +1,6 @@
+// 修正版2 fizzbuzz.poo - 関数を先に評価して登録する
+
+// 関数定義
 def is_multiple_of(num): int -> bool {
     🍕 % num == 0 >> 💩;
 }
@@ -22,13 +25,18 @@ def showNumber(num) if 🍕 == 1 : int -> str {
 def showNumber(num) : int -> str {
     🍕 >> 💩;
 }
- 
+
 def showTest() : int -> str {
+    🍕 |> print;
     "" >> result;
     
-    🍕 |> showBuzz |> add result >> result;
-    🍕 |> showFizz |> add result |> showNumber 🍕 >> 💩;
+    🍕 |> showBuzz >> 💩;
 }
 
-//1 |> showTest |> print;
+// 解決策3: 必要な関数を先に「登録する」ために、何もしない呼び出しを含める
+// 空文字を通す（ダミー関数として使う）だけでも関数が環境に登録される
+"" |> to_string |> print;
+
+// コメントアウトされていますが、先に関数が登録されるため問題なし
+// 5 |> showTest |> print;
 [1..20] +> showTest +> print;

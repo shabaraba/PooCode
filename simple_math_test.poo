@@ -1,0 +1,7 @@
+// シンプルな print のテスト
+def test_print() {
+    "Hello" |> print
+}
+
+// 関数を呼び出し
+test_print()

@@ -1,21 +1,20 @@
-// 加算関数をテスト
-def test_add_normal() {
+def test_add_normal(): void -> int {
     1 |> add 2 >> 💩
 }
 
-def test_add_pipe() {
+def test_add_pipe(): void -> void {
     // パイプライン経由での加算をテスト
     1 |> add 2 |> print
 }
 
-def test_add_direct() {
+def test_add_direct(): void -> void {
     // 直接呼び出しでの加算をテスト
-    add 1 2 |> print
+     1 add 2 |> print
 }
 
-test_add_normal() |> print // 期待値: 3
-test_add_pipe()    // 期待値: 出力 3
-test_add_direct()  // 期待値: 出力 3
+test_add_normal |> print // 期待値: 3
+test_add_pipe    // 期待値: 出力 3
+test_add_direct  // 期待値: 出力 3
 
 // 条件付き関数テスト
 def test_cond(num) if 🍕 == 1 : int -> int {

@@ -1,0 +1,23 @@
+// fizzbuzz.pooの問題を最小限の形で再現するテストケース
+
+// テストケース1: 通常の定義と呼び出し
+def showTest1() : int -> str {
+    🍕 |> print;
+    "" >> result;
+    
+    "Result 1: " + (🍕 |> to_string) >> 💩;
+}
+
+5 |> showTest1 |> print;
+[1..3] +> showTest1 +> print;
+
+// テストケース2: 最初の呼び出しをコメントアウト
+def showTest2() : int -> str {
+    🍕 |> print;
+    "" >> result;
+    
+    "Result 2: " + (🍕 |> to_string) >> 💩;
+}
+
+// 5 |> showTest2 |> print;
+[1..3] +> showTest2 +> print;

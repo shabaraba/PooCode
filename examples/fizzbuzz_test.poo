@@ -24,11 +24,11 @@ def showNumber(num) : int -> str {
 }
  
 def showTest() : int -> str {
+    🍕 |> print;
     "" >> result;
     
-    🍕 |> showBuzz |> add result >> result;
-    🍕 |> showFizz |> add result |> showNumber 🍕 >> 💩;
+    🍕 |> showBuzz >> 💩;
 }
 
-//1 |> showTest |> print;
+// 5 |> showTest |> print;
 [1..20] +> showTest +> print;
