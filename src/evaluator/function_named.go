@@ -16,9 +16,8 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// デバッグ: 環境内のすべての変数を表示
 	logger.Debug("現在の環境に登録されている変数:")
 	for k, v := range env.GetVariables() {
-		logger.Debug("  %s: %s", k, v.Type())
+		logger.Debug("  %s: %s\n", k, v.Type())
 	}
-	logger.Debug("")
 
 	// 修正: 引数の数を制限（パイプライン以外）
 	// パイプラインではない通常の呼び出しの場合、引数は1つだけ
@@ -80,7 +79,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 条件付き関数と条件なし関数をグループ化
 	var conditionalFuncs []*object.Function
 	var defaultFuncs []*object.Function
-
+	
 	for _, fn := range functions {
 		if fn.Condition != nil {
 			conditionalFuncs = append(conditionalFuncs, fn)
@@ -98,6 +97,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		if config.GlobalConfig.ShowConditionDebug {
 			logger.Debug("-------- 条件式の詳細評価 --------")
 			logger.Debug("条件式: %v", fn.Condition)
+
 			// AST構造をより詳細に表示
 			if infixExpr, ok := fn.Condition.(*ast.InfixExpression); ok {
 				logger.Debug("条件式タイプ: 中置式")
@@ -173,34 +173,55 @@ func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Ob
 	// 関数呼び出し用の新しい環境を作成
 	extendedEnv := object.NewEnclosedEnvironment(fn.Env)
 	funcName, _ := fn.Name()
-	logger.Info("function: %s", funcName)
-	for _, arg := range args {
-		logger.Info("%#v", arg)
+	
+	// デバッグ情報
+	if isArgumentsDebugEnabled {
+		logger.Debug("関数呼び出し: %s", funcName)
+		for i, arg := range args {
+			logger.Debug("  引数%d: %s (%s)", i, arg.Inspect(), arg.Type())
+		}
 	}
 
 	// 引数をバインド
 	if len(args) > 0 {
-
 		// 第1引数は必ず🍕にセット
-		// パラメータがある場合、2番目以降の引数をパラメータにバインド
 		logger.Debug("第1引数を🍕にセット: %s", args[0].Inspect())
 		extendedEnv.Set("🍕", args[0])
-		if len(fn.Parameters) > 0 && len(args) > 1 {
-			for i := 0; i < len(fn.Parameters) && i+1 < len(args); i++ {
-				extendedEnv.Set(fn.Parameters[i].Value, args[i+1])
+		LogArgumentBinding(funcName, "🍕", args[0])
+		
+		// パラメータがある場合、パラメータに引数をバインド
+		// これには二つのケースがある:
+		// 1. 引数が1つだけの場合（パイプラインの基本的な動作）: 🍕と最初のパラメータに同じ値をバインド
+		// 2. 引数が複数ある場合: 2番目以降の引数を順番にパラメータにバインド
+		if len(fn.Parameters) > 0 {
+			if len(args) == 1 {
+				// 引数が1つの場合、最初のパラメータにも同じ値をバインド（利便性のため）
+				paramName := fn.Parameters[0].Value
+				extendedEnv.Set(paramName, args[0])
+				LogArgumentBinding(funcName, paramName, args[0])
+			} else {
+				// 引数が複数の場合、2番目以降の引数を順番にパラメータにバインド
+				for i := 0; i < len(fn.Parameters) && i+1 < len(args); i++ {
+					paramName := fn.Parameters[i].Value
+					extendedEnv.Set(paramName, args[i+1])
+					LogArgumentBinding(funcName, paramName, args[i+1])
+				}
 			}
 		}
 
-		// パラメータの詳細をログに出力
-		for i, param := range fn.Parameters {
-			logger.Debug("パラメータ%d: %s", i, param.Value)
+		// デバッグ詳細情報
+		if isArgumentsDebugEnabled {
+			// パラメータの詳細をログに出力
+			for i, param := range fn.Parameters {
+				logger.Debug("パラメータ%d: %s", i, param.Value)
+			}
+			
+			// 環境内の全変数をデバッグ出力
+			logger.Debug("関数環境内の全変数:")
+			for k, v := range extendedEnv.GetVariables() {
+				logger.Debug("  %s = %s", k, v.Inspect())
+			}
 		}
-
-		// 引数の詳細をログに出力
-		for i, arg := range args {
-			logger.Debug("引数%d: %s (%s)", i, arg.Inspect(), arg.Type())
-		}
-
 	} else if len(fn.Parameters) > 0 {
 		// 引数が必要なのに渡されていない場合はnilを返す
 		logger.Debug("引数がまったくありませんが、関数は引数を必要としています")
