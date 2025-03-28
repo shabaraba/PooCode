@@ -2,6 +2,7 @@ package evaluator
 
 import (
 	"fmt"
+	"strings"
 	
 	"github.com/uncode/ast"
 	"github.com/uncode/logger"
@@ -166,7 +167,22 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	if len(defaultFuncs) == 0 {
 		// ステップ2: 専用の名前（funcName#default）でデフォルト関数を探してみる
 		defaultFuncName := fmt.Sprintf("%s#default", name)
-		logger.Debug("デフォルト関数が見つからないので、'%s' を探します...", defaultFuncName)
+		logger.Debug("デフォルト関数が見つからないので、特殊名 '%s' を探します...", defaultFuncName)
+		
+		// 環境内のすべての変数をデバッグログに表示
+		logger.Debug("=== 環境内の現在の変数（デフォルト関数探索）===")
+		for k, v := range env.GetVariables() {
+			if funcObj, ok := v.(*object.Function); ok {
+				hasCondition := "なし"
+				if funcObj.Condition != nil {
+					hasCondition = "あり"
+				}
+				logger.Debug("  変数 '%s': 関数オブジェクト (条件=%s, アドレス=%p)", k, hasCondition, funcObj)
+			} else {
+				logger.Debug("  変数 '%s': %s", k, v.Type())
+			}
+		}
+		logger.Debug("=================================================")
 		if obj, ok := env.Get(defaultFuncName); ok {
 			if function, ok := obj.(*object.Function); ok {
 				logger.Debug("専用名でデフォルト関数 '%s' が見つかりました", defaultFuncName)
@@ -181,7 +197,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 			freshFunctions := env.GetAllFunctionsByName(name)
 			logger.Debug("見つかった関数: %d 個", len(freshFunctions))
 			
-			// 条件のない関数を優先して検索
+			// まず、条件なし関数を探す
 			for _, fn := range freshFunctions {
 				// デバッグ出力
 				if fn.Condition != nil {
@@ -197,6 +213,28 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 					// 最初の条件なし関数を使用
 					break
 				}
+			}
+			
+			// それでも見つからなければ、特殊名でもう一度探す
+			if len(defaultFuncs) == 0 {
+				// 特殊名を使った再検索
+				// 非公開のstoreフィールドではなくGetVariables()を使用
+				for key, obj := range env.GetVariables() {
+					// test#0 などの形式のキーも検索
+					if len(key) > len(name) && strings.HasPrefix(key, name+"#") {
+						if fn, ok := obj.(*object.Function); ok && fn.Condition == nil {
+							logger.Debug("特殊名 '%s' でデフォルト関数が見つかりました", key)
+							defaultFuncs = append(defaultFuncs, fn)
+							break
+						}
+					}
+				}
+			}
+			
+			// それでも見つからなければ、もう一度試しに最初の関数を使用（最終手段）
+			if len(defaultFuncs) == 0 && len(freshFunctions) > 0 {
+				logger.Debug("条件なし関数が見つからないため、最初の関数を最後の手段として使用します")
+				defaultFuncs = append(defaultFuncs, freshFunctions[0])
 			}
 		}
 	}

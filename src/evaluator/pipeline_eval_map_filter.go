@@ -137,32 +137,70 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 			args = append(args, funcArgs...)
 		}
 		
-		// 関数を取得（環境から検索）
+		// 組み込み関数を確認
+		if builtin, ok := Builtins[funcName]; ok {
+			logger.Debug("ビルトイン関数 '%s' をマップ操作で呼び出します", funcName)
+			result := builtin.Fn(args...)
+			if result == nil || result.Type() == object.ERROR_OBJ {
+				return result
+			}
+			resultElements = append(resultElements, result)
+			continue
+		}
+		
+		// 名前付き関数のメカニズムを使用して条件付き関数の正しい選択を行う
+		// ここが重要な変更点：条件付き関数を明示的に処理する
+		logger.Debug("マップ操作: 要素 %s に対して条件付き関数メカニズムで関数 %s を呼び出し", elem.Inspect(), funcName)
+		
+		// 環境から全ての関数候補を取得
 		functions := env.GetAllFunctionsByName(funcName)
 		if len(functions) == 0 {
-			// 組み込み関数を確認
-			if builtin, ok := Builtins[funcName]; ok {
-				logger.Debug("ビルトイン関数 '%s' をマップ操作で呼び出します", funcName)
-				result := builtin.Fn(args...)
-				if result == nil || result.Type() == object.ERROR_OBJ {
-					return result
-				}
-				resultElements = append(resultElements, result)
-				continue
-			}
+			logger.Debug("関数 '%s' が見つかりません", funcName)
 			return createError("関数 '%s' が見つかりません", funcName)
 		}
 		
-		// 関数を適用
-		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyFunctionWithPizza(functions[0], args)
+		// 条件付き関数を優先的に探す
+		var result object.Object
+		var defaultFunc *object.Function
 		
-		if result == nil || result.Type() == object.ERROR_OBJ {
-			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
-			return result
+		// 現在の要素を処理する一時環境を更新
+		tempEnv.Set("🍕", elem)
+		
+		// まず条件付き関数を試す
+		for _, fn := range functions {
+			if fn.Condition != nil {
+				// 条件式の評価
+				isTrue, _ := evalConditionalExpression(fn, args, tempEnv)
+				if isTrue {
+					// 条件に一致した場合、この関数を使用
+					logger.Debug("条件に一致する関数を見つけました: %s", funcName)
+					result = applyFunctionWithPizza(fn, args)
+					if result != nil {
+						// 条件に一致した関数の結果を使用
+						resultElements = append(resultElements, result)
+						break
+					}
+				}
+			} else {
+				// デフォルト関数を保存
+				defaultFunc = fn
+			}
 		}
 		
-		resultElements = append(resultElements, result)
+		// 結果がまだ追加されていない場合はデフォルト関数を使う
+		if result == nil || result.Type() == object.ERROR_OBJ {
+			if defaultFunc != nil {
+				logger.Debug("デフォルト関数を使用します: %s", funcName)
+				result = applyFunctionWithPizza(defaultFunc, args)
+				if result != nil {
+					resultElements = append(resultElements, result)
+				} else {
+					return createError("関数 '%s' の適用に失敗しました", funcName)
+				}
+			} else {
+				return createError("条件に一致する関数が見つかりません: %s", funcName)
+			}
+		}
 	}
 	
 	// 単一値モードの場合は最初の結果だけを返す
@@ -277,38 +315,67 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 			args = append(args, funcArgs...)
 		}
 		
-		// 関数を取得（環境から検索）
+		// 組み込み関数を確認
+		if builtin, ok := Builtins[funcName]; ok {
+			logger.Debug("ビルトイン関数 '%s' をフィルター操作で呼び出します", funcName)
+			result := builtin.Fn(args...)
+			if result == nil || result.Type() == object.ERROR_OBJ {
+				return result
+			}
+			
+			// 結果がtruthyな場合のみ結果に含める
+			if isTruthy(result) {
+				resultElements = append(resultElements, elem)
+			}
+			continue
+		}
+		
+		// 名前付き関数のメカニズムを使用して条件付き関数の正しい選択を行う
+		// ここが重要な変更点：条件付き関数を明示的に処理する
+		logger.Debug("フィルター操作: 要素 %s に対して条件付き関数メカニズムで関数 %s を呼び出し", elem.Inspect(), funcName)
+		
+		// 環境から全ての関数候補を取得
 		functions := env.GetAllFunctionsByName(funcName)
 		if len(functions) == 0 {
-			// 組み込み関数を確認
-			if builtin, ok := Builtins[funcName]; ok {
-				logger.Debug("ビルトイン関数 '%s' をフィルター操作で呼び出します", funcName)
-				result := builtin.Fn(args...)
-				if result == nil || result.Type() == object.ERROR_OBJ {
-					return result
-				}
-				
-				// 結果がtruthyな場合のみ結果に含める
-				if isTruthy(result) {
-					resultElements = append(resultElements, elem)
-				}
-				continue
-			}
+			logger.Debug("関数 '%s' が見つかりません", funcName)
 			return createError("関数 '%s' が見つかりません", funcName)
 		}
 		
-		// 関数を適用
-		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyFunctionWithPizza(functions[0], args)
+		// 条件付き関数を優先的に探す
+		var result object.Object
+		var defaultFunc *object.Function
 		
-		if result == nil || result.Type() == object.ERROR_OBJ {
-			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
-			return result
+		// 現在の要素を処理する一時環境を更新
+		tempEnv.Set("🍕", elem)
+		
+		// まず条件付き関数を試す
+		for _, fn := range functions {
+			if fn.Condition != nil {
+				// 条件式の評価
+				isTrue, _ := evalConditionalExpression(fn, args, tempEnv)
+				if isTrue {
+					// 条件に一致した場合、この関数を使用
+					logger.Debug("条件に一致する関数を見つけました: %s", funcName)
+					result = applyFunctionWithPizza(fn, args)
+					if result != nil && isTruthy(result) {
+						// 条件に一致した関数の結果がtrue的な場合、元の要素を含める
+						resultElements = append(resultElements, elem)
+						break
+					}
+				}
+			} else {
+				// デフォルト関数を保存
+				defaultFunc = fn
+			}
 		}
 		
-		// 結果がtruthyな場合のみ結果に含める
-		if isTruthy(result) {
-			resultElements = append(resultElements, elem)
+		// まだ条件付き関数で処理できていない場合はデフォルト関数を使う
+		if result == nil && defaultFunc != nil {
+			logger.Debug("デフォルト関数を使用します: %s", funcName)
+			result = applyFunctionWithPizza(defaultFunc, args)
+			if result != nil && isTruthy(result) {
+				resultElements = append(resultElements, elem)
+			}
 		}
 	}
 	

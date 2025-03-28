@@ -36,10 +36,12 @@ func evalConditionalExpression(fn *object.Function, args []object.Object, env *o
 		return true, &object.Boolean{Value: true}
 	}
 
-	logConditionDebug("条件式の評価を開始します")
+	// 条件式の詳細な情報をログ出力
+	logger.Log(logger.LevelInfo, "条件式評価: 対象値=%s, 条件=%v", args[0].Inspect(), fn.Condition)
 	
 	// 条件式評価のために独立した環境を作成
-	condEnv := object.NewEnvironment()
+	// 重要: 外部環境を継承するようにします - 外部の環境にアクセスできるように
+	condEnv := object.NewEnclosedEnvironment(env)
 	
 	// 🍕メンバーの設定（重要な改善点）
 	if len(args) > 0 {
@@ -110,7 +112,8 @@ func evalConditionalExpression(fn *object.Function, args []object.Object, env *o
 		logConditionDebug("条件式の真偽値（非Boolean型）: %v", isTrue)
 	}
 	
-	logConditionDebug("条件式の最終評価結果: %v", isTrue)
+	// 条件式評価直後に評価結果を出力
+	logger.Log(logger.LevelInfo, "条件式評価結果: 対象値=%s, 評価結果=%v", args[0].Inspect(), isTrue)
 	
 	return isTrue, condResult
 }
