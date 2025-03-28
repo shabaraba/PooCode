@@ -103,21 +103,23 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")
-		// 現在の関数コンテキストを取得
-		// カレント関数オブジェクトを取得（後で追加するグローバル変数）
+
+		// 重要: 最初に環境から直接🍕値を取得する (条件式評価のため)
+		if val, ok := env.Get("🍕"); ok {
+			logger.Debug("環境から🍕値を取得しました: %s", val.Inspect())
+			return val
+		}
+
+		// 関数コンテキストから🍕値を取得（関数本体評価時）
 		if currentFunction != nil {
 			logger.Debug("現在の関数オブジェクトから🍕値を取得します")
 			if pizzaVal := currentFunction.GetPizzaValue(); pizzaVal != nil {
+				logger.Debug("関数オブジェクトから取得した🍕値: %s", pizzaVal.Inspect())
 				return pizzaVal
 			}
 		}
 		
-		// 後方互換性のために環境変数もチェック
-		if val, ok := env.Get("🍕"); ok {
-			logger.Debug("環境から🍕値を取得しました")
-			return val
-		}
-		
+		logger.Debug("🍕値が見つかりません")
 		return createError("🍕が定義されていません（関数の外部またはパイプラインを通じて呼び出されていません）")
 
 	case *ast.PooLiteral:

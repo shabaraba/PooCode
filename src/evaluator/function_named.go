@@ -87,8 +87,12 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	logger.Debug("関数 '%s' を %d 個の候補から分類します", name, len(functions))
 
 	for i, fn := range functions {
-		// 厳密なnilチェックで条件式の有無を判定
+		// デバッグ情報: 関数の詳細
+		logger.Debug("  関数候補 %d の詳細: Condition=%v, Addr=%p", i+1, fn.Condition, fn)
+		
+		// 厳密なnilチェックで条件式の有無を判定（重要）
 		hasCondition := fn.Condition != nil
+		logger.Debug("  条件式判定: %v (nilチェック結果: %v)", fn.Condition, hasCondition)
 		
 		if hasCondition {
 			// 条件付き関数のみを条件付き関数として分類
@@ -104,7 +108,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		} else {
 			// 条件式がないものはデフォルト関数として分類
 			defaultFuncs = append(defaultFuncs, fn)
-			logger.Debug("  関数候補 %d: デフォルト関数として分類（条件式なし）", i+1)
+			logger.Debug("  関数候補 %d: デフォルト関数として分類（条件式なし）- アドレス: %p", i+1, fn)
 			// 追加デバッグ - 関数のすべての属性を表示
 			params := ""
 			for _, p := range fn.Parameters {
@@ -145,17 +149,22 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		}
 
 		// 条件式を評価するための環境を作成
-		condEnv := object.NewEnclosedEnvironment(funcEnv)
+		// 重要: 条件式評価には独立した環境を使用し、関数の環境に依存しないようにする
+		// 修正: 完全に独立した環境を作成し、親環境へのリンクは持たない
+		condEnv := object.NewEnvironment()
 		
 		// 条件式評価のための🍕変数のセットアップ 
 		// この部分が重要: 条件式評価時も同じ引数値を🍕としてセットする
 		if len(args) > 0 {
-			// 条件式用の環境にも🍕をセット
-			logger.Debug("条件式評価用の環境でも🍕に値 %s をセットします", args[0].Inspect())
+			// 条件式用の環境に直接🍕をセット - クリティカルな修正ポイント
+			logger.Debug("条件式評価用の環境に🍕値 %s を直接セットします", args[0].Inspect())
 			condEnv.Set("🍕", args[0])
 			
-			// 関数オブジェクトにも🍕値を直接設定（評価時に参照できるように）
+			// 関数オブジェクトにも同じ🍕値を直接設定（一貫性のため）
 			fn.SetPizzaValue(args[0])
+			
+			// 追加デバッグ情報
+			logger.Debug("条件式評価用の🍕値セット完了: %s", args[0].Inspect())
 		}
 		
 		// 条件式を評価前に🍕変数の型情報をデバッグ出力
@@ -185,12 +194,17 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		// Booleanオブジェクトの場合はそのValueを使用、それ以外の場合はisTruthyで評価
 		isTrue := false
 		if condResult.Type() == object.BOOLEAN_OBJ {
+			// Boolean型の場合はそのValue値を直接使用
 			isTrue = condResult.(*object.Boolean).Value
-			logger.Debug("条件式の真偽値: %v", isTrue)
+			logger.Debug("条件式の真偽値（Boolean型）: %v", isTrue)
 		} else {
+			// Boolean以外の型は isTruthy 関数で変換
 			isTrue = isTruthy(condResult)
-			logger.Debug("条件式の評価結果（非Boolean）が %v と判定されました", isTrue)
+			logger.Debug("条件式の評価結果（非Boolean型）が %v と判定されました", isTrue)
 		}
+		
+		// 条件評価結果の詳細ログ
+		logger.Debug("条件式 '%v' の最終評価結果: %v", fn.Condition, isTrue)
 
 		if isTrue {
 			logger.Debug("条件が真であるため、この関数を使用します")
@@ -215,9 +229,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 条件付き関数が該当しなかった場合、デフォルト関数を使用
 	logger.Debug("デフォルト関数を %d 個見つけました", len(defaultFuncs))
 	
-	// デフォルト関数がなく、条件付き関数の条件がすべて偽の場合、
-	// 専用の名前（funcName#default）でデフォルト関数を探してみる
+	// ステップ1: 明示的に宣言されたデフォルト関数を探す
 	if len(defaultFuncs) == 0 {
+		// ステップ2: 専用の名前（funcName#default）でデフォルト関数を探してみる
 		defaultFuncName := fmt.Sprintf("%s#default", name)
 		logger.Debug("デフォルト関数が見つからないので、'%s' を探します...", defaultFuncName)
 		if obj, ok := env.Get(defaultFuncName); ok {
@@ -226,31 +240,51 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 				defaultFuncs = append(defaultFuncs, function)
 			}
 		}
+		
+		// ステップ3: それでも見つからない場合は、一般的な関数を検索
+		if len(defaultFuncs) == 0 {
+			logger.Debug("一般的な '%s' 関数を検索します...", name)
+			// 環境から再度すべての関数を取得（完全リフレッシュ）
+			freshFunctions := env.GetAllFunctionsByName(name)
+			logger.Debug("見つかった関数: %d 個", len(freshFunctions))
+			
+			// 条件のない関数を優先して検索
+			for _, fn := range freshFunctions {
+				// デバッグ出力
+				if fn.Condition != nil {
+					logger.Debug("  関数: 条件あり - %p", fn)
+				} else {
+					logger.Debug("  関数: 条件なし - %p", fn)
+				}
+				
+				// 条件のない関数のみを抽出
+				if fn.Condition == nil {
+					logger.Debug("条件なし関数 '%s' が見つかりました (アドレス: %p)", name, fn)
+					defaultFuncs = append(defaultFuncs, fn)
+					// 最初の条件なし関数を使用
+					break
+				}
+			}
+		}
 	}
 	
+	// 見つかったデフォルト関数を実行
 	if len(defaultFuncs) > 0 {
-		logger.Debug("デフォルト関数を使用します")
+		logger.Debug("デフォルト関数を使用します: %s", name)
 		result := applyFunctionWithPizza(defaultFuncs[0], args)
 		if result != nil {
 			return result
 		}
 		// nilが返された場合は、パラメータとして引数が合わなかった
 		logger.Debug("デフォルト関数の引数が合いませんでした")
+		return createEvalError("関数 '%s' の引数が合いません", name)
 	} else {
-		// 最後の手段: すべての関数を対象に、条件なしで呼び出し試行
-		logger.Debug("最終手段: すべての関数を条件なしで呼び出し試行中")
-		for _, fn := range functions {
-			logger.Debug("関数 '%s' を条件なしで呼び出し試行", name)
-			result := applyFunctionWithPizza(fn, args)
-			if result != nil && result.Type() != object.ERROR_OBJ {
-				return result
-			}
-		}
+		// どのような関数も見つからなかった場合、エラーを返す
+		logger.Debug("適切なデフォルト関数が見つかりませんでした")
+		return createEvalError("条件に一致する関数 '%s' が見つかりません", name)
 	}
 
-	// 適用可能な関数が見つからない場合
-	logger.Debug("条件に一致する関数が見つかりません")
-	return createEvalError("条件に一致する関数 '%s' が見つかりません", name)
+	// この行は実行されません（上記のif-elseで必ずreturnするため）
 }
 
 // applyFunctionWithPizza は関数に🍕をセットして実行する
