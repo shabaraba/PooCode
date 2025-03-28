@@ -6,8 +6,17 @@ import (
 	"github.com/uncode/object"
 )
 
-// mapFilterDebugLevel はmap/filter演算子のデバッグレベルを保持します
-var mapFilterDebugLevel = logger.LevelDebug
+// デバッグログレベル設定
+var (
+	// mapFilterDebugLevel はmap/filter演算子のデバッグレベルを保持します
+	mapFilterDebugLevel = logger.LevelDebug
+	
+	// argumentsDebugLevel は関数引数のバインディングのデバッグレベルを保持します
+	argumentsDebugLevel = logger.LevelDebug
+	
+	// isArgumentsDebugEnabled は関数引数デバッグが有効かどうかを示します
+	isArgumentsDebugEnabled = false
+)
 
 // SetMapFilterDebugLevel はmap/filter演算子のデバッグレベルを設定します
 func SetMapFilterDebugLevel(level logger.LogLevel) {
@@ -15,17 +24,47 @@ func SetMapFilterDebugLevel(level logger.LogLevel) {
 	logger.Debug("map/filter演算子のデバッグレベルを %d に設定しました", level)
 }
 
+// SetArgumentsDebugLevel は関数引数のバインディングのデバッグレベルを設定します
+func SetArgumentsDebugLevel(level logger.LogLevel) {
+	argumentsDebugLevel = level
+	logger.Debug("関数引数バインディングのデバッグレベルを %d に設定しました", level)
+}
+
+// EnableArgumentsDebug は関数引数のデバッグを有効にします
+func EnableArgumentsDebug() {
+	isArgumentsDebugEnabled = true
+	logger.Debug("関数引数デバッグを有効にしました")
+}
+
+// DisableArgumentsDebug は関数引数のデバッグを無効にします
+func DisableArgumentsDebug() {
+	isArgumentsDebugEnabled = false
+	logger.Debug("関数引数デバッグを無効にしました")
+}
+
+// LogArgumentBinding は関数引数のバインディングをログに記録します（デバッグが有効な場合のみ）
+func LogArgumentBinding(funcName string, paramName string, value object.Object) {
+	if isArgumentsDebugEnabled && logger.IsLevelEnabled(argumentsDebugLevel) {
+		logger.Log(argumentsDebugLevel, "関数 '%s': パラメータ '%s' に値 '%s' をバインドしました", 
+			funcName, paramName, value.Inspect())
+	}
+}
+
 // evalInfixExpressionWithNode は中置式を評価する
 func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environment) object.Object {
 	logger.Debug("中置式を評価します: %s", node.Operator)
 
 	switch node.Operator {
-	case "+>": // map演算子
-		logger.Debug("map パイプ演算子 (%s) を検出しました", node.Operator)
+	case "+>", "map": // map演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
+		}
 		// map関数の処理を実行
 		return evalMapOperation(node, env)
-	case "?>": // filter演算子
-		logger.Debug("filter パイプ演算子 (%s) を検出しました", node.Operator)
+	case "?>", "filter": // filter演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
+		}
 		// filter関数の処理を実行
 		return evalFilterOperation(node, env)
 	case "|>": // 標準パイプライン
@@ -122,9 +161,25 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 			args = append(args, funcArgs...)
 		}
 		
-		// applyNamedFunctionで条件に合った関数を選択して実行
+		// 関数を取得（環境から検索）
+		functions := env.GetAllFunctionsByName(funcName)
+		if len(functions) == 0 {
+			// 組み込み関数を確認
+			if builtin, ok := Builtins[funcName]; ok {
+				logger.Debug("ビルトイン関数 '%s' をマップ操作で呼び出します", funcName)
+				result := builtin.Fn(args...)
+				if result == nil || result.Type() == object.ERROR_OBJ {
+					return result
+				}
+				resultElements = append(resultElements, result)
+				continue
+			}
+			return createError("関数 '%s' が見つかりません", funcName)
+		}
+		
+		// 関数を適用
 		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyNamedFunction(tempEnv, funcName, args)
+		result := applyFunctionWithPizza(functions[0], args)
 		
 		if result == nil || result.Type() == object.ERROR_OBJ {
 			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
@@ -227,9 +282,29 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 			args = append(args, funcArgs...)
 		}
 		
-		// applyNamedFunctionで条件に合った関数を選択して実行
+		// 関数を取得（環境から検索）
+		functions := env.GetAllFunctionsByName(funcName)
+		if len(functions) == 0 {
+			// 組み込み関数を確認
+			if builtin, ok := Builtins[funcName]; ok {
+				logger.Debug("ビルトイン関数 '%s' をフィルター操作で呼び出します", funcName)
+				result := builtin.Fn(args...)
+				if result == nil || result.Type() == object.ERROR_OBJ {
+					return result
+				}
+				
+				// 結果がtruthyな場合のみ結果に含める
+				if isTruthy(result) {
+					resultElements = append(resultElements, elem)
+				}
+				continue
+			}
+			return createError("関数 '%s' が見つかりません", funcName)
+		}
+		
+		// 関数を適用
 		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyNamedFunction(tempEnv, funcName, args)
+		result := applyFunctionWithPizza(functions[0], args)
 		
 		if result == nil || result.Type() == object.ERROR_OBJ {
 			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
@@ -243,4 +318,12 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	}
 	
 	return &object.Array{Elements: resultElements}
+}
+
+// パイプラインデバッグレベル設定
+var pipeDebugLevel = logger.LevelDebug
+
+// SetPipeDebugLevel はパイプラインのデバッグレベルを設定します
+func SetPipeDebugLevel(level logger.LogLevel) {
+	pipeDebugLevel = level
 }
