@@ -55,12 +55,16 @@ func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environm
 	logger.Debug("中置式を評価します: %s", node.Operator)
 
 	switch node.Operator {
-	case "+>": // map演算子
-		logger.Debug("map パイプ演算子 (%s) を検出しました", node.Operator)
+	case "+>", "map": // map演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
+		}
 		// map関数の処理を実行
 		return evalMapOperation(node, env)
-	case "?>": // filter演算子
-		logger.Debug("filter パイプ演算子 (%s) を検出しました", node.Operator)
+	case "?>", "filter": // filter演算子
+		if logger.IsLevelEnabled(mapFilterDebugLevel) {
+			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
+		}
 		// filter関数の処理を実行
 		return evalFilterOperation(node, env)
 	case "|>": // 標準パイプライン
@@ -288,6 +292,8 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 				if result == nil || result.Type() == object.ERROR_OBJ {
 					return result
 				}
+				
+				// 結果がtruthyな場合のみ結果に含める
 				if isTruthy(result) {
 					resultElements = append(resultElements, elem)
 				}
@@ -312,4 +318,12 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	}
 	
 	return &object.Array{Elements: resultElements}
+}
+
+// パイプラインデバッグレベル設定
+var pipeDebugLevel = logger.LevelDebug
+
+// SetPipeDebugLevel はパイプラインのデバッグレベルを設定します
+func SetPipeDebugLevel(level logger.LogLevel) {
+	pipeDebugLevel = level
 }

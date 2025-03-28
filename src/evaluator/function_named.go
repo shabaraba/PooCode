@@ -98,6 +98,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		if config.GlobalConfig.ShowConditionDebug {
 			logger.Debug("-------- 条件式の詳細評価 --------")
 			logger.Debug("条件式: %v", fn.Condition)
+
 			// AST構造をより詳細に表示
 			if infixExpr, ok := fn.Condition.(*ast.InfixExpression); ok {
 				logger.Debug("条件式タイプ: 中置式")

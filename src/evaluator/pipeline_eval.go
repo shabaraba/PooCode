@@ -108,7 +108,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	return result
 }
 
-// evalPipelineWithCallExpression は関数呼び出しを含むパイプライン処理を評価する
+// パイプライン処理で関数呼び出しを評価する（改善版）
 func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpression, env *object.Environment) object.Object {
 	// 関数名を取得
 	var funcName string
@@ -125,8 +125,10 @@ func evalPipelineWithCallExpression(left object.Object, callExpr *ast.CallExpres
 	// 通常のケース: 右側がシンプルな関数呼び出し（例: func(arg1, arg2)）
 	// 引数を評価（一時環境で評価することで🍕の影響を分離）
 	args := evalExpressions(callExpr.Arguments, env)
-	if len(args) > 0 && args[0].Type() == object.ERROR_OBJ {
-		return args[0]
+	for _, arg := range args {
+		if arg.Type() == object.ERROR_OBJ {
+			return arg
+		}
 	}
 
 	// デバッグ出力
@@ -173,3 +175,4 @@ var pipeDebugLevel = logger.LevelDebug
 func SetPipeDebugLevel(level logger.LogLevel) {
 	pipeDebugLevel = level
 }
+
