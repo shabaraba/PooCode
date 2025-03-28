@@ -20,6 +20,6 @@ print("\nDoubled values:");
 
 // Use a function with argument
 print("\nAdd 100 to each value:");
-[1..10] +> add_num(100) +> print;
+[1..10] +> add_num 100  +> print;
 
 print("Program completed");

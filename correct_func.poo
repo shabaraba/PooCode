@@ -1,0 +1,6 @@
+// 関数テスト
+def double(): int -> int {
+    🍕 * 2 >> 💩
+}
+
+5 |> double |> print;  // 基本的なパイプライン

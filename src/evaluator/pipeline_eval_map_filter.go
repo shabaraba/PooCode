@@ -20,16 +20,12 @@ func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environm
 	logger.Debug("中置式を評価します: %s", node.Operator)
 
 	switch node.Operator {
-	case "+>", "map": // map演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "map パイプ演算子 (%s) を検出しました", node.Operator)
-		}
+	case "+>": // map演算子
+		logger.Debug("map パイプ演算子 (%s) を検出しました", node.Operator)
 		// map関数の処理を実行
 		return evalMapOperation(node, env)
-	case "?>", "filter": // filter演算子
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "filter パイプ演算子 (%s) を検出しました", node.Operator)
-		}
+	case "?>": // filter演算子
+		logger.Debug("filter パイプ演算子 (%s) を検出しました", node.Operator)
 		// filter関数の処理を実行
 		return evalFilterOperation(node, env)
 	case "|>": // 標準パイプライン
@@ -53,9 +49,7 @@ func evalInfixExpressionWithNode(node *ast.InfixExpression, env *object.Environm
 
 // evalMapOperation はmap演算子(+>)を処理する
 func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object.Object {
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "map演算子(+>)の処理を開始")
-	}
+	logger.Debug("mapパイプライン演算子(+>)の処理を開始")
 
 	// 左辺値の評価（通常は配列）
 	left := Eval(node.Left, env)
@@ -65,43 +59,33 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 	if left.Type() == object.ERROR_OBJ {
 		return left
 	}
-
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "+> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
+	
+	// 配列であることを確認
+	arr, ok := left.(*object.Array)
+	if !ok {
+		return createError("map演算子の左辺は配列である必要があります")
 	}
 
+	logger.Debug("+> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
+
 	// 右辺値の評価（関数または関数呼び出し）
-	var funcObj object.Object
+	var funcName string
 	var funcArgs []object.Object
 
 	switch right := node.Right.(type) {
 	case *ast.Identifier:
 		// 識別子の場合、関数名として扱う
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "右辺が識別子: %s", right.Value)
-		}
-		funcNameObj, exists := env.Get(right.Value)
-		if !exists {
-			return createError("関数 '%s' が見つかりません", right.Value)
-		}
-		funcObj = funcNameObj
+		logger.Debug("右辺が識別子: %s", right.Value)
+		funcName = right.Value
 	case *ast.CallExpression:
-		// 関数呼び出しの場合
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "右辺が関数呼び出し式")
-		}
+		logger.Debug("右辺が関数呼び出し式")
+		
+		// 関数名を取得
 		if ident, ok := right.Function.(*ast.Identifier); ok {
-			// 関数名を取得
-			if logger.IsLevelEnabled(mapFilterDebugLevel) {
-				logger.Log(mapFilterDebugLevel, "関数名: %s", ident.Value)
-			}
-			funcNameObj, exists := env.Get(ident.Value)
-			if !exists {
-				return createError("関数 '%s' が見つかりません", ident.Value)
-			}
-			funcObj = funcNameObj
-
-			// 引数の評価
+			funcName = ident.Value
+			logger.Debug("関数名: %s", funcName)
+			
+			// 追加引数を評価
 			funcArgs = evalExpressions(right.Arguments, env)
 			if len(funcArgs) > 0 && funcArgs[0] != nil && funcArgs[0].Type() == object.ERROR_OBJ {
 				return funcArgs[0]
@@ -109,38 +93,54 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 		} else {
 			return createError("関数呼び出し式の関数部分が識別子ではありません: %T", right.Function)
 		}
+		
+		// 別のケース（CallExpressionの処理）は元のコードをそのまま利用
+		leftElements := arr.Elements
+		// マップ処理の実行
+		resultElements := make([]object.Object, 0, len(leftElements))
+		for _, leftElement := range leftElements {
+			result := evalPipelineWithCallExpression(leftElement, right, env)
+			resultElements = append(resultElements, result)
+		}
+		return &object.Array{Elements: resultElements}
 	default:
 		return createError("map演算子の右辺が関数または識別子ではありません: %T", node.Right)
 	}
 
-	// map関数の呼び出し
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "map関数をビルトイン関数として呼び出し")
+	// 直接配列の各要素に対して処理を行う
+	resultElements := make([]object.Object, 0, len(arr.Elements))
+	
+	for _, elem := range arr.Elements {
+		// 一時環境を作成し、🍕に要素をセット
+		tempEnv := object.NewEnclosedEnvironment(env)
+		tempEnv.Set("🍕", elem)
+		
+		// 現在の要素に対して適切な関数を選択・実行
+		// 引数にはelemを含める
+		args := []object.Object{elem}
+		if funcArgs != nil {
+			args = append(args, funcArgs...)
+		}
+		
+		// applyNamedFunctionで条件に合った関数を選択して実行
+		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
+		result := applyNamedFunction(tempEnv, funcName, args)
+		
+		if result == nil || result.Type() == object.ERROR_OBJ {
+			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
+			return result
+		}
+		
+		resultElements = append(resultElements, result)
 	}
-	mapBuiltin, ok := Builtins["map"]
-	if !ok {
-		return createError("map関数がビルトイン関数として見つかりません")
-	}
-
-	// 引数リストの構築: [配列, 関数, 追加引数...]
-	var mapArgs []object.Object
-	mapArgs = append(mapArgs, left)       // 第1引数: 配列
-	mapArgs = append(mapArgs, funcObj)    // 第2引数: 関数
-	if funcArgs != nil {
-		mapArgs = append(mapArgs, funcArgs...) // 追加引数
-	}
-
-	// map関数の実行
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "map関数実行: 引数数=%d", len(mapArgs))
-	}
-	return mapBuiltin.Fn(mapArgs...)
+	
+	return &object.Array{Elements: resultElements}
 }
 
 // evalFilterOperation はfilter演算子(?>)を処理する
 func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) object.Object {
 	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "filter演算子(?>)の処理を開始")
+		logger.Debug("filter演算子(?>)の処理を開始")
 	}
 
 	// 左辺値の評価（通常は配列）
@@ -151,41 +151,39 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	if left.Type() == object.ERROR_OBJ {
 		return left
 	}
+	
+	// 配列であることを確認
+	arr, ok := left.(*object.Array)
+	if !ok {
+		return createError("filter演算子の左辺は配列である必要があります")
+	}
 
 	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "?> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
+		logger.Debug("?> 左辺の評価結果: %s (タイプ: %s)", left.Inspect(), left.Type())
 	}
 
 	// 右辺値の評価（関数または関数呼び出し）
-	var funcObj object.Object
+	var funcName string
 	var funcArgs []object.Object
 
 	switch right := node.Right.(type) {
 	case *ast.Identifier:
 		// 識別子の場合、関数名として扱う
 		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "右辺が識別子: %s", right.Value)
+			logger.Debug("右辺が識別子: %s", right.Value)
 		}
-		funcNameObj, exists := env.Get(right.Value)
-		if !exists {
-			return createError("関数 '%s' が見つかりません", right.Value)
-		}
-		funcObj = funcNameObj
+		funcName = right.Value
 	case *ast.CallExpression:
 		// 関数呼び出しの場合
 		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "右辺が関数呼び出し式")
+			logger.Debug("右辺が関数呼び出し式")
 		}
 		if ident, ok := right.Function.(*ast.Identifier); ok {
 			// 関数名を取得
+			funcName = ident.Value
 			if logger.IsLevelEnabled(mapFilterDebugLevel) {
-				logger.Log(mapFilterDebugLevel, "関数名: %s", ident.Value)
+				logger.Debug("関数名: %s", funcName)
 			}
-			funcNameObj, exists := env.Get(ident.Value)
-			if !exists {
-				return createError("関数 '%s' が見つかりません", ident.Value)
-			}
-			funcObj = funcNameObj
 
 			// 引数の評価
 			funcArgs = evalExpressions(right.Arguments, env)
@@ -195,30 +193,54 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 		} else {
 			return createError("関数呼び出し式の関数部分が識別子ではありません: %T", right.Function)
 		}
+		
+		// CallExpressionの場合、evalPipelineWithCallExpressionを使用して評価
+		leftElements := arr.Elements
+		// フィルター処理の実行
+		resultElements := make([]object.Object, 0)
+		for _, leftElement := range leftElements {
+			// 各要素に対して関数を適用
+			result := evalPipelineWithCallExpression(leftElement, right, env)
+			
+			// 結果がtruthyな場合のみ結果に含める
+			if isTruthy(result) {
+				resultElements = append(resultElements, leftElement)
+			}
+		}
+		return &object.Array{Elements: resultElements}
 	default:
 		return createError("filter演算子の右辺が関数または識別子ではありません: %T", node.Right)
 	}
 
-	// filter関数の呼び出し
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "filter関数をビルトイン関数として呼び出し")
+	// 直接配列の各要素に対して処理を行う
+	resultElements := make([]object.Object, 0)
+	
+	for _, elem := range arr.Elements {
+		// 一時環境を作成し、🍕に要素をセット
+		tempEnv := object.NewEnclosedEnvironment(env)
+		tempEnv.Set("🍕", elem)
+		
+		// 現在の要素に対して適切な関数を選択・実行
+		// 引数にはelemを含める
+		args := []object.Object{elem}
+		if funcArgs != nil {
+			args = append(args, funcArgs...)
+		}
+		
+		// applyNamedFunctionで条件に合った関数を選択して実行
+		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
+		result := applyNamedFunction(tempEnv, funcName, args)
+		
+		if result == nil || result.Type() == object.ERROR_OBJ {
+			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
+			return result
+		}
+		
+		// 結果がtruthyな場合のみ結果に含める
+		if isTruthy(result) {
+			resultElements = append(resultElements, elem)
+		}
 	}
-	filterBuiltin, ok := Builtins["filter"]
-	if !ok {
-		return createError("filter関数がビルトイン関数として見つかりません")
-	}
-
-	// 引数リストの構築: [配列, 関数, 追加引数...]
-	var filterArgs []object.Object
-	filterArgs = append(filterArgs, left)       // 第1引数: 配列
-	filterArgs = append(filterArgs, funcObj)    // 第2引数: 関数
-	if funcArgs != nil {
-		filterArgs = append(filterArgs, funcArgs...) // 追加引数
-	}
-
-	// filter関数の実行
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "filter関数実行: 引数数=%d", len(filterArgs))
-	}
-	return filterBuiltin.Fn(filterArgs...)
+	
+	return &object.Array{Elements: resultElements}
 }

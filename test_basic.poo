@@ -1,0 +1,2 @@
+// Basic test without using map/filter operators
+print("Hello, World\!");
