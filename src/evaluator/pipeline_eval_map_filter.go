@@ -319,11 +319,3 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	
 	return &object.Array{Elements: resultElements}
 }
-
-// パイプラインデバッグレベル設定
-var pipeDebugLevel = logger.LevelDebug
-
-// SetPipeDebugLevel はパイプラインのデバッグレベルを設定します
-func SetPipeDebugLevel(level logger.LogLevel) {
-	pipeDebugLevel = level
-}
