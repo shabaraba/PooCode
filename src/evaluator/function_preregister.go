@@ -88,49 +88,113 @@ func registerFunction(fn *ast.FunctionLiteral, env *object.Environment, register
 	// 関数名を取得
 	funcName := fn.Name.Value
 	
-	// すでに登録済みかチェック
-	if _, exists := registered[funcName]; exists {
-		logger.Debug("関数 '%s' は既に登録されています", funcName)
-		// 条件付き関数の場合は名前を変えて追加登録する
-		if fn.Condition != nil {
+	// 条件なし関数と条件付き関数で処理を分ける
+	if fn.Condition == nil {
+		// ===== デフォルト関数（条件なし）の処理 =====
+		
+		// 特殊名を作成
+		defaultName := fmt.Sprintf("%s#default", funcName)
+		
+		// 詳細なデバッグ情報
+		logger.Debug("関数事前登録: デフォルト関数 '%s' の登録を開始します（条件なし）", funcName)
+		logger.Debug("関数事前登録: 関数情報 - InputType='%s', ReturnType='%s', Parameters=%d個",
+			fn.InputType, fn.ReturnType, len(fn.Parameters))
+		
+		// デフォルト関数として専用の名前で登録（これは必ず行う）
+		createAndRegisterFunction(fn, defaultName, env)
+		logger.Debug("関数事前登録: デフォルト関数 '%s' を特殊名 '%s' で登録しました", 
+			funcName, defaultName)
+		
+		// 登録済みマップに記録（特殊名）
+		registered[defaultName] = true
+		
+		// 環境を検査して登録状況を確認
+		if obj, ok := env.Get(defaultName); ok {
+			logger.Debug("関数事前登録: 登録確認 - '%s' が環境に存在します: %T", defaultName, obj)
+		} else {
+			logger.Debug("関数事前登録: 警告 - '%s' が環境に存在しません", defaultName)
+		}
+		
+		// 元の名前でも登録する（これはどんな場合でも実行）
+		// デフォルト関数が優先的に呼ばれるようにするため
+		if obj, ok := env.Get(defaultName); ok {
+			// 元の名前がすでに登録されている場合でも上書きする
+			// これにより、条件なし関数が優先される
+			env.Set(funcName, obj)
+			logger.Debug("関数事前登録: デフォルト関数 '%s' を元の名前でも登録/上書きしました", funcName)
+			
+			// 登録済みマップに記録（元の名前）
+			registered[funcName] = true
+			
+			// 登録状況の確認
+			if regObj, regOk := env.Get(funcName); regOk {
+				logger.Debug("関数事前登録: 登録確認 - '%s' が環境に存在します: %T", funcName, regObj)
+			} else {
+				logger.Debug("関数事前登録: 警告 - '%s' が環境に存在しません", funcName)
+			}
+		} else {
+			logger.Debug("関数事前登録: 警告 - デフォルト関数の元の名前登録に失敗しました: %s", funcName)
+		}
+		
+	} else {
+		// ===== 条件付き関数の処理 =====
+		
+		// すでに登録済みかチェック
+		if _, exists := registered[funcName]; exists {
+			logger.Debug("関数 '%s' は既に登録されています", funcName)
+			
+			// 同名の既存関数を取得して、条件付き関数の数をカウント
 			existingFuncs := env.GetAllFunctionsByName(funcName)
-			uniqueName := fmt.Sprintf("%s#%d", funcName, len(existingFuncs))
 			
-			// 関数オブジェクトを作成して登録
+			// 条件付き関数のカウント
+			condFuncCount := 0
+			for _, f := range existingFuncs {
+				if f.Condition != nil {
+					condFuncCount++
+				}
+			}
+			
+			// ユニークな名前を生成
+			uniqueName := fmt.Sprintf("%s#%d", funcName, condFuncCount)
+			
+			// 特殊名で関数オブジェクトを作成して登録
 			createAndRegisterFunction(fn, uniqueName, env)
-			
-			// 元の名前としても登録（上書きではなく関連付け）
-			if obj, ok := env.Get(uniqueName); ok {
-				env.Set(funcName, obj)
+			logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' として追加登録しました", 
+				funcName, uniqueName)
+				
+			// 元の名前としても関連付け（#default 名がない場合のみ）
+			// デフォルト関数の方が優先度が高い場合は上書きしない
+			defaultKey := fmt.Sprintf("%s#default", funcName)
+			if _, hasDefault := env.Get(defaultKey); !hasDefault {
+				if obj, ok := env.Get(uniqueName); ok {
+					env.Set(funcName, obj)
+					logger.Debug("関数事前登録: 条件付き関数 '%s' を元の名前でも関連付けました", funcName)
+				}
 			}
 			
 			// 登録済みマップに記録
-			uniqueKey := fmt.Sprintf("%s#%d", funcName, len(existingFuncs))
-			registered[uniqueKey] = true
+			registered[uniqueName] = true
 			
-			logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' として追加登録しました", 
-				funcName, uniqueName)
+		} else {
+			// 初めての条件付き関数を登録
+			
+			// 元の名前で登録
+			createAndRegisterFunction(fn, funcName, env)
+			logger.Debug("関数事前登録: 初めての条件付き関数 '%s' を登録しました", funcName)
+			
+			// 特殊名でも登録
+			uniqueName := fmt.Sprintf("%s#0", funcName)
+			if obj, ok := env.Get(funcName); ok {
+				env.Set(uniqueName, obj)
+				logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' としても登録しました", 
+					funcName, uniqueName)
+			}
+			
+			// 登録済みマップに記録
+			registered[funcName] = true
+			registered[uniqueName] = true
 		}
-		return
 	}
-	
-	// 関数オブジェクトを作成
-	createAndRegisterFunction(fn, funcName, env)
-	
-	// 登録済みマップに記録
-	registered[funcName] = true
-	
-	// 条件付き関数の場合、個別の名前でも登録
-	if fn.Condition != nil {
-		uniqueName := fmt.Sprintf("%s#0", funcName)
-		if obj, ok := env.Get(funcName); ok {
-			env.Set(uniqueName, obj)
-			logger.Debug("関数事前登録: 条件付き関数 '%s' を '%s' としても登録しました", 
-				funcName, uniqueName)
-		}
-	}
-	
-	logger.Debug("関数事前登録: 関数 '%s' を登録しました", funcName)
 }
 
 // createAndRegisterFunction は関数オブジェクトを生成して環境に登録する

@@ -76,34 +76,98 @@ func (e *Environment) GetNextFunction(name string, currentFn *Function) *Functio
 // GetAllFunctionsByName は同名のすべての関数を取得する
 // 条件付き関数を正しく呼び出すために使用
 func (e *Environment) GetAllFunctionsByName(name string) []*Function {
-	var functions []*Function
+	var conditionFunctions []*Function  // 条件付き関数用
+	var defaultFunction *Function       // デフォルト関数用
 	var collectFunctions func(*Environment)
 
+	logger.Debug("GetAllFunctionsByName: 関数 '%s' の検索開始", name)
+	
+	// すべての変数を表示
+	logger.Debug("GetAllFunctionsByName: 現在の環境にある変数一覧:")
+	for k, v := range e.GetVariables() {
+		if funcObj, ok := v.(*Function); ok {
+			hasCondition := "なし"
+			if funcObj.Condition != nil {
+				hasCondition = "あり"
+			}
+			logger.Debug("  変数 '%s': 関数オブジェクト (条件=%s)", k, hasCondition)
+		} else {
+			logger.Debug("  変数 '%s': %s", k, v.Type())
+		}
+	}
+	
 	// 既に処理済みの関数オブジェクトを記録するマップ
-	// ポインタ比較で重複を排除
-	// processed := make(map[*Function]bool)
+	processed := make(map[*Function]bool)
 
 	collectFunctions = func(env *Environment) {
-		// 条件付き関数は複数定義できるようにするために特殊な名前で保存されている可能性がある
-		// 例: "name#1", "name#2" などの形式で同じname向けの複数の関数が定義されている可能性
-		// そのようなキーも検索し、関数オブジェクトを取得
-		for key, obj := range env.store {
-			if (key == name) {
-				logger.Debug("%#v", obj)
+		// ステップ1: まず専用のデフォルト関数キーを優先的に検索
+		defaultKey := name + "#default"
+		logger.Debug("GetAllFunctionsByName: デフォルト関数キー '%s' を検索中", defaultKey)
+		
+		if obj, ok := env.store[defaultKey]; ok {
+			logger.Debug("GetAllFunctionsByName: キー '%s' が環境に存在します", defaultKey)
+			if fn, ok := obj.(*Function); ok {
+				logger.Debug("GetAllFunctionsByName: '%s' は関数オブジェクトです", defaultKey)
+				if !processed[fn] {
+					defaultFunction = fn
+					processed[fn] = true
+					logger.Debug("専用デフォルト関数 '%s' を見つけました (%p)", defaultKey, fn)
+				}
+			} else {
+				logger.Debug("GetAllFunctionsByName: 警告 - '%s' は関数ではありません: %T", defaultKey, obj)
 			}
-			if (key == name) || (len(key) > len(name) && key[:len(name)+1] == name+"#") {
+		} else {
+			logger.Debug("GetAllFunctionsByName: キー '%s' が環境に存在しません", defaultKey)
+		}
+
+		// ステップ2: 全関数を検索して分類
+		for key, obj := range env.store {
+			// 基本名と一致するか、「name#数字」のパターンで一致するキーを検索
+			// #default は既に処理したので除外
+			if key == defaultKey {
+				continue // 専用デフォルト関数は既に処理済み
+			}
+			
+			logger.Debug("GetAllFunctionsByName: キー '%s' を評価中", key)
+			
+			if (key == name) || 
+			   (len(key) > len(name) && key[:len(name)+1] == name+"#") {
+				logger.Debug("GetAllFunctionsByName: キー '%s' がパターンに一致", key)
+				
 				if fn, ok := obj.(*Function); ok {
-						functions = append(functions, fn)
-					// // まだ処理済みでなければ追加
-					// if !processed[fn] {
-					// 	processed[fn] = true
-					// 	functions = append(functions, fn)
-					// }
+					if !processed[fn] {
+						processed[fn] = true
+						logger.Debug("GetAllFunctionsByName: キー '%s' の関数オブジェクト (%p) を処理", key, fn)
+
+						// 条件の有無でデフォルト関数と条件付き関数に分類
+						if fn.Condition == nil {
+							// 条件なし関数は特別扱い
+							logger.Debug("GetAllFunctionsByName: キー '%s' は条件なし関数です", key)
+							
+							// デフォルト関数がまだない場合のみ設定
+							if defaultFunction == nil {
+								defaultFunction = fn
+								logger.Debug("通常名の条件なし関数 '%s' をデフォルト関数として登録 (%p)", key, fn)
+							} else {
+								// デフォルト関数が既にある場合は一般条件付き関数として扱う
+								logger.Debug("別の条件なし関数 '%s' を条件付き関数として登録（デフォルト関数は既に存在）", key)
+								conditionFunctions = append(conditionFunctions, fn)
+							}
+						} else {
+							// 条件あり関数は条件付き関数として扱う
+							logger.Debug("条件付き関数 '%s' を条件付き関数リストに追加 (%p)", key, fn)
+							conditionFunctions = append(conditionFunctions, fn)
+						}
+					} else {
+						logger.Debug("GetAllFunctionsByName: キー '%s' の関数オブジェクトは既に処理済み", key)
+					}
+				} else {
+					logger.Debug("GetAllFunctionsByName: キー '%s' は関数オブジェクトではありません: %T", key, obj)
 				}
 			}
 		}
 
-		// 外部環境も検索
+		// 外部環境も検索（ただし、デフォルト関数がすでに見つかっている場合は条件付き関数のみ検索）
 		if env.outer != nil {
 			collectFunctions(env.outer)
 		}
@@ -111,18 +175,49 @@ func (e *Environment) GetAllFunctionsByName(name string) []*Function {
 
 	collectFunctions(e)
 
-	// デバッグ情報
-	logger.Debug("関数 '%s' の候補を %d 個見つけました", name, len(functions))
-	for i, fn := range functions {
-		// 条件の有無を表示
-		hasCondition := "なし"
-		if fn.Condition != nil {
-			hasCondition = "あり"
-		}
-		logger.Trace("  関数候補 %d: 条件=%s", i+1, hasCondition)
+	// 結果を構築
+	// ステップ1: まず条件付き関数を追加
+	var result []*Function
+	result = append(result, conditionFunctions...)
+	
+	// ステップ2: デフォルト関数があれば最後に追加（フォールバックとして）
+	if defaultFunction != nil {
+		result = append(result, defaultFunction)
+		logger.Debug("デフォルト関数を結果に追加: %p", defaultFunction)
 	}
 
-	return functions
+	// デバッグ情報（詳細）
+	logger.Debug("関数 '%s' の候補を %d 個見つけました（条件付き：%d, デフォルト：%v）", 
+		name, len(result), len(conditionFunctions), defaultFunction != nil)
+	
+	// 詳細なデバッグ情報を出力
+	for i, fn := range result {
+		condStatus := "なし"
+		if fn.Condition != nil {
+			condStatus = "あり"
+		}
+		logger.Debug("  関数候補 %d の詳細: Condition=%v, Addr=%p, 条件=%s", i+1, fn.Condition, fn, condStatus)
+		logger.Debug("  条件式判定: %v (nilチェック結果: %v)", fn.Condition, fn.Condition != nil)
+		
+		if fn.Condition != nil {
+			logger.Debug("  関数候補 %d: 条件付き関数として分類（条件式: %v）", i+1, fn.Condition)
+		} else {
+			logger.Debug("  関数候補 %d: デフォルト関数として分類（条件式なし）", i+1)
+		}
+		
+		// 関数のパラメータ情報
+		params := ""
+		for _, p := range fn.Parameters {
+			if params != "" {
+				params += ", "
+			}
+			params += p.Value
+		}
+		logger.Debug("    詳細: 入力型=%s, 戻り値型=%s, パラメータ=[%s]", 
+			fn.InputType, fn.ReturnType, params)
+	}
+
+	return result
 }
 
 // GetVariables は環境内のすべての変数を取得する（デバッグ用）
@@ -146,4 +241,3 @@ func (e *Environment) GetVariables() map[string]Object {
 
 	return vars
 }
-

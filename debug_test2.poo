@@ -1,0 +1,14 @@
+// デバッグ用のテストスクリプト
+def test() {
+    "Default function" >> 💩
+}
+
+def test() if 🍕 == "condition" {
+    "Conditional function" >> 💩
+}
+
+// テスト1: デフォルト関数を呼び出す
+"normal" |> test() |> print;
+
+// テスト2: 条件付き関数を呼び出す
+"condition" |> test() |> print;

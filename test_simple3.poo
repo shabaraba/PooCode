@@ -1,0 +1,5 @@
+def showTest() : int -> str {
+    "Test" >> 💩;
+}
+
+1 |> showTest |> print;
