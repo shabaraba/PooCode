@@ -1,14 +1,17 @@
-// map演算子のテスト
-def double() {
-    🍕 * 2 >> 💩
+// 引数とmap演算子のデバッグテスト
+
+// ベーシックな関数（引数を使用）
+def multiply(factor) {
+    🍕 * factor >> 💩
 }
 
 // 単純な数値に関数を適用してみる
-5 |> double |> print;
+print "通常のパイプラインテスト:";
+5 |> multiply(3) |> print;  // 15が表示されるはず
 
-// map演算子を使ってみる
-def hello() {
-    "Hello, " + 🍕 + "\!" >> 💩
-}
+// 配列テスト
+print "配列とmap演算子のテスト:";
+[1, 2, 3, 4, 5] >> numbers;
 
-"World" |> hello |> print;
+// 引数をとる関数をmap演算子で使用
+numbers +> multiply(2) |> print;  // [2, 4, 6, 8, 10]が表示されるはず

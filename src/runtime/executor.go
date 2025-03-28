@@ -1,3 +1,13 @@
+package runtime
+
+import (
+	"fmt"
+
+	"github.com/uncode/ast"
+	"github.com/uncode/logger"
+	"github.com/uncode/object"
+)
+
 // findAndRegisterFunctionsInExpression は式の中から関数定義を再帰的に探索する
 func findAndRegisterFunctionsInExpression(expr ast.Expression, env *object.Environment, count *int) {
 	if expr == nil {

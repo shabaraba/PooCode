@@ -16,19 +16,19 @@ def showBuzz() : int -> str {
     "" >> 💩;
 }
 
-def showNumber(num) if 🍕 == 1 : str -> str {
+def showNumber(num) if 🍕 == 1 : int -> str {
     num |> to_string >> 💩;
 }
-def showNumber(num) : str -> str {
+def showNumber(num) : int -> str {
     🍕 >> 💩;
 }
  
 def showTest() : int -> str {
+    🍕 |> print;
     "" >> result;
     
-    🍕 |> showBuzz |> add result >> result;
-    🍕 |> showFizz >> 💩;
+    🍕 |> showBuzz >> 💩;
 }
 
-1 |> showTest |> print;
+// 5 |> showTest |> print;
 [1..20] +> showTest +> print;
