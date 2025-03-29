@@ -1,27 +1,35 @@
 def showFizz() if 🍕 % 3 == 0 : int -> str {
-    "Fizz" >> 💩;
+    "Fizz" >> 💩
 }
 def showFizz() : int -> str{
-    "" >> 💩;
+    "" >> 💩
 }
  
 def showBuzz() if 🍕 % 5 == 0 : int -> str {
-    "Buzz" >> 💩;
+    "Buzz" >> 💩
 }
 def showBuzz() : int -> str {
-    "" >> 💩;
+    "" >> 💩
 }
 
 def showNumber(num) if 🍕 == "" : str -> str {
-    num |> to_string >> 💩;
+    num |> to_string >> 💩
 }
 def showNumber() : str -> str {
-    🍕 >> 💩;
+    🍕 >> 💩
 }
  
 def showTest() : int -> str {
-    🍕 |> showBuzz >> 💩;
+    🍕 |> showFizz |> showBuzz |> showNumber >> 💩
 }
 
-//5 |> showBuzz |> print;
-[1..20] +> showTest +> print;
+// 単一値でのテスト - パイプライン演算子
+"パイプライン演算子テスト:" |> print
+1 |> showTest |> print
+3 |> showTest |> print
+5 |> showTest |> print
+15 |> showTest |> print
+
+// 配列でのテスト - マップ演算子
+"マップ演算子テスト:" |> print
+[1..20] +> showTest +> print
