@@ -178,27 +178,11 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 		}
 		
 		// 環境変数内に定義された関数を呼び出す
-		// lookupFunctionInEnvironment は関数検索を統一化したヘルパー関数
+		// 元の方法へ戻す - ここでapplyNamedFunctionを使用
 		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "要素 %s に対してlookupFunctionInEnvironmentを呼び出し", elem.Inspect())
+			logger.Log(mapFilterDebugLevel, "要素 %s に対してapplyNamedFunctionを呼び出し", elem.Inspect())
 		}
-		
-		// 関数検索ロジックを強化
-		// パイプライン演算子と同じ方法で関数を検索する
-		function, err := lookupFunctionInEnvironment(env, funcName)
-		if err != nil {
-			if logger.IsLevelEnabled(mapFilterDebugLevel) {
-				logger.Log(mapFilterDebugLevel, "関数 '%s' が見つかりませんでした: %s", funcName, err.Error())
-			}
-			return createError("関数 '%s' が見つかりません: %s", funcName, err.Error())
-		}
-		
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "関数 '%s' が見つかりました (アドレス: %p)", funcName, function)
-		}
-		
-		// 関数にピザ値をセットして実行
-		result := applyFunctionWithPizza(function, args)
+		result := applyNamedFunction(env, funcName, args)
 		
 		// エラー処理
 		if result == nil {
@@ -361,26 +345,11 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 		}
 		
 		// 環境変数内に定義された関数を呼び出す
+		// 元のコードを使用
 		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "要素 %s に対してlookupFunctionInEnvironmentを呼び出し", elem.Inspect())
+			logger.Log(mapFilterDebugLevel, "要素 %s に対してapplyNamedFunctionを呼び出し", elem.Inspect())
 		}
-		
-		// 関数検索ロジックを強化
-		// パイプライン演算子と同じ方法で関数を検索する
-		function, err := lookupFunctionInEnvironment(env, funcName)
-		if err != nil {
-			if logger.IsLevelEnabled(mapFilterDebugLevel) {
-				logger.Log(mapFilterDebugLevel, "関数 '%s' が見つかりませんでした: %s", funcName, err.Error())
-			}
-			return createError("関数 '%s' が見つかりません: %s", funcName, err.Error())
-		}
-		
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "関数 '%s' が見つかりました (アドレス: %p)", funcName, function)
-		}
-		
-		// 関数にピザ値をセットして実行
-		result := applyFunctionWithPizza(function, args)
+		result := applyNamedFunction(env, funcName, args)
 		
 		// エラー処理
 		if result == nil {
@@ -405,68 +374,4 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 	}
 	
 	return &object.Array{Elements: resultElements}
-}
-
-// lookupFunctionInEnvironment は環境内から関数を検索するヘルパー関数
-// パイプラインとマップ演算子で関数検索ロジックを統一
-func lookupFunctionInEnvironment(env *object.Environment, name string) (*object.Function, error) {
-	// デバッグログ出力
-	if logger.IsLevelEnabled(mapFilterDebugLevel) {
-		logger.Log(mapFilterDebugLevel, "環境内から関数 '%s' を検索しています", name)
-	}
-	
-	// ビルトイン関数をチェック
-	if _, ok := Builtins[name]; ok {
-		return nil, createEvalError("組み込み関数 '%s' は直接検索されません", name)
-	}
-	
-	// 環境から同名のすべての関数を取得
-	functions := env.GetAllFunctionsByName(name)
-	
-	if len(functions) == 0 {
-		// 関数が見つからない場合のデバッグ情報
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "関数 '%s' は環境内に見つかりませんでした", name)
-			
-			// 環境内のすべての関数名を表示
-			logger.Log(mapFilterDebugLevel, "環境内の登録済み関数:")
-			for k, v := range env.GetVariables() {
-				if _, ok := v.(*object.Function); ok {
-					logger.Log(mapFilterDebugLevel, "  - %s", k)
-				}
-			}
-		}
-		return nil, createEvalError("関数 '%s' が見つかりません", name)
-	}
-	
-	// 条件付き関数とデフォルト関数を分類
-	var defaultFunction *object.Function
-	var conditionalFunctions []*object.Function
-	
-	for _, fn := range functions {
-		if fn.Condition == nil {
-			defaultFunction = fn
-		} else {
-			conditionalFunctions = append(conditionalFunctions, fn)
-		}
-	}
-	
-	// デフォルト関数があればそれを返す
-	if defaultFunction != nil {
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "関数 '%s' のデフォルト関数を返します", name)
-		}
-		return defaultFunction, nil
-	}
-	
-	// デフォルト関数がなければ最初の条件付き関数を返す
-	if len(conditionalFunctions) > 0 {
-		if logger.IsLevelEnabled(mapFilterDebugLevel) {
-			logger.Log(mapFilterDebugLevel, "関数 '%s' の条件付き関数を返します (デフォルト関数がないため)", name)
-		}
-		return conditionalFunctions[0], nil
-	}
-	
-	// ここには到達しないはず（上記で関数が見つからない場合はエラーを返すため）
-	return nil, createEvalError("関数 '%s' の処理中に予期しないエラーが発生しました", name)
 }
