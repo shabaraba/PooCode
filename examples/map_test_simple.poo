@@ -1,0 +1,16 @@
+// Simple test for map operator with the fixed function lookup
+
+// Double function
+def double(): int -> int {
+    🍕 * 2 >> 💩
+}
+
+// Test pipeline operator
+"Pipeline operator test:" |> print
+5 |> double |> print
+
+// Test map operator with range
+"Map operator test with range:" |> print
+[1..5] +> double +> print
+
+print("Done")

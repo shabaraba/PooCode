@@ -1,0 +1,14 @@
+// Very minimal test for map operator
+
+// Test function
+def double() : int -> int {
+    🍕 * 2 >> 💩
+}
+
+// Test pipeline operator first
+"Testing single value:" |> print
+5 |> double |> print
+
+// Test map operator
+"Testing map operator:" |> print
+[1..5] +> double +> print

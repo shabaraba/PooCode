@@ -1,0 +1,11 @@
+// Minimal test for map operator using a built-in function
+
+// Use the built-in print function with both pipeline and map operators
+"Testing with pipeline:" |> print
+5 |> print
+
+"Testing with map operator:" |> print
+1..5 +> print
+
+// Done
+print("Test complete")

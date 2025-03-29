@@ -1,0 +1,13 @@
+// Fizzbuzz test from issue description
+
+def showTest() : int -> str {
+    🍕 |> to_string >> 💩
+}
+
+// Test with pipeline operator
+"Testing pipeline:" |> print
+5 |> showTest |> print
+
+// Test with map operator - this was failing before our fix
+"Testing map operator:" |> print
+[1..3] +> showTest +> print

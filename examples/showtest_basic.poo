@@ -1,0 +1,16 @@
+// Simple showTest function for basic map testing
+
+// String conversion function
+def showTest() : int -> str {
+    🍕 |> to_string >> 💩
+}
+
+// Pipeline test
+"Pipeline test:" |> print
+5 |> showTest |> print
+
+// Map operator test
+"Map operator test:" |> print
+1..5 +> showTest +> print
+
+print("Test complete")
