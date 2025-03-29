@@ -20,8 +20,14 @@ var (
 
 // SetMapFilterDebugLevel はmap/filter操作のデバッグレベルを設定します
 func SetMapFilterDebugLevel(level logger.LogLevel) {
-	mapFilterDebugLevel = level
-	logger.Debug("map/filter操作のデバッグレベルを %d に設定しました", level)
+	// 常にDEBUGレベルを維持する（LevelOffが来てもレベルを下げない）
+	if level != logger.LevelOff {
+		mapFilterDebugLevel = level
+	} else {
+		// LevelOffの場合はDEBUGレベルに設定
+		mapFilterDebugLevel = logger.LevelDebug
+	}
+	logger.Debug("map/filter操作のデバッグレベルを %d に設定しました", mapFilterDebugLevel)
 }
 
 // SetArgumentsDebugLevel は引数バインディングのデバッグレベルを設定します
