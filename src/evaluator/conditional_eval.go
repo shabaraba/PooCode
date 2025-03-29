@@ -114,3 +114,25 @@ func evalConditionalExpression(fn *object.Function, args []object.Object, env *o
 	
 	return isTrue, condResult
 }
+
+// evalCaseStatement はcase文を評価します
+func evalCaseStatement(caseStmt *ast.CaseStatement, env *object.Environment) object.Object {
+	// 🍕変数を取得
+	pizzaVal, ok := env.Get("🍕")
+	if !ok {
+		return createError("🍕変数が見つかりません")
+	}
+
+	// 条件式を評価
+	condResult := Eval(caseStmt.Condition, env)
+	if condResult.Type() == object.ERROR_OBJ {
+		return condResult
+	}
+
+	// 条件が真の場合、結果ブロックを評価
+	if isTruthy(condResult) {
+		return evalBlockStatement(caseStmt.Consequence, env)
+	}
+
+	return NullObj
+}

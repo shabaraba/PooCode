@@ -10,6 +10,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.GLOBAL:
 		return p.parseGlobalStatement()
+	case token.CASE:
+		return p.parseCaseStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -54,4 +56,28 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+// parseCaseStatement はcase文を解析する
+func (p *Parser) parseCaseStatement() *ast.CaseStatement {
+	stmt := &ast.CaseStatement{Token: p.curToken}
+
+	// caseの次のトークンを取得
+	p.nextToken()
+
+	// 条件式を解析
+	stmt.Condition = p.parseExpression(LOWEST)
+
+	// コロンを期待
+	if !p.expectPeek(token.COLON) {
+		return nil
+	}
+
+	// コロンの次のトークンを取得
+	p.nextToken()
+
+	// 結果ブロックを解析
+	stmt.Consequence = p.parseBlockStatement()
+
+	return stmt
 }

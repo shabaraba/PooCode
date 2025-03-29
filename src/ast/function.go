@@ -16,6 +16,7 @@ type FunctionLiteral struct {
 	ReturnType string
 	InputType  string
 	Condition  Expression // 条件付き関数定義の条件部分
+	Cases      []*CaseStatement // case文のリスト
 }
 
 func (fl *FunctionLiteral) expressionNode()      {}
@@ -42,5 +43,26 @@ func (fl *FunctionLiteral) String() string {
 	}
 	out.WriteString(" ")
 	out.WriteString(fl.Body.String())
+	for _, cs := range fl.Cases {
+		out.WriteString(cs.String())
+	}
+	return out.String()
+}
+
+// CaseStatement はcase文を表すノード
+type CaseStatement struct {
+	Token       token.Token // 'case' トークン
+	Condition   Expression
+	Consequence *BlockStatement
+}
+
+func (cs *CaseStatement) statementNode()       {}
+func (cs *CaseStatement) TokenLiteral() string { return cs.Token.Literal }
+func (cs *CaseStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString(cs.TokenLiteral() + " ")
+	out.WriteString(cs.Condition.String())
+	out.WriteString(": ")
+	out.WriteString(cs.Consequence.String())
 	return out.String()
 }
