@@ -1,7 +1,10 @@
 package parser
 
 import (
+	"fmt"
+	
 	"github.com/uncode/ast"
+	"github.com/uncode/logger"
 	"github.com/uncode/token"
 )
 
@@ -11,7 +14,19 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.GLOBAL:
 		return p.parseGlobalStatement()
 	case token.CASE:
+		// 関数内でのみcase文を許可するチェック
+		if !p.insideFunctionBody {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			return nil
+		}
 		return p.parseCaseStatement()
+	case token.DEFAULT:
+		// 関数内でのみdefault文を許可するチェック
+		if !p.insideFunctionBody {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			return nil
+		}
+		return p.parseDefaultCaseStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -61,20 +76,30 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 // parseCaseStatement はcase文を解析する
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	stmt := &ast.CaseStatement{Token: p.curToken}
+	logger.ParserDebug("case文の解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
 
 	// caseの次のトークンを取得
 	p.nextToken()
+	logger.ParserDebug("case文の条件式の解析開始: 現在のトークン = %s", p.curToken.Literal)
 
 	// 条件式を解析
 	stmt.Condition = p.parseExpression(LOWEST)
+	if stmt.Condition != nil {
+		logger.ParserDebug("case文の条件式の解析完了: %s", stmt.Condition.String())
+	} else {
+		logger.ParserDebug("case文の条件式の解析に失敗")
+		return nil
+	}
 
 	// コロンを期待
 	if !p.expectPeek(token.COLON) {
+		logger.ParserDebug("case文の解析エラー: コロンが見つかりませんでした")
 		return nil
 	}
 
 	// コロンの次のトークンを取得
 	p.nextToken()
+	logger.ParserDebug("case文のブロック解析開始")
 
 	// 結果ブロックを解析
 	// 関数内での使用か関数外での使用かに応じて適切なフィールドに設定
@@ -82,10 +107,37 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	
 	// 関数内でのcase文の場合はConsequenceに、それ以外はBodyに設定
 	if p.insideFunctionBody {
+		logger.ParserDebug("関数内case文として処理: Consequenceフィールドに設定")
 		stmt.Consequence = blockStmt
 	} else {
+		logger.ParserDebug("関数外case文として処理: Bodyフィールドに設定")
 		stmt.Body = blockStmt
 	}
 
+	logger.ParserDebug("case文の解析完了")
+	return stmt
+}
+
+// parseDefaultCaseStatement はdefault case文を解析する
+func (p *Parser) parseDefaultCaseStatement() *ast.DefaultCaseStatement {
+	stmt := &ast.DefaultCaseStatement{Token: p.curToken}
+	logger.ParserDebug("default文の解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
+	
+	// コロンを期待
+	if !p.expectPeek(token.COLON) {
+		logger.ParserDebug("default文の解析エラー: コロンが見つかりませんでした")
+		p.errors = append(p.errors, fmt.Sprintf("%d行目: default文の後にコロンが必要です", p.curToken.Line))
+		return nil
+	}
+	
+	// コロンの次のトークンを取得
+	p.nextToken()
+	logger.ParserDebug("default文のブロック解析開始")
+	
+	// ブロックを解析
+	stmt.Body = p.parseBlockStatement()
+	logger.ParserDebug("default文のブロック解析完了")
+	
+	logger.ParserDebug("default文の解析完了")
 	return stmt
 }
