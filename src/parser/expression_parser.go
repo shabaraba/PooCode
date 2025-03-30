@@ -579,66 +579,8 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	return list
 }
 
-// parseCaseStatement はcase文を解析する
-func (p *Parser) parseCaseStatement() *ast.CaseStatement {
-	stmt := &ast.CaseStatement{Token: p.curToken}
+// parseCaseStatement は既に statement_parser.go で定義されているため注釈のみ残しています
+// func (p *Parser) parseCaseStatement() *ast.CaseStatement { ... }
 
-	// caseの次のトークンを取得
-	p.nextToken()
-
-	// 条件式を解析
-	stmt.Condition = p.parseExpression(LOWEST)
-
-	// コロンを期待
-	if !p.expectPeek(token.COLON) {
-		return nil
-	}
-
-	// コロンの次のトークンを取得
-	p.nextToken()
-
-	// 結果ブロックを解析
-	stmt.Consequence = p.parseBlockStatement()
-
-	return stmt
-}
-
-// parseFunctionLiteral は関数リテラルを解析する
-func (p *Parser) parseFunctionLiteral() ast.Expression {
-	lit := &ast.FunctionLiteral{Token: p.curToken}
-
-	// 関数名を解析
-	if p.peekTokenIs(token.IDENT) {
-		p.nextToken()
-		lit.Name = &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
-	}
-
-	// パラメータリストを解析
-	if !p.expectPeek(token.LPAREN) {
-		return nil
-	}
-	lit.Parameters = p.parseFunctionParameters()
-
-	// 戻り値の型を解析
-	if p.peekTokenIs(token.COLON) {
-		p.nextToken()
-		lit.ReturnType = p.parseType()
-	}
-
-	// 関数本体を解析
-	if !p.expectPeek(token.LBRACE) {
-		return nil
-	}
-	lit.Body = p.parseBlockStatement()
-
-	// case文を解析
-	for p.peekTokenIs(token.CASE) {
-		p.nextToken()
-		caseStmt := p.parseCaseStatement()
-		if caseStmt != nil {
-			lit.Cases = append(lit.Cases, caseStmt)
-		}
-	}
-
-	return lit
-}
+// parseFunctionLiteral は既に function_parser.go で定義されているため注釈のみ残しています
+// func (p *Parser) parseFunctionLiteral() ast.Expression { ... }

@@ -77,7 +77,15 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	p.nextToken()
 
 	// 結果ブロックを解析
-	stmt.Consequence = p.parseBlockStatement()
+	// 関数内での使用か関数外での使用かに応じて適切なフィールドに設定
+	blockStmt := p.parseBlockStatement()
+	
+	// 関数内でのcase文の場合はConsequenceに、それ以外はBodyに設定
+	if p.insideFunctionBody {
+		stmt.Consequence = blockStmt
+	} else {
+		stmt.Body = blockStmt
+	}
 
 	return stmt
 }

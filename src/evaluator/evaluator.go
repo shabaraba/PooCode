@@ -53,6 +53,18 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 	case *ast.ExpressionStatement:
 		logger.Debug("式文ノードを評価")
 		return Eval(node.Expression, env)
+		
+	case *ast.BlockStatement:
+		logger.Debug("ブロック文ノードを評価")
+		return evalBlockStatement(node, env)
+		
+	case *ast.CaseStatement:
+		logger.Debug("case文ノードを評価")
+		return evalCaseStatement(node, env)
+		
+	case *ast.DefaultCaseStatement:
+		logger.Debug("default case文ノードを評価")
+		return evalDefaultCaseStatement(node, env)
 
 	case *ast.StringLiteral:
 		logger.Debug("文字列リテラルを評価")

@@ -96,3 +96,19 @@ func (gs *GlobalStatement) String() string {
 	out.WriteString(gs.Name.String())
 	return out.String()
 }
+
+// DefaultCaseStatement はdefault caseを表すノード
+type DefaultCaseStatement struct {
+	Token token.Token // 'default' トークン
+	Body  *BlockStatement
+}
+
+func (ds *DefaultCaseStatement) statementNode()       {}
+func (ds *DefaultCaseStatement) expressionNode()      {}
+func (ds *DefaultCaseStatement) TokenLiteral() string { return ds.Token.Literal }
+func (ds *DefaultCaseStatement) String() string {
+	var out bytes.Buffer
+	out.WriteString("default:\n")
+	out.WriteString(ds.Body.String())
+	return out.String()
+}

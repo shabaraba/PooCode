@@ -12,6 +12,15 @@ import (
 func (p *Parser) parseFunctionLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{Token: p.curToken}
 	logger.Debug("関数リテラルの解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
+	
+	// 関数ブロック内であることを記録
+	oldInsideFunctionBody := p.insideFunctionBody
+	p.insideFunctionBody = true
+	
+	// この関数を抜けるときに元の状態に戻すようにdeferで設定
+	defer func() {
+		p.insideFunctionBody = oldInsideFunctionBody
+	}()
 
 	// 関数名があれば解析
 	if p.peekTokenIs(token.IDENT) {
