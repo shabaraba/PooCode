@@ -58,6 +58,7 @@ type CaseStatement struct {
 }
 
 func (cs *CaseStatement) statementNode()       {}
+func (cs *CaseStatement) expressionNode()      {}
 func (cs *CaseStatement) TokenLiteral() string { return cs.Token.Literal }
 func (cs *CaseStatement) String() string {
 	var out bytes.Buffer

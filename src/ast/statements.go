@@ -104,6 +104,7 @@ type DefaultCaseStatement struct {
 }
 
 func (ds *DefaultCaseStatement) statementNode()       {}
+func (ds *DefaultCaseStatement) expressionNode()      {}
 func (ds *DefaultCaseStatement) TokenLiteral() string { return ds.Token.Literal }
 func (ds *DefaultCaseStatement) String() string {
 	var out bytes.Buffer

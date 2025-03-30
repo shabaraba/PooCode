@@ -78,6 +78,15 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 				return result
 			}
 		}
+		
+		// default case文の場合、evalDefaultCaseStatementを呼び出す
+		if defaultCase, ok := statement.(*ast.DefaultCaseStatement); ok {
+			logger.Debug("  default case文を検出しました")
+			result = evalDefaultCaseStatement(defaultCase, env)
+			if result.Type() == object.ERROR_OBJ {
+				return result
+			}
+		}
 	}
 	
 	logger.Debug("ブロック文の評価を完了しました。最終結果: %s", result.Inspect())
@@ -86,8 +95,8 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 
 // evalCaseStatement はcase文を評価します
 func evalCaseStatement(caseStmt *ast.CaseStatement, env *object.Environment) object.Object {
-	// 🍕変数を取得
-	pizzaVal, ok := env.Get("🍕")
+	// 🍕変数を取得（変数の存在確認のみ）
+	_, ok := env.Get("🍕")
 	if !ok {
 		return createError("🍕変数が見つかりません")
 	}
@@ -100,8 +109,19 @@ func evalCaseStatement(caseStmt *ast.CaseStatement, env *object.Environment) obj
 
 	// 条件が真の場合、結果ブロックを評価
 	if isTruthy(condResult) {
-		return evalBlockStatement(caseStmt.Consequence, env)
+		// Consequenceかbodyのどちらかを評価
+		if caseStmt.Consequence != nil {
+			return evalBlockStatement(caseStmt.Consequence, env)
+		} else if caseStmt.Body != nil {
+			return evalBlockStatement(caseStmt.Body, env)
+		}
 	}
 
 	return NullObj
+}
+
+// evalDefaultCaseStatement はdefault case文を評価します
+func evalDefaultCaseStatement(defaultCase *ast.DefaultCaseStatement, env *object.Environment) object.Object {
+	// 条件なしで常にブロックを評価
+	return evalBlockStatement(defaultCase.Body, env)
 }

@@ -68,8 +68,9 @@ type Parser struct {
 	peekToken token.Token
 	errors    []string
 
-	prefixParseFns map[token.TokenType]prefixParseFn
-	infixParseFns  map[token.TokenType]infixParseFn
+	prefixParseFns    map[token.TokenType]prefixParseFn
+	infixParseFns     map[token.TokenType]infixParseFn
+	insideFunctionBody bool // 関数本体内かどうかのフラグ
 }
 
 // NewParser は新しいパーサーを生成する
