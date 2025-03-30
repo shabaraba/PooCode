@@ -69,8 +69,39 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 				return &object.ReturnValue{Value: leftVal}
 			}
 		}
+
+		// case文の場合、evalCaseStatementを呼び出す
+		if caseStmt, ok := statement.(*ast.CaseStatement); ok {
+			logger.Debug("  case文を検出しました")
+			result = evalCaseStatement(caseStmt, env)
+			if result.Type() == object.ERROR_OBJ {
+				return result
+			}
+		}
 	}
 	
 	logger.Debug("ブロック文の評価を完了しました。最終結果: %s", result.Inspect())
 	return result
+}
+
+// evalCaseStatement はcase文を評価します
+func evalCaseStatement(caseStmt *ast.CaseStatement, env *object.Environment) object.Object {
+	// 🍕変数を取得
+	pizzaVal, ok := env.Get("🍕")
+	if !ok {
+		return createError("🍕変数が見つかりません")
+	}
+
+	// 条件式を評価
+	condResult := Eval(caseStmt.Condition, env)
+	if condResult.Type() == object.ERROR_OBJ {
+		return condResult
+	}
+
+	// 条件が真の場合、結果ブロックを評価
+	if isTruthy(condResult) {
+		return evalBlockStatement(caseStmt.Consequence, env)
+	}
+
+	return NullObj
 }
