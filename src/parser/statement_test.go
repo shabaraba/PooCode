@@ -260,8 +260,11 @@ func TestIndexAssignment(t *testing.T) {
 	}
 }
 
-	// TestCaseStatement はcase文の解析をテストする
+// TestCaseStatement はcase文の解析をテストする
 func TestCaseStatement(t *testing.T) {
+	// ログレベルを設定
+	logger.SetLogLevel(logger.LevelDebug)
+	
 	// 関数内でのcase文使用のテスト
 	input := `
 	def test() {
