@@ -34,5 +34,11 @@ func evalAssignment(node *ast.InfixExpression, env *object.Environment) object.O
 		return &object.ReturnValue{Value: left}
 	}
 
+	// 右辺がCaseStatementの場合はcase文として扱う
+	if caseStmt, ok := right.(*ast.CaseStatement); ok {
+		logger.Debug("case文への代入を検出しました")
+		return evalCaseStatement(caseStmt, env)
+	}
+
 	return createError("代入先が識別子または💩ではありません: %T", right)
 }

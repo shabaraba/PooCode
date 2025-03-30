@@ -192,3 +192,116 @@ func TestPipelineOperator(t *testing.T) {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
+
+func TestCaseStatements(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected interface{}
+	}{
+		{
+			name: "シンプルなcase文",
+			input: `
+				func test() {
+					case 1:
+						100 >> 💩
+					case 2:
+						200 >> 💩
+					case default:
+						300 >> 💩
+				}
+				test()
+			`,
+			expected: int64(300),
+		},
+		{
+			name: "条件付きcase文",
+			input: `
+				func test() {
+					case 🍕 % 2 == 0:
+						"偶数" >> 💩
+					case 🍕 % 2 != 0:
+						"奇数" >> 💩
+					case default:
+						"不明" >> 💩
+				}
+				test(4)
+			`,
+			expected: "偶数",
+		},
+		{
+			name: "複数のcase文",
+			input: `
+				func test() {
+					case 🍕 < 0:
+						"負の数" >> 💩
+					case 🍕 == 0:
+						"ゼロ" >> 💩
+					case 🍕 > 0:
+						"正の数" >> 💩
+					case default:
+						"不明" >> 💩
+				}
+				test(-5)
+			`,
+			expected: "負の数",
+		},
+		{
+			name: "case文のネスト",
+			input: `
+				func test() {
+					case 🍕 > 0:
+						case 🍕 % 2 == 0:
+							"正の偶数" >> 💩
+						case 🍕 % 2 != 0:
+							"正の奇数" >> 💩
+					case 🍕 < 0:
+						case 🍕 % 2 == 0:
+							"負の偶数" >> 💩
+						case 🍕 % 2 != 0:
+							"負の奇数" >> 💩
+					case default:
+						"ゼロ" >> 💩
+				}
+				test(3)
+			`,
+			expected: "正の奇数",
+		},
+		{
+			name: "case文のデフォルト",
+			input: `
+				func test() {
+					case 🍕 == 1:
+						"One" >> 💩
+					case 🍕 == 2:
+						"Two" >> 💩
+					case default:
+						"Other" >> 💩
+				}
+				test(10)
+			`,
+			expected: "Other",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			evaluated := testEval(tt.input)
+			
+			switch expected := tt.expected.(type) {
+			case int64:
+				testIntegerObject(t, evaluated, expected)
+			case string:
+				result, ok := evaluated.(*object.String)
+				if !ok {
+					t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+				}
+				if result.Value != expected {
+					t.Fatalf("string has wrong value. got=%s, want=%s", result.Value, expected)
+				}
+			default:
+				t.Fatalf("未対応の期待値の型: %T", expected)
+			}
+		})
+	}
+}
