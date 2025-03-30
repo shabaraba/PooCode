@@ -54,6 +54,7 @@ type CaseStatement struct {
 	Token       token.Token // 'case' トークン
 	Condition   Expression
 	Consequence *BlockStatement
+	Body        *BlockStatement // 関数外のcase文で使用
 }
 
 func (cs *CaseStatement) statementNode()       {}
@@ -63,6 +64,10 @@ func (cs *CaseStatement) String() string {
 	out.WriteString(cs.TokenLiteral() + " ")
 	out.WriteString(cs.Condition.String())
 	out.WriteString(": ")
-	out.WriteString(cs.Consequence.String())
+	if cs.Consequence != nil {
+		out.WriteString(cs.Consequence.String())
+	} else if cs.Body != nil {
+		out.WriteString(cs.Body.String())
+	}
 	return out.String()
 }
