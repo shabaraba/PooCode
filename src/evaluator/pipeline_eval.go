@@ -116,7 +116,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			}
 		} else {
 			// その他の場合は処理できない
-			return createError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
+			return createError("パイプラインの右側が関数、ブロック、または識別子ではありません: %T", node.Right)
 		}
 	}
 
