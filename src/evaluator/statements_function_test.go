@@ -52,7 +52,7 @@ func TestFunctionApplication(t *testing.T) {
 	}
 }
 
-func TestFunctionReturnValues(t *testing.T) {
+func TestStatementFunctionReturnValues(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string

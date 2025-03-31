@@ -1,0 +1,17 @@
+// caseFizzbuzz.poo - case文によるFizzBuzzの実装
+
+// FizzBuzzをcase文で実装
+func fizzbuzz() {
+  case 🍕 % 15 == 0:
+    "FizzBuzz" >> 💩
+  case 🍕 % 3 == 0:
+    "Fizz" >> 💩
+  case 🍕 % 5 == 0:
+    "Buzz" >> 💩
+  case default:
+    🍕 >> 💩
+}
+
+// 1から30までの数値に対してFizzBuzzを実行
+"FizzBuzz (1-30):" |> print
+1..30 |> map fizzbuzz |> print
