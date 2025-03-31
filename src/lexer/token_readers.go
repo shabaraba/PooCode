@@ -56,6 +56,7 @@ func (l *Lexer) readString() string {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	
+	// 最初の文字が既に識別子として有効であることは呼び出し側でチェック済み
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
@@ -66,6 +67,8 @@ func (l *Lexer) readIdentifier() string {
 // readNumber は数値を読み込む
 func (l *Lexer) readNumber() token.Token {
 	position := l.position
+	startLine := l.line
+	startColumn := l.column
 	isFloat := false
 
 	for isDigit(l.ch) {
@@ -89,15 +92,15 @@ func (l *Lexer) readNumber() token.Token {
 		return token.Token{
 			Type:    token.FLOAT,
 			Literal: literal,
-			Line:    l.line,
-			Column:  l.column,
+			Line:    startLine,
+			Column:  startColumn,
 		}
 	}
 	return token.Token{
 		Type:    token.INT,
 		Literal: literal,
-		Line:    l.line,
-		Column:  l.column,
+		Line:    startLine,
+		Column:  startColumn,
 	}
 }
 
