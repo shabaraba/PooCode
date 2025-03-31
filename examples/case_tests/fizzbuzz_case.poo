@@ -1,0 +1,15 @@
+// FizzBuzzのcase文バージョン
+
+def fizzbuzz() {
+  case 🍕 % 15 == 0:
+    "FizzBuzz" >> 💩
+  case 🍕 % 3 == 0:
+    "Fizz" >> 💩
+  case 🍕 % 5 == 0:
+    "Buzz" >> 💩
+  case default:
+    🍕 |> to_string >> 💩
+}
+
+// 1から20までのFizzBuzz
+1..20 |> map fizzbuzz |> print;

@@ -1,0 +1,20 @@
+// 複数のcase文テスト（順番に評価される）
+
+def test_multiple_case() {
+  // 複数のcase文を持つテスト
+  case 🍕 > 10:
+    "Greater than 10" >> 💩
+  case 🍕 > 5:
+    "Greater than 5" >> 💩 // 最初にマッチしたcaseのみが実行されるため、6-10の場合これが実行
+  case 🍕 > 0:
+    "Greater than 0" >> 💩 // こちらは評価されない
+  case default:
+    "Zero or negative" >> 💩
+}
+
+// テスト実行 - 最初にマッチするcaseのみが実行される
+15 |> test_multiple_case |> print;  // Greater than 10
+7 |> test_multiple_case |> print;   // Greater than 5 (最初に🍕 > 5にマッチするため)
+3 |> test_multiple_case |> print;   // Greater than 0
+0 |> test_multiple_case |> print;   // Zero or negative
+-5 |> test_multiple_case |> print;  // Zero or negative

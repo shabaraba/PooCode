@@ -1,0 +1,16 @@
+// 基本的なcase文テスト
+
+def test_case() {
+  // 通常のcase文テスト
+  case 🍕 % 3 == 0:
+    "Divisible by 3" >> 💩
+  case 🍕 % 5 == 0:
+    "Divisible by 5" >> 💩
+  case default:
+    "Not divisible by 3 or 5" >> 💩
+}
+
+// テスト実行
+3 |> test_case |> print;    // Divisible by 3
+5 |> test_case |> print;    // Divisible by 5
+7 |> test_case |> print;    // Not divisible by 3 or 5
