@@ -1,7 +1,0 @@
-def is_multiple_of(num): int -> bool {
-    🍕 % num == 0 >> 💩
-}
-
-// シンプルな関数定義だけのテスト
-
-9 |> is_multiple_of(2) |> print
