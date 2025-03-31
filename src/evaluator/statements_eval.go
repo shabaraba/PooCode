@@ -41,8 +41,51 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 	// デバッグ出力
 	logger.Debug("ブロック文の評価を開始します。%d 個のステートメント", len(block.Statements))
 	
+	// caseステートメントの処理用変数
+	var foundMatchingCase bool = false
+	var hasDefaultCase bool = false
+	var defaultCaseStmt *ast.DefaultCaseStatement
+	
 	for i, statement := range block.Statements {
 		logger.Debug("  ステートメント %d を評価: %T", i, statement)
+		
+		// case文かdefault文かどうかをチェック
+		if caseStmt, ok := statement.(*ast.CaseStatement); ok {
+			// すでにマッチしたcaseがある場合はスキップ
+			if foundMatchingCase {
+				logger.Debug("  すでにマッチしたcaseがあるため、このcase文をスキップします")
+				continue
+			}
+			
+			logger.Debug("  case文を評価します")
+			// case文の条件を評価
+			result = evalCaseStatement(caseStmt, env)
+			
+			// エラーチェック
+			if isError(result) {
+				logger.Debug("  case文の評価でエラーが発生しました: %s", result.Inspect())
+				return result
+			}
+			
+			// resultがNULL以外ならマッチしたcaseを見つけた
+			if result != NULL {
+				logger.Debug("  マッチするcase文を見つけました。次のcaseはスキップします")
+				foundMatchingCase = true
+			}
+			
+			continue
+		}
+		
+		// default文の処理
+		if defaultStmt, ok := statement.(*ast.DefaultCaseStatement); ok {
+			hasDefaultCase = true
+			defaultCaseStmt = defaultStmt
+			// ここではまだ評価せず、すべてのcaseを確認後に評価
+			logger.Debug("  default case文を検出。後で評価します")
+			continue
+		}
+		
+		// 通常の文の評価
 		result = Eval(statement, env)
 		
 		// ReturnValue（関数からの戻り値）が検出された場合は評価を中止して戻る
@@ -69,59 +112,16 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 				return &object.ReturnValue{Value: leftVal}
 			}
 		}
-
-		// case文の場合、evalCaseStatementを呼び出す
-		if caseStmt, ok := statement.(*ast.CaseStatement); ok {
-			logger.Debug("  case文を検出しました")
-			result = evalCaseStatement(caseStmt, env)
-			if result.Type() == object.ERROR_OBJ {
-				return result
-			}
-		}
-		
-		// default case文の場合、evalDefaultCaseStatementを呼び出す
-		if defaultCase, ok := statement.(*ast.DefaultCaseStatement); ok {
-			logger.Debug("  default case文を検出しました")
-			result = evalDefaultCaseStatement(defaultCase, env)
-			if result.Type() == object.ERROR_OBJ {
-				return result
-			}
-		}
+	}
+	
+	// マッチするcaseが見つからず、defaultがある場合
+	if !foundMatchingCase && hasDefaultCase && defaultCaseStmt != nil {
+		logger.Debug("  マッチするcaseが見つからなかったため、default caseを評価します")
+		result = evalDefaultCaseStatement(defaultCaseStmt, env)
 	}
 	
 	logger.Debug("ブロック文の評価を完了しました。最終結果: %s", result.Inspect())
 	return result
 }
 
-// evalCaseStatement はcase文を評価します
-func evalCaseStatement(caseStmt *ast.CaseStatement, env *object.Environment) object.Object {
-	// 🍕変数を取得（変数の存在確認のみ）
-	_, ok := env.Get("🍕")
-	if !ok {
-		return createError("🍕変数が見つかりません")
-	}
-
-	// 条件式を評価
-	condResult := Eval(caseStmt.Condition, env)
-	if condResult.Type() == object.ERROR_OBJ {
-		return condResult
-	}
-
-	// 条件が真の場合、結果ブロックを評価
-	if isTruthy(condResult) {
-		// Consequenceかbodyのどちらかを評価
-		if caseStmt.Consequence != nil {
-			return evalBlockStatement(caseStmt.Consequence, env)
-		} else if caseStmt.Body != nil {
-			return evalBlockStatement(caseStmt.Body, env)
-		}
-	}
-
-	return NullObj
-}
-
-// evalDefaultCaseStatement はdefault case文を評価します
-func evalDefaultCaseStatement(defaultCase *ast.DefaultCaseStatement, env *object.Environment) object.Object {
-	// 条件なしで常にブロックを評価
-	return evalBlockStatement(defaultCase.Body, env)
-}
+// これらの関数は case_eval.go に移動しました
