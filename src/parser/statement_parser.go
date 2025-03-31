@@ -16,16 +16,37 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.CASE:
 		// 関数内でのみcase文を許可するチェック
 		if !p.insideFunctionBody {
-			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数ブロック内でのみ使用できます。関数定義内で使用してください", p.curToken.Line))
+			logger.ParserDebug("関数外でのcase文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		
+		// ネストしたブロック内のcase文を禁止する追加チェック
+		// 直接関数の本体内でないcase文は禁止
+		if p.isNestedBlock() {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数のルート階層でのみ使用できます。ネストされたブロック内では使用できません", p.curToken.Line))
+			logger.ParserDebug("ネストされたブロック内でのcase文使用を検出: エラー報告")
+			return nil
+		}
+		
+		logger.ParserDebug("関数内でのcase文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseCaseStatement()
 	case token.DEFAULT:
 		// 関数内でのみdefault文を許可するチェック
 		if !p.insideFunctionBody {
-			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数ブロック内でのみ使用できます。関数定義内で使用してください", p.curToken.Line))
+			logger.ParserDebug("関数外でのdefault文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		
+		// ネストしたブロック内のdefault文を禁止する追加チェック
+		if p.isNestedBlock() {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数のルート階層でのみ使用できます。ネストされたブロック内では使用できません", p.curToken.Line))
+			logger.ParserDebug("ネストされたブロック内でのdefault文使用を検出: エラー報告")
+			return nil
+		}
+		
+		logger.ParserDebug("関数内でのdefault文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseDefaultCaseStatement()
 	default:
 		return p.parseExpressionStatement()
@@ -59,6 +80,11 @@ func (p *Parser) parseGlobalStatement() *ast.GlobalStatement {
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
+	
+	// 現在のinsideFunctionBodyフラグを保存
+	// ブロック解析中は親のコンテキスト（関数内かどうか）を維持する
+	prevInsideFunctionBody := p.insideFunctionBody
+	logger.ParserDebug("ブロック解析開始 [insideFunctionBody=%v]", p.insideFunctionBody)
 
 	p.nextToken()
 
@@ -69,14 +95,22 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		}
 		p.nextToken()
 	}
-
+	
+	// ブロック解析が終わったら元の値に戻す（念のため）
+	if p.insideFunctionBody != prevInsideFunctionBody {
+		logger.ParserDebug("注意: ブロック解析中にinsideFunctionBodyが変更されました (%v -> %v)", 
+			prevInsideFunctionBody, p.insideFunctionBody)
+		p.insideFunctionBody = prevInsideFunctionBody
+	}
+	
+	logger.ParserDebug("ブロック解析終了 [insideFunctionBody=%v]", p.insideFunctionBody)
 	return block
 }
 
 // parseCaseStatement はcase文を解析する
 func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	stmt := &ast.CaseStatement{Token: p.curToken}
-	logger.ParserDebug("case文の解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
+	logger.ParserDebug("case文の解析開始 at %d:%d [insideFunctionBody=%v]", p.curToken.Line, p.curToken.Column, p.insideFunctionBody)
 
 	// caseの次のトークンを取得
 	p.nextToken()
@@ -94,6 +128,7 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	// コロンを期待
 	if !p.expectPeek(token.COLON) {
 		logger.ParserDebug("case文の解析エラー: コロンが見つかりませんでした")
+		p.errors = append(p.errors, fmt.Sprintf("%d行目: case文の後にコロンが必要です", p.curToken.Line))
 		return nil
 	}
 
@@ -102,26 +137,21 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	logger.ParserDebug("case文のブロック解析開始")
 
 	// 結果ブロックを解析
-	// 関数内での使用か関数外での使用かに応じて適切なフィールドに設定
+	// 関数内のcase文では常にConsequenceフィールドを使用する
 	blockStmt := p.parseBlockStatement()
+	logger.ParserDebug("case文のブロック解析完了")
 	
-	// 関数内でのcase文の場合はConsequenceに、それ以外はBodyに設定
-	if p.insideFunctionBody {
-		logger.ParserDebug("関数内case文として処理: Consequenceフィールドに設定")
-		stmt.Consequence = blockStmt
-	} else {
-		logger.ParserDebug("関数外case文として処理: Bodyフィールドに設定")
-		stmt.Body = blockStmt
-	}
-
-	logger.ParserDebug("case文の解析完了")
+	// 常にConsequenceフィールドを使用
+	stmt.Consequence = blockStmt
+	logger.ParserDebug("case文として解析完了")
+	
 	return stmt
 }
 
 // parseDefaultCaseStatement はdefault case文を解析する
 func (p *Parser) parseDefaultCaseStatement() *ast.DefaultCaseStatement {
 	stmt := &ast.DefaultCaseStatement{Token: p.curToken}
-	logger.ParserDebug("default文の解析開始 at %d:%d", p.curToken.Line, p.curToken.Column)
+	logger.ParserDebug("default文の解析開始 at %d:%d [insideFunctionBody=%v]", p.curToken.Line, p.curToken.Column, p.insideFunctionBody)
 	
 	// コロンを期待
 	if !p.expectPeek(token.COLON) {
@@ -138,6 +168,6 @@ func (p *Parser) parseDefaultCaseStatement() *ast.DefaultCaseStatement {
 	stmt.Body = p.parseBlockStatement()
 	logger.ParserDebug("default文のブロック解析完了")
 	
-	logger.ParserDebug("default文の解析完了")
+	logger.ParserDebug("default文として解析完了")
 	return stmt
 }

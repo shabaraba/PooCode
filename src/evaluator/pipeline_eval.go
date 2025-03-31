@@ -73,14 +73,15 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 	logger.Debug("パイプラインで🍕に値を明示的に設定します: %s (%s)\n", left.Inspect(), left.Type())
 	// nullを無視（printの結果などがnullの場合に問題が発生）
 	if left.Type() != object.NULL_OBJ {
-		// 文字列から整数への自動変換を抑制（条件付き関数で型の不一致問題を解決）
-		tempEnv.Set("🍕", left)
+		// 文字列から整数への変換を試みる
+		convertedValue := maybeConvertToInteger(left)
+		tempEnv.Set("🍕", convertedValue)
 		
 		// パイプラインの入力の型と内容を詳細に記録
-		if left.Type() == object.STRING_OBJ {
-			logger.Debug("パイプライン入力は文字列型です。自動変換を抑制します。内容: %s", left.Inspect())
-		} else if left.Type() == object.INTEGER_OBJ {
-			logger.Debug("パイプライン入力は整数型です: %d", left.(*object.Integer).Value)
+		if convertedValue.Type() == object.STRING_OBJ {
+			logger.Debug("パイプライン入力は文字列型です: %s", convertedValue.Inspect())
+		} else if convertedValue.Type() == object.INTEGER_OBJ {
+			logger.Debug("パイプライン入力は整数型です: %d", convertedValue.(*object.Integer).Value)
 		}
 	} else {
 		logger.Debug("左辺値がnullのため、🍕の設定をスキップします")
@@ -116,7 +117,7 @@ func evalPipeline(node *ast.InfixExpression, env *object.Environment) object.Obj
 			}
 		} else {
 			// その他の場合は処理できない
-			return createError("パイプラインの右側が関数または識別子ではありません: %T", node.Right)
+			return createError("パイプラインの右側が関数、ブロック、または識別子ではありません: %T", node.Right)
 		}
 	}
 

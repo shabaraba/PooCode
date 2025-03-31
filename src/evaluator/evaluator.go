@@ -112,6 +112,10 @@ func Eval(node interface{}, env *object.Environment) object.Object {
 			return index
 		}
 		return evalIndexExpression(left, index, env)
+		
+	case *ast.BlockExpression:
+		logger.Debug("ブロック式を評価")
+		return evalBlockExpression(node, env)
 
 	case *ast.PizzaLiteral:
 		logger.Debug("ピザリテラルを評価")

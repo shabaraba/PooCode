@@ -174,8 +174,21 @@ func (l *Lexer) NextToken() token.Token {
 			tok = l.newToken(token.ILLEGAL, string(l.ch))
 		}
 	case '"':
-		tok.Type = token.STRING
-		tok.Literal = l.readString()
+		// 文字列リテラルの開始位置を記録
+		startLine := l.line
+		startColumn := l.column
+		
+		// 文字列を読み込む
+		literal := l.readString()
+		
+		// トークンを生成
+		tok = token.Token{
+			Type:    token.STRING,
+			Literal: literal,
+			Line:    startLine,
+			Column:  startColumn,
+		}
+		return tok
 	case '🍕':
 		tok = l.newToken(token.PIZZA, string(l.ch))
 	case '💩':
@@ -185,8 +198,20 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Literal = ""
 	default:
 		if isLetter(l.ch) {
-			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Literal)
+			// 識別子の開始位置を記録
+			startLine := l.line
+			startColumn := l.column
+			
+			// 識別子を読み込む
+			literal := l.readIdentifier()
+			
+			// トークンを生成
+			tok = token.Token{
+				Type:    token.LookupIdent(literal),
+				Literal: literal,
+				Line:    startLine,
+				Column:  startColumn,
+			}
 			return tok
 		} else if isDigit(l.ch) {
 			return l.readNumber()

@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/uncode/ast"
@@ -47,6 +48,12 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	// 文字列の演算
 	if left.Type() == object.STRING_OBJ && right.Type() == object.STRING_OBJ {
 		return evalStringInfixExpression(operator, left, right)
+	}
+	
+	// 文字列と整数の比較
+	if (left.Type() == object.STRING_OBJ && right.Type() == object.INTEGER_OBJ) ||
+	   (left.Type() == object.INTEGER_OBJ && right.Type() == object.STRING_OBJ) {
+		return evalStringIntegerInfixExpression(operator, left, right)
 	}
 	
 	// 真偽値の演算
@@ -156,7 +163,53 @@ func evalStringInfixExpression(operator string, left, right object.Object) objec
 	}
 }
 
-// evalBooleanInfixExpression は真偽値の中置式を評価する
+// evalStringIntegerInfixExpression は文字列と整数の比較を評価する
+func evalStringIntegerInfixExpression(operator string, left, right object.Object) object.Object {
+	// 数値の自動変換を試みる
+	var leftNum, rightNum int64
+	var leftStr, rightStr string
+	var err error
+
+	// 左辺と右辺の型に基づいて変数を設定
+	if left.Type() == object.STRING_OBJ {
+		leftStr = left.(*object.String).Value
+		rightNum = right.(*object.Integer).Value
+		// 文字列を数値に変換
+		// 文字列が数値として解釈できるなら変換して比較、そうでなければ文字列と数値の特別な比較ルールを適用
+		if leftNum, err = strconv.ParseInt(leftStr, 10, 64); err != nil {
+			// 文字列が数値ではない場合、ほとんどの演算で常にfalseを返す
+			// ただし !=, == の場合は特別処理
+			switch operator {
+			case "==", "eq":
+				return FALSE // 文字列と数値は常に等しくない
+			case "!=":
+				return TRUE // 文字列と数値は常に異なる
+			default:
+				return createError("型の不一致による比較: %s %s %s", left.Type(), operator, right.Type())
+			}
+		}
+		// 文字列が数値として解釈できる場合、数値比較として扱う
+		return evalIntegerInfixExpression(operator, &object.Integer{Value: leftNum}, right)
+	} else {
+		// 整数が左辺、文字列が右辺の場合
+		leftNum = left.(*object.Integer).Value
+		rightStr = right.(*object.String).Value
+		// 文字列を数値に変換
+		if rightNum, err = strconv.ParseInt(rightStr, 10, 64); err != nil {
+			// 文字列が数値ではない場合、ほとんどの演算で常にfalseを返す
+			switch operator {
+			case "==", "eq":
+				return FALSE // 数値と文字列は常に等しくない
+			case "!=":
+				return TRUE // 数値と文字列は常に異なる
+			default:
+				return createError("型の不一致による比較: %s %s %s", left.Type(), operator, right.Type())
+			}
+		}
+		// 文字列が数値として解釈できる場合、数値比較として扱う
+		return evalIntegerInfixExpression(operator, left, &object.Integer{Value: rightNum})
+	}
+}
 func evalBooleanInfixExpression(operator string, left, right object.Object) object.Object {
 	leftVal := left.(*object.Boolean).Value
 	rightVal := right.(*object.Boolean).Value

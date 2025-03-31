@@ -231,18 +231,5 @@ func testStringLiteral(t *testing.T, exp ast.Expression, expected string) bool {
 	return true
 }
 
-// testBooleanLiteral は式が期待する真偽値リテラルかをテストする
-func testBooleanLiteral(t *testing.T, exp ast.Expression, expected bool) bool {
-	bo, ok := exp.(*ast.Boolean)
-	if !ok {
-		t.Errorf("exp not *ast.Boolean. got=%T", exp)
-		return false
-	}
-
-	if bo.Value != expected {
-		t.Errorf("bo.Value not %t. got=%t", expected, bo.Value)
-		return false
-	}
-
-	return true
-}
+// テスト用ヘルパーのインポート
+// testBooleanLiteralはexpression_test.goにすでに定義されているので削除

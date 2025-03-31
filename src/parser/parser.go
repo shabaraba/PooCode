@@ -94,6 +94,7 @@ func NewParser(tokens []token.Token) *Parser {
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+	p.registerPrefix(token.LBRACE, p.parseBlockExpression)  // ブロック式の解析関数を追加
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 	p.registerPrefix(token.CLASS, p.parseClassLiteral)
 	p.registerPrefix(token.PIZZA, p.parsePizzaLiteral)
@@ -141,6 +142,66 @@ func NewParser(tokens []token.Token) *Parser {
 // Errors はパース中に発生したエラーを返す
 func (p *Parser) Errors() []string {
 	return p.errors
+}
+
+// isNestedBlock はパーサーが現在ネストされたブロック内にいるかどうかを判定する
+func (p *Parser) isNestedBlock() bool {
+	// ブロック式のネスト状態を確認するためのヘルパー
+	// パーサーの状態から現在ネストされたブロック内かどうかを判定
+	
+	// このメソッドは次の条件が両方満たされた場合にtrueを返す:
+	// 1. 関数本体内にいる (insideFunctionBodyがtrue)
+	// 2. 現在ネストされたブロックを解析中
+	
+	// 関数内でない場合、ネストしたブロックかどうかは関係ない
+	if !p.insideFunctionBody {
+		return false
+	}
+	
+	// ネストレベルを確認
+	return p.isParsingNestedBlock()
+}
+
+// isParsingNestedBlock は現在解析しているブロックがネストされているかを確認する
+func (p *Parser) isParsingNestedBlock() bool {
+	// このメソッドは現在のパーサーの状態からネストされたブロックを解析中かを判定
+	
+	// 現在のトークン列と位置を検査して、ネストレベルを判定
+	// 簡易実装: 現在のブロックが関数のルート直下かどうかを判定
+	
+	// 現在の位置から遡って、関数宣言と最初のブレースを探す
+	braceCount := 0
+	
+	// 現在のトークンの前までのトークンを検査
+	for i := p.position; i >= 0; i-- {
+		if i >= len(p.tokens) {
+			continue
+		}
+		
+		token := p.tokens[i]
+		
+		// ブレースのカウント
+		if token.Type == "{" {
+			braceCount++
+		} else if token.Type == "}" {
+			braceCount--
+		}
+		
+		// 関数宣言を見つけた場合
+		if token.Type == "def" {
+			// 関数宣言後に見つかったブレースが2つ以上なら、ネストされたブロック
+			// (1つ目は関数ブロック自体、2つ目以降はネストされたブロック)
+			logger.ParserDebug("関数宣言を検出: ブレースカウント=%d", braceCount)
+			return braceCount >= 2
+		}
+	}
+	
+	// デバッグ情報を記録
+	logger.ParserDebug("ネストレベルの判定: braceCount=%d", braceCount)
+	
+	// 関数宣言が見つからない場合、またはネストレベルが判定できない場合は
+	// シンプルな判定として、ブレースが2つ以上あればネストされたブロックとする
+	return braceCount >= 2
 }
 
 // nextToken は次のトークンに進む

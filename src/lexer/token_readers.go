@@ -36,6 +36,10 @@ func (l *Lexer) readString() string {
 				result = append(result, '\'') // 一重引用符
 			case '0':
 				result = append(result, '\x00') // NULL文字
+			case '+', '|', '>', ' ', '\n':
+				// よく間違えられる文字に対する特別なケース
+				// 例えば "string" + var のようなケースで " + var" を別の文字列として解釈しないように
+				result = append(result, l.ch)
 			default:
 				// 未知のエスケープシーケンスの場合はそのまま両方の文字を追加
 				result = append(result, '\\')
@@ -49,6 +53,11 @@ func (l *Lexer) readString() string {
 		l.readChar()
 	}
 	
+	// 文字列の終端（閉じ二重引用符）がまだ残っていればスキップ
+	if l.ch == '"' {
+		l.readChar()
+	}
+	
 	return string(result)
 }
 
@@ -56,6 +65,7 @@ func (l *Lexer) readString() string {
 func (l *Lexer) readIdentifier() string {
 	position := l.position
 	
+	// 最初の文字が既に識別子として有効であることは呼び出し側でチェック済み
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
@@ -66,6 +76,8 @@ func (l *Lexer) readIdentifier() string {
 // readNumber は数値を読み込む
 func (l *Lexer) readNumber() token.Token {
 	position := l.position
+	startLine := l.line
+	startColumn := l.column
 	isFloat := false
 
 	for isDigit(l.ch) {
@@ -89,15 +101,15 @@ func (l *Lexer) readNumber() token.Token {
 		return token.Token{
 			Type:    token.FLOAT,
 			Literal: literal,
-			Line:    l.line,
-			Column:  l.column,
+			Line:    startLine,
+			Column:  startColumn,
 		}
 	}
 	return token.Token{
 		Type:    token.INT,
 		Literal: literal,
-		Line:    l.line,
-		Column:  l.column,
+		Line:    startLine,
+		Column:  startColumn,
 	}
 }
 

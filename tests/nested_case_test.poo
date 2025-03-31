@@ -1,0 +1,21 @@
+// 関数内でのcase文使用のテスト
+// 🍕 はパイプラインの入力値として自動的に設定される
+def testFunc(): int -> str {
+  case 🍕 > 0: {
+    "positive" >> 💩
+  }
+  default: {
+    "non-positive" >> 💩
+  }
+}
+
+// テスト実行
+"testFunc: " |> print
+
+// 正の値をテスト
+1 |> testFunc |> print
+
+// ゼロのテスト
+0 |> testFunc |> print
+
+// 注意: 負の値のテストは現在の言語仕様では難しいので省略しています

@@ -41,6 +41,15 @@ func evalCaseStatement(node *ast.CaseStatement, env *object.Environment) object.
 	logCaseDebug("case文の評価: 条件=%s, 🍕値=%s", 
 		node.Condition.String(), pizzaVal.Inspect())
 	
+	// 条件式評価中のフラグを設定
+	if currentFunction != nil {
+		currentFunction.Condition = node.Condition
+		// 評価後に元に戻すように後始末
+		defer func() {
+			currentFunction.Condition = nil
+		}()
+	}
+	
 	// 条件式を評価
 	condition := Eval(node.Condition, env)
 	if isError(condition) {
