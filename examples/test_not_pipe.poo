@@ -1,2 +1,0 @@
-// パイプ演算子を用いたnot関数の使用
-true |> not |> print  // falseが表示されるはず

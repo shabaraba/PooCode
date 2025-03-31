@@ -1,6 +1,0 @@
-// ブール値のテスト
-true >> bool_val
-bool_val |> print  // trueが表示されるはず
-
-false >> bool_val2
-bool_val2 |> print  // falseが表示されるはず
