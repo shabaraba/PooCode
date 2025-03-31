@@ -1,0 +1,9 @@
+// シンプルなテスト
+
+"Hello world!" |> print
+
+func testFunction() {
+    "Test function called" >> 💩
+}
+
+testFunction() |> print

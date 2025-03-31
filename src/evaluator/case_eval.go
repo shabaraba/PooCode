@@ -45,6 +45,7 @@ func evalCaseStatement(node *ast.CaseStatement, env *object.Environment) object.
 	condition := Eval(node.Condition, env)
 	if isError(condition) {
 		logCaseDebug("case文の条件評価でエラー: %s", condition.Inspect())
+		// エラーを返して、evalBlockStatementでハンドリングする
 		return condition
 	}
 	
@@ -56,9 +57,13 @@ func evalCaseStatement(node *ast.CaseStatement, env *object.Environment) object.
 	if isTruthy(condition) {
 		logCaseDebug("条件が真: ブロックを実行")
 		if node.Body != nil {
-			return evalBlockStatement(node.Body, env)
+			result := evalBlockStatement(node.Body, env)
+			logCaseDebug("case文のブロック評価結果: %s", result.Inspect())
+			return result
 		} else if node.Consequence != nil {
-			return evalBlockStatement(node.Consequence, env)
+			result := evalBlockStatement(node.Consequence, env)
+			logCaseDebug("case文の結果ブロック評価結果: %s", result.Inspect())
+			return result
 		}
 		logCaseDebug("警告: case文に実行可能なブロックがありません")
 		return NullObj
@@ -73,7 +78,9 @@ func evalCaseStatement(node *ast.CaseStatement, env *object.Environment) object.
 func evalDefaultCaseStatement(node *ast.DefaultCaseStatement, env *object.Environment) object.Object {
 	logCaseDebug("default文の評価を開始")
 	// 条件チェックなし、常にブロックを実行
-	return evalBlockStatement(node.Body, env)
+	result := evalBlockStatement(node.Body, env)
+	logCaseDebug("default文の評価結果: %s", result.Inspect())
+	return result
 }
 
 // 🍕変数の取得補助関数

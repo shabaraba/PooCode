@@ -76,7 +76,9 @@ func evalBlockStatement(block *ast.BlockStatement, env *object.Environment) obje
 			if isError(caseResult) {
 				logger.Debug("  case文の評価でエラーが発生しました: %s", caseResult.Inspect())
 				logCaseDebug("case文の評価エラー: %s", caseResult.Inspect())
-				return caseResult
+				
+				// エラーの場合は次のcase文を評価する (変更点: エラーをすぐに返さない)
+				continue
 			}
 			
 			// NULLの場合は条件が一致しなかったので続行
