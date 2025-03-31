@@ -153,9 +153,10 @@ func evalMapOperation(node *ast.InfixExpression, env *object.Environment) object
 			return createError("関数 '%s' が見つかりません", funcName)
 		}
 		
-		// 関数を適用
+		// 関数を適用 (case文サポート)
 		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyFunctionWithPizza(functions[0], args)
+		logCaseDebug("map演算子: case文対応で関数 %s を呼び出します", funcName)
+		result := applyCaseBare(functions[0], args)
 		
 		if result == nil || result.Type() == object.ERROR_OBJ {
 			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())
@@ -297,9 +298,10 @@ func evalFilterOperation(node *ast.InfixExpression, env *object.Environment) obj
 			return createError("関数 '%s' が見つかりません", funcName)
 		}
 		
-		// 関数を適用
+		// 関数を適用 (case文サポート)
 		logger.Debug("要素 %s に対して関数 %s を適用", elem.Inspect(), funcName)
-		result := applyFunctionWithPizza(functions[0], args)
+		logCaseDebug("filter演算子: case文対応で関数 %s を呼び出します", funcName)
+		result := applyCaseBare(functions[0], args)
 		
 		if result == nil || result.Type() == object.ERROR_OBJ {
 			logger.Debug("関数 %s の適用中にエラーが発生: %s", funcName, result.Inspect())

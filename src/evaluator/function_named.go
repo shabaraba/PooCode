@@ -3,7 +3,6 @@ package evaluator
 import (
 	"fmt"
 	
-	"github.com/uncode/ast"
 	"github.com/uncode/logger"
 	"github.com/uncode/object"
 )
@@ -34,7 +33,7 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 		return builtin.Fn(args...)
 	}
 
-	// 環境から同名のすべての関数を取得
+	// 環境から同名のすべての関数を検索
 	functions := env.GetAllFunctionsByName(name)
 
 	if len(functions) == 0 {
@@ -67,13 +66,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 関数が1つだけの場合は直接適用
 	if len(functions) == 1 {
 		logger.Debug("関数が1つだけ見つかりました")
-		result := applyFunctionWithPizza(functions[0], args)
-		if result != nil {
-			return result
-		}
-		// nilが返された場合は、引数が合わなかった
-		logger.Debug("単独関数の引数が合いませんでした")
-		return createEvalError("関数 '%s' の引数が合いません", name)
+		// case文対応: applyCaseBare を使用して呼び出す
+		logCaseDebug("単独関数をcase文対応で実行: %s", functions[0].Inspect())
+		return applyCaseBare(functions[0], args)
 	}
 
 	logger.Debug("複数の関数が見つかりました: %d", len(functions))
@@ -151,12 +146,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 条件に一致する関数が見つかった場合、その関数を実行
 	if matchedCondFunc != nil {
 		logger.Debug("条件に一致する関数を実行します")
-		result := applyFunctionWithPizza(matchedCondFunc, args)
-		if result != nil {
-			return result
-		}
-		// nilが返された場合は、パラメータとして引数が合わなかった
-		logger.Debug("条件付き関数の引数が合いませんでした")
+		// case文対応: applyCaseBare を使用して呼び出す
+		logCaseDebug("条件付き関数をcase文対応で実行: %s", matchedCondFunc.Inspect())
+		return applyCaseBare(matchedCondFunc, args)
 	}
 
 	// 条件付き関数が該当しなかった場合、デフォルト関数を使用
@@ -204,13 +196,9 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 	// 見つかったデフォルト関数を実行
 	if len(defaultFuncs) > 0 {
 		logger.Debug("デフォルト関数を使用します: %s", name)
-		result := applyFunctionWithPizza(defaultFuncs[0], args)
-		if result != nil {
-			return result
-		}
-		// nilが返された場合は、パラメータとして引数が合わなかった
-		logger.Debug("デフォルト関数の引数が合いませんでした")
-		return createEvalError("関数 '%s' の引数が合いません", name)
+		// case文対応: applyCaseBare を使用して呼び出す
+		logCaseDebug("デフォルト関数をcase文対応で実行: %s", defaultFuncs[0].Inspect())
+		return applyCaseBare(defaultFuncs[0], args)
 	} else {
 		// どのような関数も見つからなかった場合、エラーを返す
 		logger.Debug("適切なデフォルト関数が見つかりませんでした")
@@ -221,102 +209,10 @@ func applyNamedFunction(env *object.Environment, name string, args []object.Obje
 }
 
 // applyFunctionWithPizza は関数に🍕をセットして実行する
+// 注: この関数は後方互換性のために維持しています
+// 新しい実装ではapplyCaseBareを使用してください
 func applyFunctionWithPizza(fn *object.Function, args []object.Object) object.Object {
-	// 関数呼び出し用の新しい環境を作成
-	extendedEnv := object.NewEnclosedEnvironment(fn.Env)
-	funcName, _ := fn.Name()
-	
-	// デバッグ情報
-	if isArgumentsDebugEnabled {
-		logger.Debug("関数呼び出し: %s", funcName)
-		for i, arg := range args {
-			logger.Debug("  引数%d: %s (%s)", i, arg.Inspect(), arg.Type())
-		}
-	}
-
-	// 引数をバインド
-	if len(args) > 0 {
-		// 第1引数は🍕に設定
-		// 🍕値を環境変数として設定（後方互換性のため）
-		logger.Debug("第1引数を🍕にセット: %s", args[0].Inspect())
-		extendedEnv.Set("🍕", args[0])
-		LogArgumentBinding(funcName, "🍕", args[0])
-		
-		// 新しい実装: 🍕値を関数オブジェクト自体に設定
-		logger.Debug("関数オブジェクトに🍕値を直接設定: %s", args[0].Inspect())
-		fn.SetPizzaValue(args[0])
-		
-		// パラメータがある場合、パラメータに引数をバインド
-		// これには二つのケースがある:
-		// 1. 引数が1つだけの場合（パイプラインの基本的な動作）: 🍕と最初のパラメータに同じ値をバインド
-		// 2. 引数が複数ある場合: 2番目以降の引数を順番にパラメータにバインド
-		if len(fn.Parameters) > 0 {
-			if len(args) == 1 {
-				// 引数が1つの場合、最初のパラメータにも同じ値をバインド（利便性のため）
-				paramName := fn.Parameters[0].Value
-				extendedEnv.Set(paramName, args[0])
-				LogArgumentBinding(funcName, paramName, args[0])
-			} else {
-				// 引数が複数の場合、2番目以降の引数を順番にパラメータにバインド
-				for i := 0; i < len(fn.Parameters) && i+1 < len(args); i++ {
-					paramName := fn.Parameters[i].Value
-					extendedEnv.Set(paramName, args[i+1])
-					LogArgumentBinding(funcName, paramName, args[i+1])
-				}
-			}
-		}
-
-		// デバッグ詳細情報
-		if isArgumentsDebugEnabled {
-			// パラメータの詳細をログに出力
-			for i, param := range fn.Parameters {
-				logger.Debug("パラメータ%d: %s", i, param.Value)
-			}
-			
-			// 環境内の全変数をデバッグ出力
-			logger.Debug("関数環境内の全変数:")
-			for k, v := range extendedEnv.GetVariables() {
-				logger.Debug("  %s = %s", k, v.Inspect())
-			}
-		}
-	} else if len(fn.Parameters) > 0 {
-		// 引数が必要なのに渡されていない場合はnilを返す
-		logger.Debug("引数がまったくありませんが、関数は引数を必要としています")
-		return nil
-	}
-
-	// 関数本体を評価
-	astBody, ok := fn.ASTBody.(*ast.BlockStatement)
-	if !ok {
-		return createEvalError("関数の本体がBlockStatementではありません")
-	}
-
-	// 現在の関数コンテキストを保存
-	prevFunction := currentFunction
-	
-	// 現在の関数コンテキストを設定
-	logger.Debug("現在の関数コンテキストを設定: %s", funcName)
-	currentFunction = fn
-	
-	logger.Debug("関数 '%s' の本体を評価中...", funcName)
-	evaluated := evalBlockStatement(astBody, extendedEnv)
-	logger.Debug("関数 '%s' の評価結果: %s (%T)", funcName, evaluated.Inspect(), evaluated)
-	
-	// 元の関数コンテキストを復元
-	logger.Debug("元の関数コンテキストを復元")
-	currentFunction = prevFunction
-
-	// ReturnValue の場合は Value を抽出
-	if returnValue, ok := evaluated.(*object.ReturnValue); ok {
-		logger.Debug("関数 '%s' から戻り値を受け取りました: %s", funcName, returnValue.Inspect())
-		// Valueフィールドがnilの場合は空のオブジェクトを返す
-		if returnValue.Value == nil {
-			logger.Debug("戻り値が nil です、NULL を返します")
-			return NullObj
-		}
-		return returnValue.Value
-	}
-
-	logger.Debug("通常の評価結果を返します: %s", evaluated.Inspect())
-	return evaluated
+	// case文対応: 新しい関数に委譲して実装を一元化
+	logCaseDebug("applyFunctionWithPizza は applyCaseBare に委譲します")
+	return applyCaseBare(fn, args)
 }
