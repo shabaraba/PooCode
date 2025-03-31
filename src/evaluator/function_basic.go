@@ -51,12 +51,21 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 			logger.Debug("引数がないため、🍕値は設定されません")
 		}
 
+		// 現在実行中の関数を更新
+		oldCurrentFunction := currentFunction
+		currentFunction = fn
+		
 		// 関数本体を評価（ASTBodyをast.BlockStatementに型アサーション）
 		astBody, ok := fn.ASTBody.(*ast.BlockStatement)
 		if !ok {
+			// 一時的な変数を元に戻す
+			currentFunction = oldCurrentFunction
 			return createError("関数の本体がBlockStatementではありません")
 		}
 		result := evalBlockStatement(astBody, extendedEnv)
+
+		// 一時的な変数を元に戻す
+		currentFunction = oldCurrentFunction
 
 		// 💩値を返す（関数の戻り値）
 		if obj, ok := result.(*object.ReturnValue); ok {
@@ -82,4 +91,65 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 	default:
 		return createError("関数ではありません: %s", fn.Type())
 	}
+}
+
+// applyCaseBare は単純に引数を🍕として関数を実行する
+// case文の評価用に特化した関数呼び出し処理
+func applyCaseBare(fn *object.Function, args []object.Object) object.Object {
+	// デバッグ情報
+	logger.Debug("applyCaseBare: 関数を🍕変数設定付きで呼び出します")
+	logCaseDebug("case文用の関数呼び出し: 引数の数=%d", len(args))
+	
+	// 新しい環境を作成
+	extendedEnv := object.NewEnclosedEnvironment(fn.Env)
+	
+	// 🍕変数を設定
+	if len(args) > 0 {
+		logCaseDebug("🍕値を環境に設定: %s", args[0].Inspect())
+		extendedEnv.Set("🍕", args[0])
+		
+		// 関数オブジェクトにも🍕値を設定
+		fn.SetPizzaValue(args[0])
+	} else {
+		logCaseDebug("引数がないため、🍕値は設定されません")
+	}
+	
+	// 通常の引数もパラメータにバインド
+	for i, param := range fn.Parameters {
+		if i < len(args) {
+			extendedEnv.Set(param.Value, args[i])
+		}
+	}
+	
+	// 現在実行中の関数を更新
+	oldCurrentFunction := currentFunction
+	currentFunction = fn
+	
+	// 関数本体を評価
+	astBody, ok := fn.ASTBody.(*ast.BlockStatement)
+	if !ok {
+		// 一時的な変数を元に戻す
+		currentFunction = oldCurrentFunction
+		return createError("関数の本体がBlockStatementではありません")
+	}
+	result := evalBlockStatement(astBody, extendedEnv)
+	
+	// 一時的な変数を元に戻す
+	currentFunction = oldCurrentFunction
+	
+	// リターン値のアンラップ
+	if obj, ok := result.(*object.ReturnValue); ok {
+		return obj.Value
+	}
+	
+	return result
+}
+
+// unwrapReturnValue は関数の戻り値をアンラップする
+func unwrapReturnValue(obj object.Object) object.Object {
+	if returnValue, ok := obj.(*object.ReturnValue); ok {
+		return returnValue.Value
+	}
+	
+	return obj
 }
