@@ -61,12 +61,12 @@ func evalCaseStatement(node *ast.CaseStatement, env *object.Environment) object.
 			return evalBlockStatement(node.Consequence, env)
 		}
 		logCaseDebug("警告: case文に実行可能なブロックがありません")
-		return NULL
+		return NullObj
 	}
 	
 	// 条件が偽の場合
 	logCaseDebug("条件が偽: 次のcaseへ")
-	return NULL
+	return NullObj
 }
 
 // evalDefaultCaseStatement はdefault文を評価
@@ -98,9 +98,9 @@ func getPizzaValueFromEnv(env *object.Environment) (object.Object, bool) {
 // エッジケース対応のヘルパー関数
 func checkCaseConditionSafety(condition object.Object) (bool, object.Object) {
 	// NULL値のチェック
-	if condition == NULL {
+	if condition == NullObj {
 		logCaseDebug("条件がNULL: 偽として評価")
-		return false, NULL
+		return false, NullObj
 	}
 	
 	// エラー値のチェック
