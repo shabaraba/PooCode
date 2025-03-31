@@ -139,3 +139,19 @@ func (re *RangeExpression) String() string {
 	out.WriteString(")")
 	return out.String()
 }
+
+// BlockExpression はブロック式を表すノード
+type BlockExpression struct {
+	Token token.Token     // '{' トークン
+	Block *BlockStatement // ブロック内のステートメント
+}
+
+func (be *BlockExpression) expressionNode()      {}
+func (be *BlockExpression) TokenLiteral() string { return be.Token.Literal }
+func (be *BlockExpression) String() string {
+	var out bytes.Buffer
+	out.WriteString("{ ")
+	out.WriteString(be.Block.String())
+	out.WriteString(" }")
+	return out.String()
+}
