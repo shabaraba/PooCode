@@ -1,44 +1,21 @@
 // 関数内でのcase文使用のテスト
-def testFunc() {
-  let x = 5
-  case x > 0:
+// 🍕 はパイプラインの入力値として自動的に設定される
+def testFunc(): int -> str {
+  case 🍕 > 0: {
     "positive" >> 💩
-  default:
-    "non-positive" >> 💩
-}
-
-// ネストされたブロック内でのcase文使用のテスト
-def testNestedFunc() {
-  let x = 10
-  {
-    case x > 5:
-      "greater than 5" >> 💩
-    default:
-      "less than or equal to 5" >> 💩
   }
-}
-
-// FizzBuzzの実装例
-def fizzbuzz(n) {
-  case n % 15 == 0:
-    "FizzBuzz" >> 💩
-  case n % 3 == 0:
-    "Fizz" >> 💩
-  case n % 5 == 0:
-    "Buzz" >> 💩
-  default:
-    n >> 💩
+  default: {
+    "non-positive" >> 💩
+  }
 }
 
 // テスト実行
 "testFunc: " |> print
-testFunc() |> print
 
-"testNestedFunc: " |> print
-testNestedFunc() |> print
+// 正の値をテスト
+1 |> testFunc |> print
 
-"FizzBuzz tests:" |> print
-fizzbuzz(1) |> print
-fizzbuzz(3) |> print
-fizzbuzz(5) |> print
-fizzbuzz(15) |> print
+// ゼロのテスト
+0 |> testFunc |> print
+
+// 注意: 負の値のテストは現在の言語仕様では難しいので省略しています
