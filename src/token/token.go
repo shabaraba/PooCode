@@ -69,8 +69,8 @@ const (
 	CLASS    = "class"   // クラス定義
 	IF       = "if"      // 条件分岐
 	ELSE     = "else"    // 条件分岐（その他）
-	CASE     = "CASE"    // case文
-	DEFAULT  = "DEFAULT" // defaultケース
+	CASE     = "case"    // case文
+	DEFAULT  = "default" // defaultケース
 	PUBLIC   = "public"  // 公開アクセス修飾子
 	PRIVATE  = "private" // 非公開アクセス修飾子
 	GLOBAL   = "global"  // グローバル変数

@@ -40,8 +40,16 @@ func applyFunction(fn object.Object, args []object.Object) object.Object {
 			extendedEnv.Set(param.Value, args[i])
 		}
 
-		// 修正後の仕様では、🍕はパイプラインで渡された値のみを表す
-		// 通常の関数呼び出しでは🍕は設定しない
+		// case文のために第一引数を🍕として設定
+		if len(args) > 0 {
+			logger.Debug("🍕値を環境に設定: %s", args[0].Inspect())
+			extendedEnv.Set("🍕", args[0])
+			
+			// 関数オブジェクトにも🍕値を設定（将来の参照用）
+			fn.SetPizzaValue(args[0])
+		} else {
+			logger.Debug("引数がないため、🍕値は設定されません")
+		}
 
 		// 関数本体を評価（ASTBodyをast.BlockStatementに型アサーション）
 		astBody, ok := fn.ASTBody.(*ast.BlockStatement)
