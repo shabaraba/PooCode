@@ -1,0 +1,44 @@
+// 関数内でのcase文使用のテスト
+def testFunc() {
+  let x = 5
+  case x > 0:
+    "positive" >> 💩
+  default:
+    "non-positive" >> 💩
+}
+
+// ネストされたブロック内でのcase文使用のテスト
+def testNestedFunc() {
+  let x = 10
+  {
+    case x > 5:
+      "greater than 5" >> 💩
+    default:
+      "less than or equal to 5" >> 💩
+  }
+}
+
+// FizzBuzzの実装例
+def fizzbuzz(n) {
+  case n % 15 == 0:
+    "FizzBuzz" >> 💩
+  case n % 3 == 0:
+    "Fizz" >> 💩
+  case n % 5 == 0:
+    "Buzz" >> 💩
+  default:
+    n >> 💩
+}
+
+// テスト実行
+"testFunc: " |> print
+testFunc() |> print
+
+"testNestedFunc: " |> print
+testNestedFunc() |> print
+
+"FizzBuzz tests:" |> print
+fizzbuzz(1) |> print
+fizzbuzz(3) |> print
+fizzbuzz(5) |> print
+fizzbuzz(15) |> print
