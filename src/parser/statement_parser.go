@@ -20,6 +20,15 @@ func (p *Parser) parseStatement() ast.Statement {
 			logger.ParserDebug("関数外でのcase文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		
+		// ネストしたブロック内のcase文を禁止する追加チェック
+		// 直接関数の本体内でないcase文は禁止
+		if p.isNestedBlock() {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数のルート階層でのみ使用できます。ネストされたブロック内では使用できません", p.curToken.Line))
+			logger.ParserDebug("ネストされたブロック内でのcase文使用を検出: エラー報告")
+			return nil
+		}
+		
 		logger.ParserDebug("関数内でのcase文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseCaseStatement()
 	case token.DEFAULT:
@@ -29,6 +38,14 @@ func (p *Parser) parseStatement() ast.Statement {
 			logger.ParserDebug("関数外でのdefault文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		
+		// ネストしたブロック内のdefault文を禁止する追加チェック
+		if p.isNestedBlock() {
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数のルート階層でのみ使用できます。ネストされたブロック内では使用できません", p.curToken.Line))
+			logger.ParserDebug("ネストされたブロック内でのdefault文使用を検出: エラー報告")
+			return nil
+		}
+		
 		logger.ParserDebug("関数内でのdefault文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseDefaultCaseStatement()
 	default:
