@@ -16,16 +16,20 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.CASE:
 		// 関数内でのみcase文を許可するチェック
 		if !p.insideFunctionBody {
-			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: case文は関数ブロック内でのみ使用できます。関数定義内で使用してください", p.curToken.Line))
+			logger.ParserDebug("関数外でのcase文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		logger.ParserDebug("関数内でのcase文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseCaseStatement()
 	case token.DEFAULT:
 		// 関数内でのみdefault文を許可するチェック
 		if !p.insideFunctionBody {
-			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数ブロック内のトップレベルでのみ使用できます", p.curToken.Line))
+			p.errors = append(p.errors, fmt.Sprintf("%d行目: default文は関数ブロック内でのみ使用できます。関数定義内で使用してください", p.curToken.Line))
+			logger.ParserDebug("関数外でのdefault文使用を検出: エラー報告 (insideFunctionBody=%v)", p.insideFunctionBody)
 			return nil
 		}
+		logger.ParserDebug("関数内でのdefault文使用を検出 (insideFunctionBody=%v)", p.insideFunctionBody)
 		return p.parseDefaultCaseStatement()
 	default:
 		return p.parseExpressionStatement()
@@ -102,17 +106,11 @@ func (p *Parser) parseCaseStatement() *ast.CaseStatement {
 	logger.ParserDebug("case文のブロック解析開始")
 
 	// 結果ブロックを解析
-	// 関数内での使用か関数外での使用かに応じて適切なフィールドに設定
+	// parseStatement関数内ですでに関数内かどうかチェック済みなので、
+	// ここでは常にConsequenceフィールドに設定する
 	blockStmt := p.parseBlockStatement()
-	
-	// 関数内でのcase文の場合はConsequenceに、それ以外はBodyに設定
-	if p.insideFunctionBody {
-		logger.ParserDebug("関数内case文として処理: Consequenceフィールドに設定")
-		stmt.Consequence = blockStmt
-	} else {
-		logger.ParserDebug("関数外case文として処理: Bodyフィールドに設定")
-		stmt.Body = blockStmt
-	}
+	logger.ParserDebug("case文として処理: Consequenceフィールドに設定")
+	stmt.Consequence = blockStmt
 
 	logger.ParserDebug("case文の解析完了")
 	return stmt

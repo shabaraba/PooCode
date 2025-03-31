@@ -262,8 +262,10 @@ func TestIndexAssignment(t *testing.T) {
 
 // TestCaseStatement はcase文の解析をテストする
 func TestCaseStatement(t *testing.T) {
-	// ログレベルを設定
-	logger.SetLogLevel(logger.LevelDebug)
+	// グローバルのログレベルを設定
+	logger.SetLevel(logger.LevelDebug)
+	// パーサーデバッグログを有効化
+	logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	
 	// 関数内でのcase文使用のテスト
 	input := `
@@ -330,8 +332,10 @@ func TestCaseStatement(t *testing.T) {
 
 // TestDefaultCaseStatement はdefault case文の解析をテストする
 func TestDefaultCaseStatement(t *testing.T) {
-	// ログレベルを設定
-	logger.SetLogLevel(logger.LevelDebug)
+	// グローバルのログレベルを設定
+	logger.SetLevel(logger.LevelDebug)
+	// パーサーデバッグログを有効化
+	logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	
 	// 関数内でのdefault文使用のテスト
 	input := `
@@ -393,8 +397,10 @@ func TestDefaultCaseStatement(t *testing.T) {
 
 // TestCaseDefaultCombination はcase文とdefault文の組み合わせをテストする
 func TestCaseDefaultCombination(t *testing.T) {
-	// ログレベルを設定
-	logger.SetLogLevel(logger.LevelDebug)
+	// グローバルのログレベルを設定
+	logger.SetLevel(logger.LevelDebug)
+	// パーサーデバッグログを有効化
+	logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	
 	// 関数内でcase文とdefault文の組み合わせをテスト
 	input := `
@@ -463,8 +469,10 @@ func TestCaseDefaultCombination(t *testing.T) {
 
 // TestCaseStatementErrors はcase文のエラーケースをテストする
 func TestCaseStatementErrors(t *testing.T) {
-	// ログレベルを設定
-	logger.SetLogLevel(logger.LevelDebug)
+	// グローバルのログレベルを設定
+	logger.SetLevel(logger.LevelDebug)
+	// パーサーデバッグログを有効化
+	logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	
 	// 関数外でのcase文使用のテスト（エラーになるべき）
 	input := `
@@ -499,8 +507,10 @@ func TestCaseStatementErrors(t *testing.T) {
 
 // TestDefaultCaseStatementErrors はdefault文のエラーケースをテストする
 func TestDefaultCaseStatementErrors(t *testing.T) {
-	// ログレベルを設定
-	logger.SetLogLevel(logger.LevelDebug)
+	// グローバルのログレベルを設定
+	logger.SetLevel(logger.LevelDebug)
+	// パーサーデバッグログを有効化
+	logger.SetSpecialLevelEnabled(logger.LevelParserDebug, true)
 	
 	// 関数外でのdefault文使用のテスト（エラーになるべき）
 	input := `
