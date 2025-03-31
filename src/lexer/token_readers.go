@@ -36,6 +36,10 @@ func (l *Lexer) readString() string {
 				result = append(result, '\'') // 一重引用符
 			case '0':
 				result = append(result, '\x00') // NULL文字
+			case '+', '|', '>', ' ', '\n':
+				// よく間違えられる文字に対する特別なケース
+				// 例えば "string" + var のようなケースで " + var" を別の文字列として解釈しないように
+				result = append(result, l.ch)
 			default:
 				// 未知のエスケープシーケンスの場合はそのまま両方の文字を追加
 				result = append(result, '\\')
@@ -46,6 +50,11 @@ func (l *Lexer) readString() string {
 			result = append(result, l.ch)
 		}
 		
+		l.readChar()
+	}
+	
+	// 文字列の終端（閉じ二重引用符）がまだ残っていればスキップ
+	if l.ch == '"' {
 		l.readChar()
 	}
 	
