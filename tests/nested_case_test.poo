@@ -10,12 +10,14 @@ def testFunc(): int -> str {
 }
 
 // テスト実行
-"testFunc: " |> print
+"testFunc: " |> print;
 
 // 正の値をテスト
-1 |> testFunc |> print
+1 |> testFunc |> print;
 
 // ゼロのテスト
-0 |> testFunc |> print
+0 |> testFunc |> print;
+
+-1 |> testFunc |> print;
 
 // 注意: 負の値のテストは現在の言語仕様では難しいので省略しています
