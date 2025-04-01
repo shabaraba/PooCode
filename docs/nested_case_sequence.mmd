@@ -1,0 +1,67 @@
+sequenceDiagram
+    %% シーケンス図のパーティシパント定義
+    participant User as ユーザー
+    participant Runtime as 実行ランタイム
+    participant Lexer as 字句解析器
+    participant Parser as 構文解析器
+    participant AST as 抽象構文木
+    participant Evaluator as 評価器
+    participant Environment as 環境
+
+    %% プログラム実行開始
+    User->>Runtime: プログラム実行
+    Runtime->>Lexer: ソースコード解析依頼
+    
+    %% 字句解析プロセス
+    Note over Lexer: 字句解析（トークン化）
+    Lexer->>Lexer: ソースコードをトークンに分割
+    Lexer->>Parser: トークン列
+    
+    %% 構文解析プロセス
+    Note over Parser: 構文解析
+    Parser->>Parser: プログラムノード作成
+    Parser->>Parser: 文の解析
+    
+    %% ブロック式の解析に関する問題
+    Note over Parser: ブロック式の解析
+    Parser->>Parser: parseBlockExpression()
+    Parser->>Parser: parseBlockStatement()
+    
+    %% case文の解析
+    Note over Parser: case文の解析
+    Parser->>Parser: parseCaseStatement()
+    Note right of Parser: 問題: 括弧内のトークン位置情報が不正確
+    
+    %% AST構築
+    Parser->>AST: AST構築完了
+    
+    %% 評価プロセス
+    AST->>Evaluator: 評価リクエスト
+    
+    %% 環境設定
+    Evaluator->>Environment: 環境作成
+    
+    %% ブロック式の評価
+    Note over Evaluator: ブロック式の評価
+    Evaluator->>Evaluator: evalBlockExpression()
+    Evaluator->>Evaluator: evalBlockStatement()
+    
+    %% ネストしたcase文処理の問題箇所
+    Note over Evaluator: case文の評価
+    Evaluator->>Evaluator: evalCaseStatement()
+    Evaluator->>Environment: 🍕値の取得
+    Environment-->>Evaluator: 🍕値
+    
+    %% エラーが発生するポイント
+    Note right of Evaluator: 問題: パース時の位置情報の問題により<br/>条件式が正しく評価できない
+    Evaluator-->>Runtime: エラー：代入先が識別子または💩ではありません
+    Runtime-->>User: エラー表示
+    
+    %% 本来の正しい処理フロー
+    Note over Evaluator: 正しい処理フロー（現在は機能していない）
+    Evaluator->>Evaluator: 条件式の評価
+    Evaluator->>Evaluator: 条件が真ならブロック内を評価
+    Evaluator->>Environment: 結果の設定（💩に代入）
+    Environment-->>Evaluator: 格納完了
+    Evaluator-->>Runtime: 評価結果
+    Runtime-->>User: 処理結果表示

@@ -1,0 +1,221 @@
+classDiagram
+    %% インターフェース定義
+    class Node {
+        <<interface>>
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class Statement {
+        <<interface>>
+        +statementNode()
+    }
+    
+    class Expression {
+        <<interface>>
+        +expressionNode()
+    }
+    
+    class Object {
+        <<interface>>
+        +Type() ObjectType
+        +Inspect() string
+        +GetPooValue() Object
+        +SetPooValue(Object)
+    }
+    
+    class Hashable {
+        <<interface>>
+        +HashKey() HashKey
+    }
+    
+    %% AST関連のクラス
+    class Program {
+        +Statements Statement[]
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class BlockStatement {
+        +Token token.Token
+        +Statements Statement[]
+        +statementNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class ExpressionStatement {
+        +Token token.Token
+        +Expression Expression
+        +statementNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class AssignStatement {
+        +Token token.Token
+        +Left Expression
+        +Value Expression
+        +statementNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class PipeStatement {
+        +Token token.Token
+        +Left Expression
+        +Right Expression
+        +IsParallel bool
+        +statementNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class CaseStatement {
+        +Token token.Token
+        +Condition Expression
+        +Consequence BlockStatement
+        +Body BlockStatement
+        +statementNode()
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class DefaultCaseStatement {
+        +Token token.Token
+        +Body BlockStatement
+        +statementNode()
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class BlockExpression {
+        +Token token.Token
+        +Block BlockStatement
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class FunctionLiteral {
+        +Token token.Token
+        +Name Identifier
+        +Parameters Identifier[]
+        +Body BlockStatement
+        +ReturnType string
+        +InputType string
+        +Condition Expression
+        +Cases CaseStatement[]
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    %% 式関連のクラス
+    class Identifier {
+        +Token token.Token
+        +Value string
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class IntegerLiteral {
+        +Token token.Token
+        +Value int64
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class StringLiteral {
+        +Token token.Token
+        +Value string
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class BooleanLiteral {
+        +Token token.Token
+        +Value bool
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class ArrayLiteral {
+        +Token token.Token
+        +Elements Expression[]
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class PizzaLiteral {
+        +Token token.Token
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    class PooLiteral {
+        +Token token.Token
+        +expressionNode()
+        +TokenLiteral() string
+        +String() string
+    }
+    
+    %% 関連性
+    Node <|-- Statement
+    Node <|-- Expression
+    
+    Statement <|.. BlockStatement
+    Statement <|.. ExpressionStatement
+    Statement <|.. AssignStatement
+    Statement <|.. PipeStatement
+    Statement <|.. CaseStatement
+    Statement <|.. DefaultCaseStatement
+    
+    Expression <|.. BlockExpression
+    Expression <|.. FunctionLiteral
+    Expression <|.. Identifier
+    Expression <|.. IntegerLiteral
+    Expression <|.. StringLiteral
+    Expression <|.. BooleanLiteral
+    Expression <|.. ArrayLiteral
+    Expression <|.. PizzaLiteral
+    Expression <|.. PooLiteral
+    
+    Program o-- Statement
+    
+    BlockExpression o-- BlockStatement
+    FunctionLiteral o-- BlockStatement
+    FunctionLiteral o-- CaseStatement
+    CaseStatement o-- BlockStatement
+    DefaultCaseStatement o-- BlockStatement
+    
+    Hashable <|.. IntegerLiteral
+    Hashable <|.. StringLiteral
+    Hashable <|.. BooleanLiteral
+    
+    class Parser {
+        -lexer Lexer
+        -curToken token.Token
+        -peekToken token.Token
+        -errors string[]
+        +ParseProgram() Program
+    }
+    
+    class Evaluator {
+        +Eval(node, env) Object
+    }
+    
+    class Environment {
+        +store map
+        +outer Environment
+        +Get(name) (Object, bool)
+        +Set(name, val) Object
+    }

@@ -1,0 +1,75 @@
+sequenceDiagram
+    %% シーケンス図のパーティシパント定義
+    participant User as ユーザー
+    participant Runtime as 実行ランタイム
+    participant Lexer as 字句解析器
+    participant Parser as 構文解析器
+    participant AST as 抽象構文木
+    participant Evaluator as 評価器
+    participant Environment as 環境
+
+    %% プログラム実行開始
+    User->>Runtime: プログラム実行（case文を含む関数）
+    Runtime->>Lexer: ソースコード解析依頼
+    
+    %% 字句解析プロセス
+    Lexer->>Lexer: ソースコードをトークンに分割
+    Lexer-->>Parser: トークン列を渡す
+    
+    %% 構文解析プロセス
+    Parser->>Parser: プログラムノード作成
+    
+    %% 関数定義の解析
+    Parser->>Parser: parseFunctionLiteral()
+    Parser->>Parser: パラメータリスト解析
+    Parser->>Parser: 関数本体（BlockStatement）解析
+    
+    %% 関数内のcase文解析
+    Parser->>Parser: parseCaseStatement()
+    Parser->>Parser: 条件式の解析
+    Parser->>Parser: 結果ブロックの解析
+    
+    %% デフォルトケース解析（存在する場合）
+    Parser->>Parser: parseDefaultCaseStatement()
+    Parser->>Parser: デフォルトブロックの解析
+    
+    %% AST構築完了
+    Parser-->>AST: 完成したAST
+    AST-->>Runtime: 構文解析完了
+    
+    %% 関数呼び出し
+    Note over User, Runtime: ユーザーが関数を呼び出す
+    User->>Runtime: 関数呼び出し（パイプライン経由）
+    Runtime->>Evaluator: 関数評価リクエスト
+    
+    %% 関数評価
+    Evaluator->>Environment: 新しい関数スコープ作成
+    Environment-->>Evaluator: 関数環境
+    
+    %% パラメータと🍕の設定
+    Evaluator->>Environment: パラメータ値のバインド
+    Evaluator->>Environment: 🍕値の設定（パイプライン入力値）
+    
+    %% case文の評価
+    Evaluator->>Evaluator: evalCaseStatement()
+    Evaluator->>Environment: 🍕値の取得
+    Environment-->>Evaluator: 🍕値
+    
+    %% 条件式の評価
+    Evaluator->>Evaluator: 条件式の評価
+    
+    %% 条件によるブランチ
+    alt 条件が真
+        Evaluator->>Evaluator: ブロック内の文を評価
+        Evaluator->>Environment: 💩に結果を設定
+        Environment-->>Evaluator: 設定完了
+        Evaluator-->>Runtime: 関数の戻り値
+    else 条件が偽
+        Note over Evaluator: 次のcaseまたはdefaultを評価
+        Evaluator->>Evaluator: evalDefaultCaseStatement()（存在すれば）
+        Evaluator->>Environment: 💩に結果を設定
+        Environment-->>Evaluator: 設定完了
+        Evaluator-->>Runtime: 関数の戻り値
+    end
+    
+    Runtime-->>User: 処理結果表示
