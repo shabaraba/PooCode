@@ -1,0 +1,38 @@
+def showFizz(): int -> str {
+    case 🍕 % 3 == 0: {
+        "Fizz" >> 💩;
+    }
+    default: {
+        "" >> 💩;
+    }
+}
+
+def showBuzz(): int -> str {
+    case 🍕 % 5 == 0: {
+        "Buzz" >> 💩;
+    }
+    default: {
+        "" >> 💩;
+    }
+}
+
+def showNumber(num): str -> str {
+    case 🍕 == "": {
+        num |> print;
+        num |> to_string >> 💩;
+    }
+    default: {
+        🍕 >> 💩;
+    }
+}
+
+def fizzbuzz(): int -> str {
+    "" >> result;
+
+    🍕 >> tmp;
+    🍕 |> showBuzz |> add result >> result;
+    🍕 |> showFizz |> add result |> showNumber tmp >> 💩;
+}
+
+2 |> fizzbuzz;
+

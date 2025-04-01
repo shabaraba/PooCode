@@ -26,8 +26,6 @@ const (
 type Object interface {
 	Type() ObjectType
 	Inspect() string
-	GetPooValue() Object // 💩メンバの値を取得
-	SetPooValue(Object)  // 💩メンバの値を設定
 }
 
 // Hashable はハッシュキーとして使用可能なオブジェクトのインターフェース
